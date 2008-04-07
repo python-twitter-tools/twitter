@@ -1,8 +1,14 @@
 
 from base64 import b64encode
+from urllib import urlencode
 
 import httplib
 import simplejson
+
+from exceptions import Exception
+
+class TwitterError(Exception):
+    pass
 
 class TwitterCall(object):
     def __init__(self, username=None, password=None, uri=""):
@@ -21,8 +27,7 @@ class TwitterCall(object):
             method = "POST"
         argStr = ""
         if kwargs:
-            argStr = "?" + "&".join([
-                "%s=%s" %(k, v) for k, v in kwargs.iteritems()])
+            argStr = "?" + urlencode(kwargs.items())
         c = httplib.HTTPConnection("twitter.com")
         try:
             c.putrequest(method, "/%s.json%s" %(self.uri, argStr))
@@ -35,7 +40,7 @@ class TwitterCall(object):
             if (r.status == 304):
                 return []
             elif (r.status != 200):
-                raise Exception("Twitter sent status %i: %s" %(
+                raise TwitterError("Twitter sent status %i: %s" %(
                     r.status, r.read()))
             return simplejson.loads(r.read())
         finally:

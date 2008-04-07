@@ -1,6 +1,6 @@
 Metadata-Version: 1.0
 Name: twitter
-Version: 0.1dev
+Version: 0.1dev-r155
 Summary: An API and command-line toolset for Twitter (twitter.com)
 Home-page: http://mike.verdone.ca/twitter/
 Author: Mike Verdone

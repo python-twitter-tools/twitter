@@ -1,3 +1,5 @@
 
       # -*- Entry points: -*-
+      [console_scripts]
+      twitter=twitter.cmdline:main
       

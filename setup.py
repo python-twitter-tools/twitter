@@ -22,5 +22,7 @@ setup(name='twitter',
       ],
       entry_points="""
       # -*- Entry points: -*-
+      [console_scripts]
+      twitter=twitter.cmdline:main
       """,
       )
