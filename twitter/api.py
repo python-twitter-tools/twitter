@@ -3,7 +3,6 @@ from base64 import b64encode
 from urllib import urlencode
 
 import httplib
-import simplejson
 
 from exceptions import Exception
 
@@ -11,16 +10,18 @@ class TwitterError(Exception):
     pass
 
 class TwitterCall(object):
-    def __init__(self, username=None, password=None, uri=""):
+    def __init__(self, username, password, format, uri=""):
         self.username = username
         self.password = password
+        self.format = format
         self.uri = uri
     def __getattr__(self, k):
         try:
             return object.__getattr__(self, k)
         except AttributeError:
             return TwitterCall(
-                self.username, self.password, self.uri + "/" + k)
+                self.username, self.password, self.format, 
+                self.uri + "/" + k)
     def __call__(self, **kwargs):
         method = "GET"
         if self.uri.endswith('new') or self.uri.endswith('update'):
@@ -30,11 +31,15 @@ class TwitterCall(object):
             argStr = "?" + urlencode(kwargs.items())
         c = httplib.HTTPConnection("twitter.com")
         try:
-            c.putrequest(method, "/%s.json%s" %(self.uri, argStr))
+            c.putrequest(method, "/%s.%s%s" %(
+                self.uri, self.format, argStr))
             if (self.username):
-                c.putheader("Authorization", "Basic " 
-                            + b64encode("%s:%s" %(
-                                self.username, self.password)))
+                c.putheader(
+                    "Authorization", "Basic " + b64encode("%s:%s" %(
+                        self.username, self.password)))
+            if (method == "POST"):
+                # TODO specify charset
+                pass
             c.endheaders()
             r = c.getresponse()
             if (r.status == 304):
@@ -42,7 +47,11 @@ class TwitterCall(object):
             elif (r.status != 200):
                 raise TwitterError("Twitter sent status %i: %s" %(
                     r.status, r.read()))
-            return simplejson.loads(r.read())
+            if ("json" == self.format):
+                import simplejson
+                return simplejson.loads(r.read())
+            else:
+                return r.read()
         finally:
             c.close()
 
@@ -86,13 +95,31 @@ class Twitter(TwitterCall):
 
       # The screen name of the user who wrote the first 'tweet'
       x[0]['user']['screen_name']
+    
+    Getting raw XML data::
+    
+      If you prefer to get your Twitter data in XML format, pass
+      format="xml" to the Twitter object when you instantiate it:
       
+      twitter = Twitter(format="xml")
+      
+      The output will not be parsed in any way. It will be a raw string
+      of XML.
     """
-    def __init__(self, email=None, password=None):
+    def __init__(self, email=None, password=None, format="json"):
         """
         Create a new twitter API connector using the specified
-        credentials (email and password).
+        credentials (email and password). Format specifies the output
+        format ("json" (default) or "xml").
         """
-        TwitterCall.__init__(self, email, password)
+        if (format not in ("json", "xml")):
+            raise TwitterError("Unknown data format '%s'" %(format))
+        if (format == "json"):
+            try:
+                import simplejson
+            except ImportError:
+                raise TwitterError(
+                    "format not available: simplejson is not installed")
+        TwitterCall.__init__(self, email, password, format)
 
 __all__ = ["Twitter"]
