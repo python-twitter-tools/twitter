@@ -17,6 +17,7 @@ OPTIONS:
 
 import sys
 from getopt import getopt
+from getpass import getpass
 
 from api import Twitter, TwitterError
 
@@ -26,12 +27,13 @@ options = {
     'action': 'friends',
     'forever': False,
     'refresh': 600,
+    'verbose': 0,
     'extra_args': []
 }
 
 def parse_args(args, options):
-    long_opts = ['email', 'password', 'help']
-    short_opts = "e:p:h?"
+    long_opts = ['email', 'password', 'help', 'verbose']
+    short_opts = "e:p:vh?"
     opts, extra_args = getopt(args, short_opts, long_opts)
     
     for opt, arg in opts:
@@ -39,6 +41,8 @@ def parse_args(args, options):
             options['email'] = arg
         elif opt in ('-p', '--password'):
             options['password'] = arg
+        elif opt in ('-v', '--verbose'):
+            options['verbose'] = options.get('verbose', 0) + 1
         elif opt in ('-?', '-h', '--help'):
             print __doc__
             sys.exit(0)
@@ -49,30 +53,44 @@ def parse_args(args, options):
 
 class StatusFormatter(object):
     def __call__(self, status):
-        return (u"%s: %s" %(
+        return (u"%s %s" %(
             status['user']['screen_name'], status['text'])).encode(
                 sys.stdout.encoding, 'replace')
 
+class VerboseStatusFormatter(object):
+    def __call__(self, status):
+        return (u"-- %s (%s) on %s\n%s\n" %(
+            status['user']['screen_name'],
+            status['user']['location'],
+            status['created_at'],
+            status['text'])).encode(
+                sys.stdout.encoding, 'replace')
+
+def get_status_formatter(options):
+    if options['verbose']:
+        return VerboseStatusFormatter()
+    return StatusFormatter()
+    
 def no_action(twitter, options):
     print >> sys.stderr, "No such action: ", options['action']
     sys.exit(1)
     
 def action_friends(twitter, options):
     statuses = reversed(twitter.statuses.friends_timeline())
-    sf = StatusFormatter()
+    sf = get_status_formatter(options)
     for status in statuses:
         print sf(status)
 
 def action_public(twitter, options):
     statuses = reversed(twitter.statuses.public_timeline())
-    sf = StatusFormatter()
+    sf = get_status_formatter(options)
     for status in statuses:
         print sf(status)
 
 def action_set_status(twitter, options):
-    twitter.statuses.update(
-        status=(u" ".join(options['extra_args'])).encode(
-            'utf8', 'replace'))
+    status = (u" ".join(options['extra_args'])).encode(
+        'utf8', 'replace')
+    twitter.statuses.update(status=status)
 
 actions = {
     'friends': action_friends,
@@ -86,6 +104,8 @@ def main():
     
 def main_with_args(args):
     parse_args(args, options)
+    if options['email'] and not options['password']:
+        options['password'] = getpass("Twitter password: ")
     twitter = Twitter(options['email'], options['password'])
     action = actions.get(options['action'], no_action)
     try:
