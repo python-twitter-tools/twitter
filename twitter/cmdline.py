@@ -32,7 +32,7 @@ options = {
 def parse_args(args, options):
     long_opts = ['email', 'password', 'help']
     short_opts = "e:p:h?"
-    opts, options['extra_args'] = getopt(args, short_opts, long_opts)
+    opts, extra_args = getopt(args, short_opts, long_opts)
     
     for opt, arg in opts:
         if opt in ('-e', '--email'):
@@ -42,11 +42,16 @@ def parse_args(args, options):
         elif opt in ('-?', '-h', '--help'):
             print __doc__
             sys.exit(0)
+    
+    if extra_args:
+        options['action'] = extra_args[0]
+    options['extra_args'] = extra_args[1:]
 
 class StatusFormatter(object):
     def __call__(self, status):
-        return u"%s: %s" %(
-            status['user']['screen_name'], status['text'])
+        return (u"%s: %s" %(
+            status['user']['screen_name'], status['text'])).encode(
+                sys.stdout.encoding, 'replace')
 
 def no_action(twitter, options):
     print >> sys.stderr, "No such action: ", options['action']
@@ -66,7 +71,8 @@ def action_public(twitter, options):
 
 def action_set_status(twitter, options):
     twitter.statuses.update(
-        status=" ".join(options['extra_args']))
+        status=(u" ".join(options['extra_args'])).encode(
+            'utf8', 'replace'))
 
 actions = {
     'friends': action_friends,
@@ -74,11 +80,11 @@ actions = {
     'set': action_set_status,
 }
 
+
 def main():
-    args = sys.argv[1:]
-    if args and args[0][0] != "-":
-        options['action'] = args[0]
-        args = args[1:]
+    return main_with_args(sys.argv[1:])
+    
+def main_with_args(args):
     parse_args(args, options)
     twitter = Twitter(options['email'], options['password'])
     action = actions.get(options['action'], no_action)

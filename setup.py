@@ -19,6 +19,7 @@ setup(name='twitter',
       zip_safe=True,
       install_requires=[
           # -*- Extra requirements: -*-
+          "simplejson>=1.7.1",
       ],
       entry_points="""
       # -*- Entry points: -*-
