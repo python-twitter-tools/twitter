@@ -13,11 +13,23 @@ OPTIONS:
 
  -e --email <email>         your email to login to twitter
  -p --password <password>   your twitter password
+ -r --refresh               run this command forever, polling every once
+                            in a while (default: every 5 minutes)
+ -R --refresh-rate <rate>   set the refresh rate (in seconds)
+ -f --format <format>       specify the output format for status updates
+
+FORMATS for the --format option
+
+ default         one line per status
+ verbose         multiple lines per status, more verbose status info
+ urls            nothing but URLs. Dare you click them?
 """
 
 import sys
+import time
 from getopt import getopt
 from getpass import getpass
+import re
 
 from api import Twitter, TwitterError
 
@@ -25,15 +37,16 @@ options = {
     'email': None,
     'password': None,
     'action': 'friends',
-    'forever': False,
-    'refresh': 600,
-    'verbose': 0,
+    'refresh': False,
+    'refresh_rate': 600,
+    'format': 'default',
     'extra_args': []
 }
 
 def parse_args(args, options):
-    long_opts = ['email', 'password', 'help', 'verbose']
-    short_opts = "e:p:vh?"
+    long_opts = ['email', 'password', 'help', 'format', 'refresh',
+                 'refresh-rate']
+    short_opts = "e:p:f:h?rR:"
     opts, extra_args = getopt(args, short_opts, long_opts)
     
     for opt, arg in opts:
@@ -41,8 +54,12 @@ def parse_args(args, options):
             options['email'] = arg
         elif opt in ('-p', '--password'):
             options['password'] = arg
-        elif opt in ('-v', '--verbose'):
-            options['verbose'] = options.get('verbose', 0) + 1
+        elif opt in ('-f', '--format'):
+            options['format'] = arg
+        elif opt in ('-r', '--refresh'):
+            options['refresh'] = True
+        elif opt in ('-R', '--refresh-rate'):
+            options['refresh_rate'] = int(arg)
         elif opt in ('-?', '-h', '--help'):
             print __doc__
             sys.exit(0)
@@ -54,8 +71,7 @@ def parse_args(args, options):
 class StatusFormatter(object):
     def __call__(self, status):
         return (u"%s %s" %(
-            status['user']['screen_name'], status['text'])).encode(
-                sys.stdout.encoding, 'replace')
+            status['user']['screen_name'], status['text']))
 
 class VerboseStatusFormatter(object):
     def __call__(self, status):
@@ -63,39 +79,62 @@ class VerboseStatusFormatter(object):
             status['user']['screen_name'],
             status['user']['location'],
             status['created_at'],
-            status['text'])).encode(
-                sys.stdout.encoding, 'replace')
+            status['text']))
 
+class URLStatusFormatter(object):
+    urlmatch = re.compile(r'https?://\S+')
+    def __call__(self, status):
+        urls = self.urlmatch.findall(status['text'])
+        return u'\n'.join(urls) if urls else ""
+
+formatters = {
+    'default': StatusFormatter,
+    'verbose': VerboseStatusFormatter,
+    'urls': URLStatusFormatter
+}    
+    
 def get_status_formatter(options):
-    if options['verbose']:
-        return VerboseStatusFormatter()
-    return StatusFormatter()
-    
-def no_action(twitter, options):
-    print >> sys.stderr, "No such action: ", options['action']
-    sys.exit(1)
-    
-def action_friends(twitter, options):
-    statuses = reversed(twitter.statuses.friends_timeline())
-    sf = get_status_formatter(options)
-    for status in statuses:
-        print sf(status)
+    sf = formatters.get(options['format'])
+    if (not sf):
+        raise TwitterError(
+            "Unknown formatter '%s'" %(options['format']))
+    return sf()
 
-def action_public(twitter, options):
-    statuses = reversed(twitter.statuses.public_timeline())
-    sf = get_status_formatter(options)
-    for status in statuses:
-        print sf(status)
+class Action(object):
+    pass
 
-def action_set_status(twitter, options):
-    status = (u" ".join(options['extra_args'])).encode(
-        'utf8', 'replace')
-    twitter.statuses.update(status=status)
+class NoSuchAction(Action):
+    def __call__(self, twitter, options):
+        print >> sys.stderr, "No such action: ", options['action']
+        sys.exit(1)
+
+class StatusAction(Action):
+    def __call__(self, twitter, options):
+        statuses = self.getStatuses(twitter)
+        sf = get_status_formatter(options)
+        for status in statuses:
+            statusStr = sf(status)
+            if statusStr.strip():
+                print statusStr.encode(sys.stdout.encoding, 'replace')
+        
+class FriendsAction(StatusAction):
+    def getStatuses(self, twitter):
+        return reversed(twitter.statuses.friends_timeline())
+    
+class PublicAction(StatusAction):
+    def getStatuses(self, twitter):
+        return reversed(twitter.statuses.public_timeline())
+
+class SetStatusAction(Action):
+    def __call__(self, twitter, options):
+        status = (u" ".join(options['extra_args'])).encode(
+            'utf8', 'replace')
+        twitter.statuses.update(status=status)
 
 actions = {
-    'friends': action_friends,
-    'public': action_public,
-    'set': action_set_status,
+    'friends': FriendsAction,
+    'public': PublicAction,
+    'set': SetStatusAction,
 }
 
 
@@ -104,13 +143,26 @@ def main():
     
 def main_with_args(args):
     parse_args(args, options)
+    if options['refresh'] and options['action'] == 'set':
+        print >> sys.stderr, "You can't repeatedly set your status, silly"
+        print >> sys.stderr, "Use 'twitter -h' for help."
+        sys.exit(1)
     if options['email'] and not options['password']:
         options['password'] = getpass("Twitter password: ")
     twitter = Twitter(options['email'], options['password'])
-    action = actions.get(options['action'], no_action)
+    action = actions.get(options['action'], NoSuchAction)()
     try:
-        action(twitter, options)
+        doAction = lambda : action(twitter, options)
+        if (options['refresh']):
+            while True:
+                doAction()
+                time.sleep(options['refresh_rate'])
+        else:
+            doAction()
     except TwitterError, e:
         print >> sys.stderr, e.message
         print >> sys.stderr, "Use 'twitter -h' for help."
         sys.exit(1)
+    except KeyboardInterrupt:
+        pass
+    
