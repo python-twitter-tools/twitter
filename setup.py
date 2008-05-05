@@ -20,6 +20,7 @@ setup(name='twitter',
       install_requires=[
           # -*- Extra requirements: -*-
           "simplejson>=1.7.1",
+          "dateutil>=1.1",
       ],
       entry_points="""
       # -*- Entry points: -*-

@@ -127,8 +127,10 @@ class PublicAction(StatusAction):
 
 class SetStatusAction(Action):
     def __call__(self, twitter, options):
-        status = (u" ".join(options['extra_args'])).encode(
-            'utf8', 'replace')
+        statusTxt = (u" ".join(options['extra_args']) 
+                     if options['extra_args'] 
+                     else unicode(raw_input("message: ")))
+        status = (statusTxt.encode('utf8', 'replace'))
         twitter.statuses.update(status=status)
 
 actions = {
