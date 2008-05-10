@@ -1,17 +1,35 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '0.1'
+version = '0.2'
 
 setup(name='twitter',
       version=version,
       description="An API and command-line toolset for Twitter (twitter.com)",
       long_description="""\
+An API and command-line toolset for Twitter (twitter.com). Includes:
+
+  * a lightweight Twitter API access class.
+  * a twitter command-line tool for setting your status and getting your
+    friends' status
+  * a twitter IRC bot for announcing status updates to an IRC channel
+
 """,
-      classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
-      keywords='twitter',
+      # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
+      classifiers=[
+          "Development Status :: 4 - Beta",
+          "Environment :: Console",
+          "Intended Audience :: End Users/Desktop",
+          "Natural Language :: English",
+          "Operating System :: OS Independent",
+          "Programming Language :: Python",
+          "Topic :: Communications :: Chat :: Internet Relay Chat",
+          "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: CGI Tools/Libraries",
+          "Topic :: Utilities",
+          ],
+      keywords='twitter, IRC, command-line tools, web 2.0',
       author='Mike Verdone',
-      author_email='mike.verdone@gmail.com',
+      author_email='mike.verdone+twitterapi@gmail.com',
       url='http://mike.verdone.ca/twitter/',
       license='',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),

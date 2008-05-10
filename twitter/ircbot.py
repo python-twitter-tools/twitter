@@ -1,4 +1,31 @@
+"""
+twitterbot
 
+  A twitter IRC bot. Twitterbot connected to an IRC server and idles in
+  a channel, polling a twitter account and broadcasting all updates to
+  friends.
+  
+USAGE
+
+  twitterbot [config_file]
+
+CONFIG_FILE
+
+  The config file is an ini-style file that must contain the following:
+  
+[irc]
+server: <irc_server>
+port: <irc_port>
+nick: <irc_nickname>
+channel: <irc_channel_to_join>
+
+[twitter]
+email: <twitter_account_email>
+password: <twitter_account_password>
+
+  If no config file is given "twitterbot.ini" will be used by default.
+
+"""
 import sys
 import time
 from dateutil.parser import parse
@@ -17,7 +44,7 @@ except:
 
 def debug(msg):
     # uncomment this for debug text stuff
-    print >> sys.stderr, msg
+    # print >> sys.stderr, msg
     pass
 
 class SchedTask(object):
@@ -183,5 +210,12 @@ def main():
     configFilename = "twitterbot.ini"
     if (sys.argv[1:]):
         configFilename = sys.argv[1]
+    try:
+        load_config(configFilename)
+    except:
+        print >> sys.stderr, "Error loading ini file %s" %(
+            configFilename)
+        print __doc__
+        sys.exit(1)
     bot = TwitterBot(configFilename)
     return bot.run()
