@@ -6,7 +6,7 @@ from ConfigParser import ConfigParser
 from heapq import heappop, heappush
 import traceback
 
-from api import Twitter
+from api import Twitter, TwitterError
 
 try:
     import irclib
@@ -131,7 +131,13 @@ class TwitterBot(object):
                 userNick,
                 "=O_o= I'm already following %s." %(name))
         else:
-            self.twitter.friendships.create(id=name)
+            try:
+                self.twitter.friendships.create(id=name)
+            except TwitterError:
+                conn.privmsg(
+                    userNick,
+                    "=O_o= I can't follow that user. Are you sure the name is correct?")
+                return
             conn.privmsg(
                 userNick,
                 "=^_^= Okay! I'm now following %s." %(name))
