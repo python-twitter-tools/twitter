@@ -26,5 +26,6 @@ setup(name='twitter',
       # -*- Entry points: -*-
       [console_scripts]
       twitter=twitter.cmdline:main
+      twitterbot=twitter.ircbot:main
       """,
       )
