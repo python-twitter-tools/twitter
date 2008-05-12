@@ -26,6 +26,18 @@ password: <twitter_account_password>
   If no config file is given "twitterbot.ini" will be used by default.
 
 """
+
+# TODO add delimiter if first word isn't "is" or "was"
+# TODO handle newlines
+# TODO handle quotes
+
+BOT_VERSION = "TwitterBot 0.2.1 (mike.verdone.ca/twitter)"
+
+IRC_BOLD = chr(0x02)
+IRC_ITALIC = chr(0x16)
+IRC_UNDERLINE = chr(0x1f)
+IRC_REGULAR = chr(0x0f)
+
 import sys
 import time
 from dateutil.parser import parse
@@ -93,13 +105,14 @@ class TwitterBot(object):
         self.config = load_config(self.configFilename)
         self.irc = irclib.IRC()
         self.irc.add_global_handler('privmsg', self.handle_privmsg)
+        self.irc.add_global_handler('ctcp', self.handle_ctcp)
         self.ircServer = self.irc.server()
         self.twitter = Twitter(
             self.config.get('twitter', 'email'),
             self.config.get('twitter', 'password'))
         self.sched = Scheduler(
             (SchedTask(self.process_events, 1),
-             SchedTask(self.check_statuses, 60)))
+             SchedTask(self.check_statuses, 120)))
         self.lastUpdate = time.gmtime()
 
     def check_statuses(self):
@@ -114,10 +127,15 @@ class TwitterBot(object):
         for update in updates:
             crt = parse(update['created_at']).utctimetuple()
             if (crt > self.lastUpdate):
+                text = (
+                    update['text']
+                    .replace('\n', ' ')
+                    .replace("&quot;", "\"")
+                    .replace('&amp;', '&'))
                 self.privmsg_channel(
-                    "=^_^= %s %s" %(
-                        update['user']['screen_name'],
-                        update['text']))
+                    "=^_^= %s%s%s %s" %(
+                        IRC_BOLD, update['user']['screen_name'],
+                        IRC_BOLD, text))
                 self.lastUpdate = crt
             else:
                 break
@@ -144,6 +162,17 @@ class TwitterBot(object):
                     + "(unfollow <twitter_name>) to make me stop.")
         except Exception:
             traceback.print_exc(file=sys.stderr)
+    
+    def handle_ctcp(self, conn, evt):
+        args = evt.arguments()
+        source = evt.source().split('!')[0]
+        if (args):
+            if args[0] == 'VERSION':
+                conn.ctcp_reply(source, "VERSION " + BOT_VERSION)
+            elif args[0] == 'PING':
+                conn.ctcp_reply(source, "PING")
+            elif args[0] == 'CLIENTINFO':
+                conn.ctcp_reply(source, "CLIENTINFO PING VERSION CLIENTINFO")
 
     def privmsg_channel(self, msg):
         return self.ircServer.privmsg(
