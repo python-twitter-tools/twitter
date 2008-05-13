@@ -28,8 +28,6 @@ password: <twitter_account_password>
 """
 
 # TODO add delimiter if first word isn't "is" or "was"
-# TODO handle newlines
-# TODO handle quotes
 
 BOT_VERSION = "TwitterBot 0.2.1 (mike.verdone.ca/twitter)"
 
@@ -46,6 +44,7 @@ from heapq import heappop, heappush
 import traceback
 
 from api import Twitter, TwitterError
+from util import htmlentitydecode
 
 try:
     import irclib
@@ -127,11 +126,9 @@ class TwitterBot(object):
         for update in updates:
             crt = parse(update['created_at']).utctimetuple()
             if (crt > self.lastUpdate):
-                text = (
-                    update['text']
-                    .replace('\n', ' ')
-                    .replace("&quot;", "\"")
-                    .replace('&amp;', '&'))
+                text = (htmlentitydecode(
+                    update['text'].replace('\n', ' '))
+                    .encode('utf-8', 'replace'))
                 self.privmsg_channel(
                     "=^_^= %s%s%s %s" %(
                         IRC_BOLD, update['user']['screen_name'],
