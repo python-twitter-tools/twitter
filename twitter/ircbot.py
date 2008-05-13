@@ -123,6 +123,7 @@ class TwitterBot(object):
             traceback.print_exc(file=sys.stderr)
             return
         
+        nextLastUpdate = self.lastUpdate
         for update in updates:
             crt = parse(update['created_at']).utctimetuple()
             if (crt > self.lastUpdate):
@@ -133,10 +134,11 @@ class TwitterBot(object):
                     "=^_^= %s%s%s %s" %(
                         IRC_BOLD, update['user']['screen_name'],
                         IRC_BOLD, text))
-                self.lastUpdate = crt
+                nextLastUpdate = crt
             else:
                 break
-
+        self.lastUpdate = nextLastUpdate
+        
     def process_events(self):
         debug("In process_events")
         self.irc.process_once()
