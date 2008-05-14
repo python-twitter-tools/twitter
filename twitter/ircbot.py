@@ -27,9 +27,7 @@ password: <twitter_account_password>
 
 """
 
-# TODO add delimiter if first word isn't "is" or "was"
-
-BOT_VERSION = "TwitterBot 0.2.1 (mike.verdone.ca/twitter)"
+BOT_VERSION = "TwitterBot 0.3.1 (mike.verdone.ca/twitter)"
 
 IRC_BOLD = chr(0x02)
 IRC_ITALIC = chr(0x16)
@@ -130,10 +128,16 @@ class TwitterBot(object):
                 text = (htmlentitydecode(
                     update['text'].replace('\n', ' '))
                     .encode('utf-8', 'replace'))
-                self.privmsg_channel(
-                    "=^_^= %s%s%s %s" %(
-                        IRC_BOLD, update['user']['screen_name'],
-                        IRC_BOLD, text))
+
+                # Skip updates beginning with @
+                # TODO This would be better if we only ignored messages
+                #   to people who are not on our following list.
+                if not text.startswith("@"):
+                    self.privmsg_channel(
+                        "=^_^= %s%s%s %s" %(
+                            IRC_BOLD, update['user']['screen_name'],
+                            IRC_BOLD, text))
+                
                 nextLastUpdate = crt
             else:
                 break
