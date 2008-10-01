@@ -27,7 +27,7 @@ password: <twitter_account_password>
 
 """
 
-BOT_VERSION = "TwitterBot 0.3.1 (mike.verdone.ca/twitter)"
+BOT_VERSION = "TwitterBot 0.4 (mike.verdone.ca/twitter)"
 
 IRC_BOLD = chr(0x02)
 IRC_ITALIC = chr(0x16)
@@ -37,7 +37,7 @@ IRC_REGULAR = chr(0x0f)
 import sys
 import time
 from dateutil.parser import parse
-from ConfigParser import ConfigParser
+from ConfigParser import SafeConfigParser
 from heapq import heappop, heappush
 import traceback
 
@@ -82,19 +82,17 @@ class Scheduler(object):
         now = time.time()
         task = heappop(self.task_heap)
         wait = task.next - now
+        task.next = now + task.delta
+        heappush(self.task_heap, task)
         if (wait > 0):
             time.sleep(wait)
         task()
-        task.next = now + task.delta
-        heappush(self.task_heap, task)
         debug("tasks: " + str(self.task_heap))
         
     def run_forever(self):
-        try:
-            while True:
-                self.next_task()
-        except KeyboardInterrupt:
-            pass
+        while True:
+            self.next_task()
+
             
 class TwitterBot(object):
     def __init__(self, configFilename):
@@ -134,9 +132,9 @@ class TwitterBot(object):
                 #   to people who are not on our following list.
                 if not text.startswith("@"):
                     self.privmsg_channel(
-                        "=^_^= %s%s%s %s" %(
+                        u"=^_^=  %s%s%s %s" %(
                             IRC_BOLD, update['user']['screen_name'],
-                            IRC_BOLD, text))
+                            IRC_BOLD, text.decode('utf-8')))
                 
                 nextLastUpdate = crt
             else:
@@ -179,7 +177,7 @@ class TwitterBot(object):
 
     def privmsg_channel(self, msg):
         return self.ircServer.privmsg(
-            self.config.get('irc', 'channel'), msg)
+            self.config.get('irc', 'channel'), msg.encode('utf-8'))
             
     def follow(self, conn, evt, name):
         userNick = evt.source().split('!')[0]
@@ -227,14 +225,19 @@ class TwitterBot(object):
             self.config.getint('irc', 'port'),
             self.config.get('irc', 'nick'))
         self.ircServer.join(self.config.get('irc', 'channel'))
-        try:
-            self.sched.run_forever()
-        except KeyboardInterrupt:
-            pass
+
+        while True:
+            try:
+                self.sched.run_forever()
+            except KeyboardInterrupt:
+                break
+            except TwitterError:
+                # twitter.com is probably down because it sucks. ignore the fault and keep going
+                pass
 
 def load_config(filename):
     defaults = dict(server=dict(port=6667, nick="twitterbot"))
-    cp = ConfigParser(defaults)
+    cp = SafeConfigParser(defaults)
     cp.read((filename,))
     return cp
 
