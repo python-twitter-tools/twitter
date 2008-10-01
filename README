@@ -1,0 +1,11 @@
+Python Twitter Tools
+
+The Minimalist Twitter API for Python is a Python API for Twitter, everyone's favorite Web 2.0 Facebook-style status updater for people on the go.
+
+Also included is a twitter command-line tool for getting your friends' tweets and setting your own tweet from the safety and security of your favorite shell and an IRC bot that can announce Twitter updated to an IRC channel.
+
+For more information:
+
+ * import the `twitter` package and run help() on it
+ * run `twitter -h` for command-line tool help
+ * run `twitterbot -h` for IRC bot help
