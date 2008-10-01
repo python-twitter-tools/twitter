@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '0.3.1'
+version = '0.4'
 
 setup(name='twitter',
       version=version,
@@ -17,7 +17,7 @@ An API and command-line toolset for Twitter (twitter.com). Includes:
 """,
       # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
       classifiers=[
-          "Development Status :: 4 - Beta",
+          "Development Status :: 5 - Production/Stable",
           "Environment :: Console",
           "Intended Audience :: End Users/Desktop",
           "Natural Language :: English",
@@ -26,12 +26,13 @@ An API and command-line toolset for Twitter (twitter.com). Includes:
           "Topic :: Communications :: Chat :: Internet Relay Chat",
           "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: CGI Tools/Libraries",
           "Topic :: Utilities",
+          "License :: OSI Approved :: MIT License",
           ],
       keywords='twitter, IRC, command-line tools, web 2.0',
       author='Mike Verdone',
       author_email='mike.verdone+twitterapi@gmail.com',
       url='http://mike.verdone.ca/twitter/',
-      license='',
+      license='MIT License',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
       zip_safe=True,

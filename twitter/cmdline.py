@@ -17,12 +17,22 @@ OPTIONS:
                             in a while (default: every 5 minutes)
  -R --refresh-rate <rate>   set the refresh rate (in seconds)
  -f --format <format>       specify the output format for status updates
+ -c --config <filename>     read username and password from given config
+                              file (default ~/.twitter)
 
 FORMATS for the --format option
 
  default         one line per status
  verbose         multiple lines per status, more verbose status info
  urls            nothing but URLs. Dare you click them?
+ 
+CONFIG FILES
+
+ The config file should contain your email and password like so:
+
+[twitter]
+email: <username>
+password: <password>
 """
 
 import sys
@@ -30,6 +40,8 @@ import time
 from getopt import getopt
 from getpass import getpass
 import re
+import os.path
+from ConfigParser import SafeConfigParser
 
 from api import Twitter, TwitterError
 
@@ -40,13 +52,14 @@ options = {
     'refresh': False,
     'refresh_rate': 600,
     'format': 'default',
+    'config_filename': os.environ.get('HOME', '') + os.sep + '.twitter',
     'extra_args': []
 }
 
 def parse_args(args, options):
     long_opts = ['email', 'password', 'help', 'format', 'refresh',
-                 'refresh-rate']
-    short_opts = "e:p:f:h?rR:"
+                 'refresh-rate', 'config']
+    short_opts = "e:p:f:h?rR:c:"
     opts, extra_args = getopt(args, short_opts, long_opts)
     
     for opt, arg in opts:
@@ -63,6 +76,8 @@ def parse_args(args, options):
         elif opt in ('-?', '-h', '--help'):
             print __doc__
             sys.exit(0)
+        elif opt in ('-c', '--config'):
+            options['config_filename'] = arg
     
     if extra_args:
         options['action'] = extra_args[0]
@@ -139,12 +154,26 @@ actions = {
     'set': SetStatusAction,
 }
 
+def loadConfig(filename):
+    email = None
+    password = None
+    if os.path.exists(filename):
+        cp = SafeConfigParser()
+        cp.read([filename])
+        email = cp.get('twitter', 'email', None)
+        password = cp.get('twitter', 'password', None)
+    return email, password
 
 def main():
     return main_with_args(sys.argv[1:])
     
 def main_with_args(args):
     parse_args(args, options)
+
+    email, password = loadConfig(options['config_filename'])
+    if not options['email']: options['email'] = email
+    if not options['password']: options['password'] = password
+    
     if options['refresh'] and options['action'] == 'set':
         print >> sys.stderr, "You can't repeatedly set your status, silly"
         print >> sys.stderr, "Use 'twitter -h' for help."

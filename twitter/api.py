@@ -7,6 +7,10 @@ import httplib
 from exceptions import Exception
 
 class TwitterError(Exception):
+    """
+    Exception thrown by the Twitter object when there is an
+    error interacting with twitter.com.
+    """
     pass
 
 class TwitterCall(object):
@@ -24,7 +28,9 @@ class TwitterCall(object):
                 self.uri + "/" + k)
     def __call__(self, **kwargs):
         method = "GET"
-        if self.uri.endswith('new') or self.uri.endswith('update'):
+        if (self.uri.endswith('new') 
+            or self.uri.endswith('update')
+            or self.uri.endswith('create')):
             method = "POST"
         argStr = ""
         if kwargs:
