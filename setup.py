@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '0.4'
+version = '0.4.1'
 
 setup(name='twitter',
       version=version,

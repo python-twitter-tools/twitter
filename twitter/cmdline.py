@@ -191,7 +191,7 @@ def main_with_args(args):
         else:
             doAction()
     except TwitterError, e:
-        print >> sys.stderr, e.message
+        print >> sys.stderr, e.args[0]
         print >> sys.stderr, "Use 'twitter -h' for help."
         sys.exit(1)
     except KeyboardInterrupt:

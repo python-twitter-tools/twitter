@@ -6,6 +6,15 @@ import httplib
 
 from exceptions import Exception
 
+def _py26OrGreater():
+    import sys
+    return sys.hexversion > 0x20600f0
+
+if _py26OrGreater():
+    import json
+else:
+    import simplejson as json
+
 class TwitterError(Exception):
     """
     Exception thrown by the Twitter object when there is an
@@ -54,8 +63,7 @@ class TwitterCall(object):
                 raise TwitterError("Twitter sent status %i: %s" %(
                     r.status, r.read()))
             if ("json" == self.format):
-                import simplejson
-                return simplejson.loads(r.read())
+                return json.loads(r.read())
             else:
                 return r.read()
         finally:
@@ -120,12 +128,6 @@ class Twitter(TwitterCall):
         """
         if (format not in ("json", "xml")):
             raise TwitterError("Unknown data format '%s'" %(format))
-        if (format == "json"):
-            try:
-                import simplejson
-            except ImportError:
-                raise TwitterError(
-                    "format not available: simplejson is not installed")
         TwitterCall.__init__(self, email, password, format)
 
 __all__ = ["Twitter"]
