@@ -39,7 +39,8 @@ class TwitterCall(object):
         method = "GET"
         if (self.uri.endswith('new') 
             or self.uri.endswith('update')
-            or self.uri.endswith('create')):
+            or self.uri.endswith('create')
+            or self.uri.endswith('destroy')):
             method = "POST"
         argStr = ""
         if kwargs:
