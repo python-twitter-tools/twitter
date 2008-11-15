@@ -14,3 +14,6 @@ For more information:
  * import the `twitter` package and run help() on it
  * run `twitter -h` for command-line tool help
  * run `twitterbot -h` for IRC bot help
+ * visit http://mike.verdone.ca/twitter for more info
+
+Python Twitter Tools are released under an MIT License.
