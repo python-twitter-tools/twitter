@@ -42,28 +42,37 @@ class TwitterCall(object):
             or self.uri.endswith('create')
             or self.uri.endswith('destroy')):
             method = "POST"
+        
+        encoded_kwargs = urlencode(kwargs.items())
         argStr = ""
-        if kwargs:
-            argStr = "?" + urlencode(kwargs.items())
+        if kwargs and (method == "GET"):
+            argStr = "?" + encoded_kwargs
+
+        headers = {}
+        if (self.username):
+            headers["Authorization"] = "Basic " + b64encode("%s:%s" %(
+                self.username, self.password))
+        if method == "POST":
+            headers["Content-type"] = "application/x-www-form-urlencoded"
+            headers["Content-length"] = len(encoded_kwargs)
+        
         c = httplib.HTTPConnection("twitter.com")
         try:
-            c.putrequest(method, "/%s.%s%s" %(
+            c.putrequest(method, "%s.%s%s" %(
                 self.uri, self.format, argStr))
-            if (self.username):
-                c.putheader(
-                    "Authorization", "Basic " + b64encode("%s:%s" %(
-                        self.username, self.password)))
-            if (method == "POST"):
-                # TODO specify charset
-                pass
+            for item in headers.iteritems():
+                c.putheader(*item)
             c.endheaders()
+            if method == "POST":
+                c.send(encoded_kwargs)
             r = c.getresponse()
+
             if (r.status == 304):
                 return []
             elif (r.status != 200):
                 raise TwitterError("Twitter sent status %i: %s" %(
                     r.status, r.read()))
-            if ("json" == self.format):
+            if "json" == self.format:
                 return json.loads(r.read())
             else:
                 return r.read()
@@ -131,4 +140,4 @@ class Twitter(TwitterCall):
             raise TwitterError("Unknown data format '%s'" %(format))
         TwitterCall.__init__(self, email, password, format)
 
-__all__ = ["Twitter"]
+__all__ = ["Twitter", "TwitterError"]

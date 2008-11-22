@@ -1,20 +1,12 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '0.4.2'
+version = '0.4.3'
 
 setup(name='twitter',
       version=version,
       description="An API and command-line toolset for Twitter (twitter.com)",
-      long_description="""\
-An API and command-line toolset for Twitter (twitter.com). Includes:
-
-  * a lightweight Twitter API access class.
-  * a twitter command-line tool for setting your status and getting your
-    friends' status
-  * a twitter IRC bot for announcing status updates to an IRC channel
-
-""",
+      long_description=open("./README", "r").read(),
       # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
       classifiers=[
           "Development Status :: 5 - Production/Stable",
