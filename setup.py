@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '0.4.3'
+version = '0.4.4'
 
 setup(name='twitter',
       version=version,
@@ -31,7 +31,7 @@ setup(name='twitter',
       install_requires=[
           # -*- Extra requirements: -*-
           "simplejson>=1.7.1",
-          "dateutil>=1.1",
+          "python-dateutil>=1.1",
       ],
       entry_points="""
       # -*- Entry points: -*-
