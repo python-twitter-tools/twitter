@@ -55,8 +55,15 @@ class TwitterCall(object):
         if method == "POST":
             headers["Content-type"] = "application/x-www-form-urlencoded"
             headers["Content-length"] = len(encoded_kwargs)
+
+        domain = "twitter.com"
+        if (
+            self.uri.startswith('/search') or
+            self.uri.startswith('/trends')
+        ):
+            domain = "search.twitter.com"
         
-        c = httplib.HTTPConnection("twitter.com")
+        c = httplib.HTTPConnection(domain)
         try:
             c.putrequest(method, "%s.%s%s" %(
                 self.uri, self.format, argStr))
