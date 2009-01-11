@@ -23,18 +23,20 @@ class TwitterError(Exception):
     pass
 
 class TwitterCall(object):
-    def __init__(self, username, password, format, uri=""):
+    def __init__(self, username, password, format, uri="", agent="twitter.py"):
         self.username = username
         self.password = password
         self.format = format
         self.uri = uri
+        self.agent = agent
     def __getattr__(self, k):
         try:
             return object.__getattr__(self, k)
         except AttributeError:
             return TwitterCall(
                 self.username, self.password, self.format, 
-                self.uri + "/" + k)
+                self.uri + "/" + k, self.agent
+            )
     def __call__(self, **kwargs):
         method = "GET"
         if (self.uri.endswith('new') 
@@ -42,6 +44,9 @@ class TwitterCall(object):
             or self.uri.endswith('create')
             or self.uri.endswith('destroy')):
             method = "POST"
+
+        if (self.agent and self.uri.endswith('update')):
+            kwargs["source"] = self.agent
         
         encoded_kwargs = urlencode(kwargs.items())
         argStr = ""
@@ -49,6 +54,8 @@ class TwitterCall(object):
             argStr = "?" + encoded_kwargs
 
         headers = {}
+        if (self.agent):
+            headers["X-Twitter-Client"] = self.agent
         if (self.username):
             headers["Authorization"] = "Basic " + b64encode("%s:%s" %(
                 self.username, self.password))
