@@ -44,9 +44,8 @@ class TwitterCall(object):
             or self.uri.endswith('create')
             or self.uri.endswith('destroy')):
             method = "POST"
-
-        if (self.agent and self.uri.endswith('update')):
-            kwargs["source"] = self.agent
+            if (self.agent):
+                kwargs["source"] = self.agent
         
         encoded_kwargs = urlencode(kwargs.items())
         argStr = ""
