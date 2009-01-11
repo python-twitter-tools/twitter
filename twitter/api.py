@@ -2,7 +2,7 @@
 from base64 import b64encode
 from urllib import urlencode
 
-import httplib
+import urllib2
 
 from exceptions import Exception
 
@@ -59,8 +59,13 @@ class TwitterCall(object):
             
         encoded_kwargs = urlencode(kwargs.items())
         argStr = ""
-        if kwargs and (method == "GET"):
-            argStr = "?" + encoded_kwargs
+        argData = None
+        encoded_kwargs = urlencode(kwargs.items())
+        if kwargs:
+            if (method == "GET"):
+                argStr = "?%s" %(encoded_kwargs)
+            else:
+                argData = encoded_kwargs
 
         headers = {}
         if (self.agent):
@@ -68,34 +73,25 @@ class TwitterCall(object):
         if (self.username):
             headers["Authorization"] = "Basic " + b64encode("%s:%s" %(
                 self.username, self.password))
-        if method == "POST":
-            headers["Content-type"] = "application/x-www-form-urlencoded"
-            headers["Content-length"] = len(encoded_kwargs)
         
-        c = httplib.HTTPConnection(self.domain)
+        req = urllib2.Request(
+                "http://%s/%s.%s%s" %(self.domain, self.uri, self.format, argStr),
+                argData, headers
+            )
         try:
-            c.putrequest(method, "%s.%s%s" %(
-                uri, self.format, argStr))
-            for item in headers.iteritems():
-                c.putheader(*item)
-            c.endheaders()
-            if method == "POST":
-                c.send(encoded_kwargs)
-            r = c.getresponse()
-
-            if (r.status == 304):
+            handle = urllib2.urlopen(req) 
+            if "json" == self.format:
+                return json.loads(handle.read())
+            else:
+                return handle.read()
+        except urllib2.HTTPError, e:
+            if (e.code == 304):
                 return []
-            elif (r.status != 200):
+            else:
                 raise TwitterError(
                     "Twitter sent status %i for URL: %s.%s using parameters: (%s)\ndetails: %s" %(
-                        r.status, uri, self.format, encoded_kwargs, r.read()))
-            if "json" == self.format:
-                return json.loads(r.read())
-            else:
-                return r.read()
-        finally:
-            c.close()
-
+                        e.code, uri, self.format, encoded_kwargs, e,msg))
+            
 class Twitter(TwitterCall):
     """
     The minimalist yet fully featured Twitter API class.
