@@ -90,7 +90,7 @@ class TwitterCall(object):
             else:
                 raise TwitterError(
                     "Twitter sent status %i for URL: %s.%s using parameters: (%s)\ndetails: %s" %(
-                        e.code, uri, self.format, encoded_kwargs, e,msg))
+                        e.code, uri, self.format, encoded_kwargs, e.fp.read()))
             
 class Twitter(TwitterCall):
     """
