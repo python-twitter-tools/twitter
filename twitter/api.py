@@ -21,7 +21,7 @@ class TwitterError(Exception):
     pass
 
 class TwitterCall(object):
-    def __init__(self, http, format, domain, uri=""):
+    def __init__(self, http, format, uri=""):
         self.http = http
         self.format = format
         self.uri = uri
