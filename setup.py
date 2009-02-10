@@ -32,6 +32,7 @@ setup(name='twitter',
           # -*- Extra requirements: -*-
           "simplejson>=1.7.1",
           "python-dateutil>=1.1",
+          "httplib2>=0.4.0",
       ],
       entry_points="""
       # -*- Entry points: -*-
