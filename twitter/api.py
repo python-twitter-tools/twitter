@@ -22,6 +22,11 @@ class TwitterError(Exception):
     """
     pass
 
+# These actions require POST http requests instead of GET
+_POST_ACTIONS = [
+    "create", "update", "destroy", "new", "follow", "leave",
+    ]
+
 class TwitterCall(object):
     def __init__(self, username, password, format, domain, uri=""):
         self.username = username
@@ -38,12 +43,11 @@ class TwitterCall(object):
                 self.uri + "/" + k)
     def __call__(self, **kwargs):
         method = "GET"
-        if (self.uri.endswith('new') 
-            or self.uri.endswith('update')
-            or self.uri.endswith('create')
-            or self.uri.endswith('destroy')):
-            method = "POST"
-        
+        for action in _POST_ACTIONS:
+            if self.uri.endswith(action):
+                method = "POST"
+                break
+            
         encoded_kwargs = urlencode(kwargs.items())
         argStr = ""
         if kwargs and (method == "GET"):
