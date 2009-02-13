@@ -118,7 +118,7 @@ class Twitter(TwitterCall):
         twitter_search.trends()
 
         # Search for the latest News on #gaza
-        twitter_search(q="#gaza")
+        twitter_search.search(q="#gaza")
 
     Using the data returned::
 
