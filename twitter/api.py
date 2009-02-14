@@ -98,8 +98,8 @@ class Twitter(TwitterCall):
 
     The Twitter API is documented here:
 
-        http://apiwiki.twitter.com/
-        http://groups.google.com/group/twitter-development-talk/web/api-documentation
+      http://apiwiki.twitter.com/
+      http://groups.google.com/group/twitter-development-talk/web/api-documentation
     
     Examples::
     
@@ -121,13 +121,13 @@ class Twitter(TwitterCall):
 
     Searching Twitter::
         
-        twitter_search = Twitter(domain="search.twitter.com")
+      twitter_search = Twitter(domain="search.twitter.com")
 
-        # Find the latest search trends
-        twitter_search.trends()
+      # Find the latest search trends
+      twitter_search.trends()
 
-        # Search for the latest News on #gaza
-        twitter_search.search(q="#gaza")
+      # Search for the latest News on #gaza
+      twitter_search.search(q="#gaza")
 
     Using the data returned::
 
