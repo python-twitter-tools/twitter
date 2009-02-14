@@ -24,10 +24,9 @@ email: <twitter_account_email>
 password: <twitter_account_password>
 
   If no config file is given "twitterbot.ini" will be used by default.
-
 """
 
-BOT_VERSION = "TwitterBot 0.4 (mike.verdone.ca/twitter)"
+BOT_VERSION = "TwitterBot 0.5.1 (http://mike.verdone.ca/twitter)"
 
 IRC_BOLD = chr(0x02)
 IRC_ITALIC = chr(0x16)
@@ -40,6 +39,7 @@ from dateutil.parser import parse
 from ConfigParser import SafeConfigParser
 from heapq import heappop, heappush
 import traceback
+import os.path
 
 from api import Twitter, TwitterError
 from util import htmlentitydecode
@@ -239,18 +239,41 @@ def load_config(filename):
     defaults = dict(server=dict(port=6667, nick="twitterbot"))
     cp = SafeConfigParser(defaults)
     cp.read((filename,))
+    
+    # attempt to read these properties-- they are required
+    self.config.get('twitter', 'email'),
+    self.config.get('twitter', 'password')
+    self.config.get('irc', 'server')
+    self.config.getint('irc', 'port')
+    self.config.get('irc', 'nick')
+
     return cp
+
+
+# Howdy, hacker!! You've found the secret Twitter business model!!
+#
+# 1. provide awesome status-update service
+# 2. buy a lot of new hardware to keep it running
+# 3. ???
+# 4. profit!
+#
+# I'm just kidding... :3
+
 
 def main():
     configFilename = "twitterbot.ini"
     if (sys.argv[1:]):
         configFilename = sys.argv[1]
+        
     try:
+        if not os.path.exists(configFilename):
+            raise Exception()
         load_config(configFilename)
     except:
-        print >> sys.stderr, "Error loading ini file %s" %(
+        print >> sys.stderr, "Error while loading ini file %s" %(
             configFilename)
         print __doc__
         sys.exit(1)
+
     bot = TwitterBot(configFilename)
     return bot.run()

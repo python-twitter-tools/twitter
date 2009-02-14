@@ -7,6 +7,7 @@ ACTIONS:
 
  friends        get latest tweets from your friends (default action)
  public         get latest public tweets
+ replies        get latest replies
  set            set your twitter status
 
 OPTIONS:
@@ -135,10 +136,14 @@ class StatusAction(Action):
 class FriendsAction(StatusAction):
     def getStatuses(self, twitter):
         return reversed(twitter.statuses.friends_timeline())
-    
+ 
 class PublicAction(StatusAction):
     def getStatuses(self, twitter):
         return reversed(twitter.statuses.public_timeline())
+
+class RepliesAction(StatusAction):
+    def getStatuses(self, twitter):
+        return reversed(twitter.statuses.replies())
 
 class SetStatusAction(Action):
     def __call__(self, twitter, options):
@@ -151,6 +156,7 @@ class SetStatusAction(Action):
 actions = {
     'friends': FriendsAction,
     'public': PublicAction,
+    'replies': RepliesAction,
     'set': SetStatusAction,
 }
 

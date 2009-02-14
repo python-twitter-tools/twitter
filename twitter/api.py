@@ -23,10 +23,13 @@ class TwitterError(Exception):
     pass
 
 class TwitterCall(object):
-    def __init__(self, username, password, format, uri="", agent="twitter.py"):
+    def __init__(
+        self, username, password, format, domain, uri="", agent="twitter.py"
+    ):
         self.username = username
         self.password = password
         self.format = format
+        self.domain = domain
         self.uri = uri
         self.agent = agent
     def __getattr__(self, k):
@@ -34,7 +37,7 @@ class TwitterCall(object):
             return object.__getattr__(self, k)
         except AttributeError:
             return TwitterCall(
-                self.username, self.password, self.format, 
+                self.username, self.password, self.format, self.domain,
                 self.uri + "/" + k, self.agent
             )
     def __call__(self, **kwargs):
@@ -62,7 +65,7 @@ class TwitterCall(object):
             headers["Content-type"] = "application/x-www-form-urlencoded"
             headers["Content-length"] = len(encoded_kwargs)
         
-        c = httplib.HTTPConnection("twitter.com")
+        c = httplib.HTTPConnection(self.domain)
         try:
             c.putrequest(method, "%s.%s%s" %(
                 self.uri, self.format, argStr))
@@ -93,7 +96,9 @@ class Twitter(TwitterCall):
     is decoded python objects (lists and dicts).
 
     The Twitter API is documented here:
-    http://groups.google.com/group/twitter-development-talk/web/api-documentation
+
+        http://apiwiki.twitter.com/
+        http://groups.google.com/group/twitter-development-talk/web/api-documentation
     
     Examples::
     
@@ -112,6 +117,16 @@ class Twitter(TwitterCall):
       twitter.direct_messages.new(
           user="billybob",
           text="I think yer swell!")
+
+    Searching Twitter::
+        
+        twitter_search = Twitter(domain="search.twitter.com")
+
+        # Find the latest search trends
+        twitter_search.trends()
+
+        # Search for the latest News on #gaza
+        twitter_search.search(q="#gaza")
 
     Using the data returned::
 
@@ -136,7 +151,7 @@ class Twitter(TwitterCall):
       The output will not be parsed in any way. It will be a raw string
       of XML.
     """
-    def __init__(self, email=None, password=None, format="json"):
+    def __init__(self, email=None, password=None, format="json", domain="twitter.com"):
         """
         Create a new twitter API connector using the specified
         credentials (email and password). Format specifies the output
@@ -144,6 +159,6 @@ class Twitter(TwitterCall):
         """
         if (format not in ("json", "xml")):
             raise TwitterError("Unknown data format '%s'" %(format))
-        TwitterCall.__init__(self, email, password, format)
+        TwitterCall.__init__(self, email, password, format, domain)
 
 __all__ = ["Twitter", "TwitterError"]
