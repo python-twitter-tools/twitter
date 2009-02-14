@@ -24,7 +24,8 @@ class TwitterError(Exception):
 
 class TwitterCall(object):
     def __init__(
-        self, username, password, format, domain, uri="", agent="twitter.py"
+        self, username, password, format, domain, uri="",
+        agent="Python Twitter Tools"
     ):
         self.username = username
         self.password = password
