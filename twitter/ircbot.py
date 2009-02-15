@@ -26,7 +26,7 @@ password: <twitter_account_password>
   If no config file is given "twitterbot.ini" will be used by default.
 """
 
-BOT_VERSION = "TwitterBot 0.5.1 (http://mike.verdone.ca/twitter)"
+BOT_VERSION = "TwitterBot 1.0 (http://mike.verdone.ca/twitter)"
 
 IRC_BOLD = chr(0x02)
 IRC_ITALIC = chr(0x16)
