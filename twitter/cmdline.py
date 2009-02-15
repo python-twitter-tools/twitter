@@ -6,7 +6,7 @@ USAGE:
 ACTIONS:
  follow         add the specified user to your follow list
  friends        get latest tweets from your friends (default action)
- leave			remove the specified user from your following list
+ leave          remove the specified user from your following list
  public         get latest public tweets
  replies        get latest replies
  set            set your twitter status
@@ -27,10 +27,11 @@ FORMATS for the --format option
  default         one line per status
  verbose         multiple lines per status, more verbose status info
  urls            nothing but URLs. Dare you click them?
- 
+
 CONFIG FILES
 
- The config file should contain your email and password like so:
+ The config file should contain a [twitter] header, your email and password
+ like so:
 
 [twitter]
 email: <username>
@@ -63,7 +64,7 @@ def parse_args(args, options):
                  'refresh-rate', 'config']
     short_opts = "e:p:f:h?rR:c:"
     opts, extra_args = getopt(args, short_opts, long_opts)
-    
+
     for opt, arg in opts:
         if opt in ('-e', '--email'):
             options['email'] = arg
@@ -80,7 +81,7 @@ def parse_args(args, options):
             sys.exit(0)
         elif opt in ('-c', '--config'):
             options['config_filename'] = arg
-    
+
     if extra_args:
         options['action'] = extra_args[0]
     options['extra_args'] = extra_args[1:]
@@ -105,21 +106,21 @@ class URLStatusFormatter(object):
         return u'\n'.join(urls) if urls else ""
 
 class AdminFormatter(object):
-	def __call__(self, action, user):
-		return(u"%s: %s" %(
-			"Following" if action == "follow" else "Leaving", user['name']))
-			
+    def __call__(self, action, user):
+        return(u"%s: %s" %(
+            "Following" if action == "follow" else "Leaving", user['name']))
+
 class VerboseAdminFormatter(object):
-	def __call__(self, action, user):
-		return(u"-- %s: %s (%s): %s" % (
-			"Following" if action == "follow" else "Leaving", 
-			user['screen_name'], 
-			user['name'],
-			user['url']))
-			
+    def __call__(self, action, user):
+        return(u"-- %s: %s (%s): %s" % (
+            "Following" if action == "follow" else "Leaving", 
+            user['screen_name'], 
+            user['name'],
+            user['url']))
+
 class URLAdminFormatter(object):
-	def __call__(self, action, user):
-		return("Admin actions do not support the URL formatter")
+    def __call__(self, action, user):
+        return("Admin actions do not support the URL formatter")
 
 status_formatters = {
     'default': StatusFormatter,
@@ -128,11 +129,11 @@ status_formatters = {
 }    
 
 admin_formatters = {
-	'default': AdminFormatter,
-	'verbose': VerboseAdminFormatter,
-	'urls': URLAdminFormatter
+    'default': AdminFormatter,
+    'verbose': VerboseAdminFormatter,
+    'urls': URLAdminFormatter
 }
-    
+
 def get_status_formatter(options):
     sf = status_formatters.get(options['format'])
     if (not sf):
@@ -141,12 +142,12 @@ def get_status_formatter(options):
     return sf()
 
 def get_admin_formatter(options):
-	sf = admin_formatters.get(options['format'])
-	if (not sf):
-		raise TwitterError(
-			"Unknown formatter '%s'" %(options['format']))
-	return sf()
-	
+    sf = admin_formatters.get(options['format'])
+    if (not sf):
+        raise TwitterError(
+            "Unknown formatter '%s'" %(options['format']))
+    return sf()
+
 class Action(object):
     pass
 
@@ -165,18 +166,18 @@ class StatusAction(Action):
                 print statusStr.encode(sys.stdout.encoding, 'replace')
 
 class AdminAction(Action):
-	def __call__(self, twitter, options):
-		if (not options['extra_args'][0]):
-			raise TwitterError("You need to specify a User (Screen Name)")
-		af = get_admin_formatter(options)
-		user = self.getUser(twitter, options['extra_args'][0])
-		if(user):
-			print af(options['action'], user).encode(sys.stdout.encoding, 'replace')
-        
+    def __call__(self, twitter, options):
+        if (not options['extra_args'][0]):
+            raise TwitterError("You need to specify a User (Screen Name)")
+        af = get_admin_formatter(options)
+        user = self.getUser(twitter, options['extra_args'][0])
+        if(user):
+            print af(options['action'], user).encode(sys.stdout.encoding, 'replace')
+
 class FriendsAction(StatusAction):
     def getStatuses(self, twitter):
         return reversed(twitter.statuses.friends_timeline())
- 
+
 class PublicAction(StatusAction):
     def getStatuses(self, twitter):
         return reversed(twitter.statuses.public_timeline())
@@ -186,13 +187,13 @@ class RepliesAction(StatusAction):
         return reversed(twitter.statuses.replies())
 
 class FollowAction(AdminAction):
-	def getUser(self, twitter, user):
-		# Twitter wants /notifications/follow/user.json?id=user
-		return twitter.notifications.follow.__getattr__(user)(id=user)
-		
+    def getUser(self, twitter, user):
+        # Twitter wants /notifications/follow/user.json?id=user
+        return twitter.notifications.follow.__getattr__(user)(id=user)
+
 class LeaveAction(AdminAction):
-	def getUser(self, twitter, user):
-		return twitter.notifications.leave.__getattr__(user)(id=user)
+    def getUser(self, twitter, user):
+        return twitter.notifications.leave.__getattr__(user)(id=user)
 
 class SetStatusAction(Action):
     def __call__(self, twitter, options):
@@ -203,7 +204,7 @@ class SetStatusAction(Action):
         twitter.statuses.update(status=status)
 
 actions = {
-	'follow': FollowAction,
+    'follow': FollowAction,
     'friends': FriendsAction,
     'leave': LeaveAction,
     'public': PublicAction,
@@ -223,14 +224,14 @@ def loadConfig(filename):
 
 def main():
     return main_with_args(sys.argv[1:])
-    
+
 def main_with_args(args):
     parse_args(args, options)
 
     email, password = loadConfig(options['config_filename'])
     if not options['email']: options['email'] = email
     if not options['password']: options['password'] = password
-   
+
     #Maybe check for AdminAction here, but whatever you do, don't write TODO
     if options['refresh'] and options['action'] == 'set':
         print >> sys.stderr, "You can't repeatedly set your status, silly"
@@ -242,18 +243,18 @@ def main_with_args(args):
     action = actions.get(options['action'], NoSuchAction)()
     try:
         doAction = lambda : action(twitter, options)
-	        
+
         if (options['refresh'] and isinstance(action, StatusAction)):
-           while True:
-              doAction()
-              time.sleep(options['refresh_rate'])
+            while True:
+                doAction()
+                time.sleep(options['refresh_rate'])
         else:
-           doAction()
-			
+            doAction()
+
     except TwitterError, e:
         print >> sys.stderr, e.args[0]
         print >> sys.stderr, "Use 'twitter -h' for help."
         sys.exit(1)
     except KeyboardInterrupt:
         pass
-    
+
