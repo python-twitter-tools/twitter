@@ -28,19 +28,24 @@ _POST_ACTIONS = [
     ]
 
 class TwitterCall(object):
-    def __init__(self, username, password, format, domain, uri=""):
+    def __init__(
+        self, username, password, format, domain, uri="",
+        agent="Python Twitter Tools"
+    ):
         self.username = username
         self.password = password
         self.format = format
-        self.uri = uri
         self.domain = domain
+        self.uri = uri
+        self.agent = agent
     def __getattr__(self, k):
         try:
             return object.__getattr__(self, k)
         except AttributeError:
             return TwitterCall(
                 self.username, self.password, self.format, self.domain,
-                self.uri + "/" + k)
+                self.uri + "/" + k, self.agent
+            )
     def __call__(self, **kwargs):
         uri = self.uri
         method = "GET"
@@ -48,6 +53,8 @@ class TwitterCall(object):
             if self.uri.endswith(action):
                 method = "POST"
                 break
+            if (self.agent):
+                kwargs["source"] = self.agent
         
         id = kwargs.pop('id', None)
         if id:
@@ -59,6 +66,8 @@ class TwitterCall(object):
             argStr = "?" + encoded_kwargs
 
         headers = {}
+        if (self.agent):
+            headers["X-Twitter-Client"] = self.agent
         if (self.username):
             headers["Authorization"] = "Basic " + b64encode("%s:%s" %(
                 self.username, self.password))
@@ -99,8 +108,8 @@ class Twitter(TwitterCall):
 
     The Twitter API is documented here:
 
-        http://apiwiki.twitter.com/
-        http://groups.google.com/group/twitter-development-talk/web/api-documentation
+      http://apiwiki.twitter.com/
+      http://groups.google.com/group/twitter-development-talk/web/api-documentation
     
     Examples::
     
@@ -122,13 +131,13 @@ class Twitter(TwitterCall):
 
     Searching Twitter::
         
-        twitter_search = Twitter(domain="search.twitter.com")
+      twitter_search = Twitter(domain="search.twitter.com")
 
-        # Find the latest search trends
-        twitter_search.trends()
+      # Find the latest search trends
+      twitter_search.trends()
 
-        # Search for the latest News on #gaza
-        twitter_search.search(q="#gaza")
+      # Search for the latest News on #gaza
+      twitter_search.search(q="#gaza")
 
     Using the data returned::
 
