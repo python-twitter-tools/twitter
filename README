@@ -1,4 +1,5 @@
 Python Twitter Tools
+====================
 
 The Minimalist Twitter API for Python is a Python API for Twitter,
 everyone's favorite Web 2.0 Facebook-style status updater for people
@@ -9,11 +10,37 @@ tweets and setting your own tweet from the safety and security of your
 favorite shell and an IRC bot that can announce Twitter updates to an
 IRC channel.
 
-For more information:
+For more information, after installing the `twitter` egg:
 
  * import the `twitter` package and run help() on it
  * run `twitter -h` for command-line tool help
  * run `twitterbot -h` for IRC bot help
  * visit http://mike.verdone.ca/twitter for more info
+
+
+ 
+The Command-Line Tool
+=====================
+
+The command-line tool currently supports the following things:
+
+ * view your friends' recent tweets
+ * view your recent replies
+ * view the public timeline
+ * follow and unfollow (leave) friends
+ * various output formats for tweet information
+ * read your username and password from a config file
+ 
+The bottom line: type `twitter`, receive tweets.
+
+
+
+The IRC Bot
+===========
+
+The IRC bot is associated with a twitter account (either your own account or an
+account you create for the bot). The bot announces all tweets from friends
+it is following. It can be made to follow or leave friends through IRC /msg
+commands.
 
 Python Twitter Tools are released under an MIT License.
