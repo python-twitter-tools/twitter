@@ -6,6 +6,7 @@ USAGE:
 ACTIONS:
  follow         add the specified user to your follow list
  friends        get latest tweets from your friends (default action)
+ help           print this help text that you are currently reading
  leave          remove the specified user from your following list
  public         get latest public tweets
  replies        get latest replies
@@ -47,6 +48,8 @@ import os.path
 from ConfigParser import SafeConfigParser
 
 from api import Twitter, TwitterError
+
+AGENT_STR = "Twitter Command-line Tool"
 
 options = {
     'email': None,
@@ -182,6 +185,7 @@ class AdminAction(Action):
             print "  Or the user may not exist."
             print "  Sorry."
             print
+            print e
         else:
             print af(options['action'], user).encode(sys.stdout.encoding, 'replace')
 
@@ -213,9 +217,14 @@ class SetStatusAction(Action):
         status = (statusTxt.encode('utf8', 'replace'))
         twitter.statuses.update(status=status)
 
+class HelpAction(Action):
+    def __call__(self, twitter, options):
+        print __doc__
+
 actions = {
     'follow': FollowAction,
     'friends': FriendsAction,
+    'help': HelpAction,
     'leave': LeaveAction,
     'public': PublicAction,
     'replies': RepliesAction,
@@ -250,8 +259,10 @@ def main_with_args(args):
         
     if options['email'] and not options['password']:
         options['password'] = getpass("Twitter password: ")
-    twitter = Twitter(options['email'], options['password'])
+        
+    twitter = Twitter(options['email'], options['password'], agent=AGENT_STR)
     action = actions.get(options['action'], NoSuchAction)()
+    
     try:
         doAction = lambda : action(twitter, options)
 

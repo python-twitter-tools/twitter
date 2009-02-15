@@ -29,9 +29,7 @@ _POST_ACTIONS = [
 
 class TwitterCall(object):
     def __init__(
-        self, username, password, format, domain, uri="",
-        agent="Python Twitter Tools"
-    ):
+        self, username, password, format, domain, uri="", agent=None):
         self.username = username
         self.password = password
         self.format = format
@@ -44,8 +42,7 @@ class TwitterCall(object):
         except AttributeError:
             return TwitterCall(
                 self.username, self.password, self.format, self.domain,
-                self.uri + "/" + k, self.agent
-            )
+                self.uri + "/" + k, self.agent)
     def __call__(self, **kwargs):
         uri = self.uri
         method = "GET"
@@ -162,7 +159,9 @@ class Twitter(TwitterCall):
       The output will not be parsed in any way. It will be a raw string
       of XML.
     """
-    def __init__(self, email=None, password=None, format="json", domain="twitter.com"):
+    def __init__(
+        self, email=None, password=None, format="json", domain="twitter.com",
+        agent=None):
         """
         Create a new twitter API connector using the specified
         credentials (email and password). Format specifies the output
