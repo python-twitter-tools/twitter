@@ -109,9 +109,9 @@ class AdminFormatter(object):
     def __call__(self, action, user):
         user_str = u"%s (%s)" %(user['screen_name'], user['name'])
         if action == "follow":
-            return u"You are now following %s" %(user_str)
+            return u"You are now following %s.\n" %(user_str)
         else:
-            return u"You are no longer following %s" %(user_str)
+            return u"You are no longer following %s.\n" %(user_str)
 
 class VerboseAdminFormatter(object):
     def __call__(self, action, user):
@@ -171,10 +171,18 @@ class StatusAction(Action):
 class AdminAction(Action):
     def __call__(self, twitter, options):
         if not options['extra_args'][0]:
-            raise TwitterError("You need to specify a User (Screen Name)")
+            raise TwitterError("You need to specify a user (screen name)")
         af = get_admin_formatter(options)
-        user = self.getUser(twitter, options['extra_args'][0])
-        if user:
+        try:
+            user = self.getUser(twitter, options['extra_args'][0])
+        except TwitterError, e:
+            print "There was a problem following or leaving the specified user."
+            print "  You may be trying to follow a user you are already following;"
+            print "  Leaving a user you are not currently following;"
+            print "  Or the user may not exist."
+            print "  Sorry."
+            print
+        else:
             print af(options['action'], user).encode(sys.stdout.encoding, 'replace')
 
 class FriendsAction(StatusAction):
@@ -234,11 +242,12 @@ def main_with_args(args):
     if not options['email']: options['email'] = email
     if not options['password']: options['password'] = password
 
-    #Maybe check for AdminAction here, but whatever you do, don't write TODO
-    if options['refresh'] and options['action'] == 'set':
-        print >> sys.stderr, "You can't repeatedly set your status, silly"
+    if options['refresh'] and options['action'] not in (
+        'friends', 'public', 'replies'):
+        print >> sys.stderr, "You can only refresh the friends, public, or replies actions."
         print >> sys.stderr, "Use 'twitter -h' for help."
         sys.exit(1)
+        
     if options['email'] and not options['password']:
         options['password'] = getpass("Twitter password: ")
     twitter = Twitter(options['email'], options['password'])
