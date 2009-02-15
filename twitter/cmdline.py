@@ -4,8 +4,9 @@ USAGE:
  twitter [action] [options]
 
 ACTIONS:
-
+ follow         add the specified user to your follow list
  friends        get latest tweets from your friends (default action)
+ leave			remove the specified user from your following list
  public         get latest public tweets
  replies        get latest replies
  set            set your twitter status
@@ -103,19 +104,49 @@ class URLStatusFormatter(object):
         urls = self.urlmatch.findall(status['text'])
         return u'\n'.join(urls) if urls else ""
 
-formatters = {
+class AdminFormatter(object):
+	def __call__(self, action, user):
+		return(u"%s: %s" %(
+			"Following" if action == "follow" else "Leaving", user['name']))
+			
+class VerboseAdminFormatter(object):
+	def __call__(self, action, user):
+		return(u"-- %s: %s (%s): %s" % (
+			"Following" if action == "follow" else "Leaving", 
+			user['screen_name'], 
+			user['name'],
+			user['url']))
+			
+class URLAdminFormatter(object):
+	def __call__(self, action, user):
+		return("Admin actions do not support the URL formatter")
+
+status_formatters = {
     'default': StatusFormatter,
     'verbose': VerboseStatusFormatter,
     'urls': URLStatusFormatter
 }    
+
+admin_formatters = {
+	'default': AdminFormatter,
+	'verbose': VerboseAdminFormatter,
+	'urls': URLAdminFormatter
+}
     
 def get_status_formatter(options):
-    sf = formatters.get(options['format'])
+    sf = status_formatters.get(options['format'])
     if (not sf):
         raise TwitterError(
             "Unknown formatter '%s'" %(options['format']))
     return sf()
 
+def get_admin_formatter(options):
+	sf = admin_formatters.get(options['format'])
+	if (not sf):
+		raise TwitterError(
+			"Unknown formatter '%s'" %(options['format']))
+	return sf()
+	
 class Action(object):
     pass
 
@@ -132,6 +163,15 @@ class StatusAction(Action):
             statusStr = sf(status)
             if statusStr.strip():
                 print statusStr.encode(sys.stdout.encoding, 'replace')
+
+class AdminAction(Action):
+	def __call__(self, twitter, options):
+		if (not options['extra_args'][0]):
+			raise TwitterError("You need to specify a User (Screen Name)")
+		af = get_admin_formatter(options)
+		user = self.getUser(twitter, options['extra_args'][0])
+		if(user):
+			print af(options['action'], user).encode(sys.stdout.encoding, 'replace')
         
 class FriendsAction(StatusAction):
     def getStatuses(self, twitter):
@@ -145,6 +185,15 @@ class RepliesAction(StatusAction):
     def getStatuses(self, twitter):
         return reversed(twitter.statuses.replies())
 
+class FollowAction(AdminAction):
+	def getUser(self, twitter, user):
+		# Twitter wants /notifications/follow/user.json?id=user
+		return twitter.notifications.follow.__getattr__(user)(id=user)
+		
+class LeaveAction(AdminAction):
+	def getUser(self, twitter, user):
+		return twitter.notifications.leave.__getattr__(user)(id=user)
+
 class SetStatusAction(Action):
     def __call__(self, twitter, options):
         statusTxt = (u" ".join(options['extra_args']) 
@@ -154,7 +203,9 @@ class SetStatusAction(Action):
         twitter.statuses.update(status=status)
 
 actions = {
+	'follow': FollowAction,
     'friends': FriendsAction,
+    'leave': LeaveAction,
     'public': PublicAction,
     'replies': RepliesAction,
     'set': SetStatusAction,
@@ -179,7 +230,8 @@ def main_with_args(args):
     email, password = loadConfig(options['config_filename'])
     if not options['email']: options['email'] = email
     if not options['password']: options['password'] = password
-    
+   
+    #Maybe check for AdminAction here, but whatever you do, don't write TODO
     if options['refresh'] and options['action'] == 'set':
         print >> sys.stderr, "You can't repeatedly set your status, silly"
         print >> sys.stderr, "Use 'twitter -h' for help."
@@ -190,12 +242,14 @@ def main_with_args(args):
     action = actions.get(options['action'], NoSuchAction)()
     try:
         doAction = lambda : action(twitter, options)
-        if (options['refresh']):
-            while True:
-                doAction()
-                time.sleep(options['refresh_rate'])
+	        
+        if (options['refresh'] and isinstance(action, StatusAction)):
+           while True:
+              doAction()
+              time.sleep(options['refresh_rate'])
         else:
-            doAction()
+           doAction()
+			
     except TwitterError, e:
         print >> sys.stderr, e.args[0]
         print >> sys.stderr, "Use 'twitter -h' for help."

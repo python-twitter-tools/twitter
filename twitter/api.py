@@ -75,8 +75,13 @@ class TwitterCall(object):
             if (r.status == 304):
                 return []
             elif (r.status != 200):
-                raise TwitterError("Twitter sent status %i: %s" %(
-                    r.status, r.read()))
+                raise TwitterError(
+					"Twitter sent status %i for URL: %s.%s using parameters: %s\ndetails: %s" %(
+                    r.status, 
+					self.uri, 
+					self.format,
+					encoded_kwargs, 
+					r.read()))
             if "json" == self.format:
                 return json.loads(r.read())
             else:
