@@ -107,8 +107,11 @@ class URLStatusFormatter(object):
 
 class AdminFormatter(object):
     def __call__(self, action, user):
-        return(u"%s: %s" %(
-            "Following" if action == "follow" else "Leaving", user['name']))
+        user_str = u"%s (%s)" %(user['screen_name'], user['name'])
+        if action == "follow":
+            return u"You are now following %s" %(user_str)
+        else:
+            return u"You are no longer following %s" %(user_str)
 
 class VerboseAdminFormatter(object):
     def __call__(self, action, user):
@@ -167,11 +170,11 @@ class StatusAction(Action):
 
 class AdminAction(Action):
     def __call__(self, twitter, options):
-        if (not options['extra_args'][0]):
+        if not options['extra_args'][0]:
             raise TwitterError("You need to specify a User (Screen Name)")
         af = get_admin_formatter(options)
         user = self.getUser(twitter, options['extra_args'][0])
-        if(user):
+        if user:
             print af(options['action'], user).encode(sys.stdout.encoding, 'replace')
 
 class FriendsAction(StatusAction):
@@ -188,12 +191,11 @@ class RepliesAction(StatusAction):
 
 class FollowAction(AdminAction):
     def getUser(self, twitter, user):
-        # Twitter wants /notifications/follow/user.json?id=user
-        return twitter.notifications.follow.__getattr__(user)(id=user)
+        return twitter.notifications.follow(id=user)
 
 class LeaveAction(AdminAction):
     def getUser(self, twitter, user):
-        return twitter.notifications.leave.__getattr__(user)(id=user)
+        return twitter.notifications.leave(id=user)
 
 class SetStatusAction(Action):
     def __call__(self, twitter, options):

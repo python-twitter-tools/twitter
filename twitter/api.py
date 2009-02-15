@@ -42,11 +42,16 @@ class TwitterCall(object):
                 self.username, self.password, self.format, self.domain,
                 self.uri + "/" + k)
     def __call__(self, **kwargs):
+        uri = self.uri
         method = "GET"
         for action in _POST_ACTIONS:
             if self.uri.endswith(action):
                 method = "POST"
                 break
+        
+        id = kwargs.pop('id', None)
+        if id:
+            uri += "/%s" %(id)
             
         encoded_kwargs = urlencode(kwargs.items())
         argStr = ""
@@ -64,7 +69,7 @@ class TwitterCall(object):
         c = httplib.HTTPConnection(self.domain)
         try:
             c.putrequest(method, "%s.%s%s" %(
-                self.uri, self.format, argStr))
+                uri, self.format, argStr))
             for item in headers.iteritems():
                 c.putheader(*item)
             c.endheaders()
@@ -76,12 +81,8 @@ class TwitterCall(object):
                 return []
             elif (r.status != 200):
                 raise TwitterError(
-					"Twitter sent status %i for URL: %s.%s using parameters: %s\ndetails: %s" %(
-                    r.status, 
-					self.uri, 
-					self.format,
-					encoded_kwargs, 
-					r.read()))
+                    "Twitter sent status %i for URL: %s.%s using parameters: (%s)\ndetails: %s" %(
+                        r.status, uri, self.format, encoded_kwargs, r.read()))
             if "json" == self.format:
                 return json.loads(r.read())
             else:
