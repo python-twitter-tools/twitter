@@ -41,7 +41,7 @@ password: <password>
 
 import sys
 import time
-from getopt import getopt
+from getopt import getopt, GetoptError
 from getpass import getpass
 import re
 import os.path
@@ -66,7 +66,7 @@ def parse_args(args, options):
     long_opts = ['email', 'password', 'help', 'format', 'refresh',
                  'refresh-rate', 'config']
     short_opts = "e:p:f:h?rR:c:"
-    opts, extra_args = getopt(args, short_opts, long_opts)
+    opts, extra_args = getopt(args, short_opts, long_opts)        
 
     for opt, arg in opts:
         if opt in ('-e', '--email'):
@@ -245,7 +245,12 @@ def main():
     return main_with_args(sys.argv[1:])
 
 def main_with_args(args):
-    parse_args(args, options)
+    try:
+        parse_args(args, options)
+    except GetoptError, e:
+        print >> sys.stderr, "I can't do that, %s." %(e)
+        print >> sys.stderr
+        sys.exit(1)
 
     email, password = loadConfig(options['config_filename'])
     if not options['email']: options['email'] = email
