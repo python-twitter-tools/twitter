@@ -241,11 +241,12 @@ def load_config(filename):
     cp.read((filename,))
     
     # attempt to read these properties-- they are required
-    self.config.get('twitter', 'email'),
-    self.config.get('twitter', 'password')
-    self.config.get('irc', 'server')
-    self.config.getint('irc', 'port')
-    self.config.get('irc', 'nick')
+    cp.get('twitter', 'email'),
+    cp.get('twitter', 'password')
+    cp.get('irc', 'server')
+    cp.getint('irc', 'port')
+    cp.get('irc', 'nick')
+    cp.get('irc', 'channel')
 
     return cp
 
@@ -269,10 +270,11 @@ def main():
         if not os.path.exists(configFilename):
             raise Exception()
         load_config(configFilename)
-    except:
+    except Exception, e:
         print >> sys.stderr, "Error while loading ini file %s" %(
             configFilename)
-        print __doc__
+        print >> sys.stderr, e
+        print >> sys.stderr, __doc__
         sys.exit(1)
 
     bot = TwitterBot(configFilename)
