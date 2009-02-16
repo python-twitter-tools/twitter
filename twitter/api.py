@@ -53,9 +53,8 @@ class TwitterCall(object):
             if (self.agent):
                 kwargs["source"] = self.agent
         
-        id = kwargs.pop('id', None)
-        if id:
-            uri += "/%s" %(id)
+        if kwargs.has_key('id'):
+            uri += "/%s" %(kwargs['id'])
             
         encoded_kwargs = urlencode(kwargs.items())
         argStr = ""
