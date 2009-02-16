@@ -49,7 +49,9 @@ from ConfigParser import SafeConfigParser
 
 from api import Twitter, TwitterError
 
-AGENT_STR = "Twitter Command-line Tool"
+# Please don't change this, it was provided by the fine folks at Twitter.
+# If you change it, it will not work.
+AGENT_STR = "twittercommandlinetoolpy"
 
 options = {
     'email': None,

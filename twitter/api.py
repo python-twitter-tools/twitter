@@ -49,9 +49,9 @@ class TwitterCall(object):
         for action in _POST_ACTIONS:
             if self.uri.endswith(action):
                 method = "POST"
+                if (self.agent):
+                    kwargs["source"] = self.agent
                 break
-            if (self.agent):
-                kwargs["source"] = self.agent
         
         if kwargs.has_key('id'):
             uri += "/%s" %(kwargs['id'])
@@ -168,6 +168,6 @@ class Twitter(TwitterCall):
         """
         if (format not in ("json", "xml")):
             raise TwitterError("Unknown data format '%s'" %(format))
-        TwitterCall.__init__(self, email, password, format, domain)
+        TwitterCall.__init__(self, email, password, format, domain, "", agent)
 
 __all__ = ["Twitter", "TwitterError"]
