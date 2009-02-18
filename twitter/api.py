@@ -6,6 +6,8 @@ import urllib2
 
 from exceptions import Exception
 
+from twitter.twitter_globals import _POST_ACTIONS
+
 def _py26OrGreater():
     import sys
     return sys.hexversion > 0x20600f0
@@ -21,11 +23,6 @@ class TwitterError(Exception):
     error interacting with twitter.com.
     """
     pass
-
-# These actions require POST http requests instead of GET
-_POST_ACTIONS = [
-    "create", "update", "destroy", "new", "follow", "leave",
-    ]
 
 class TwitterCall(object):
     def __init__(
@@ -56,7 +53,7 @@ class TwitterCall(object):
         id = kwargs.pop('id', None)
         if id:
             uri += "/%s" %(id)
-            
+
         encoded_kwargs = urlencode(kwargs.items())
         argStr = ""
         argData = None
@@ -95,7 +92,7 @@ class TwitterCall(object):
 class Twitter(TwitterCall):
     """
     The minimalist yet fully featured Twitter API class.
-    
+
     Get RESTful data by accessing members of this class. The result
     is decoded python objects (lists and dicts).
 
@@ -103,27 +100,27 @@ class Twitter(TwitterCall):
 
       http://apiwiki.twitter.com/
       http://groups.google.com/group/twitter-development-talk/web/api-documentation
-    
+
     Examples::
-    
+
       twitter = Twitter("hello@foo.com", "password123")
-      
+
       # Get the public timeline
       twitter.statuses.public_timeline()
-      
+
       # Get a particular friend's timeline
       twitter.statuses.friends_timeline(id="billybob")
-      
+
       # Also supported (but totally weird)
       twitter.statuses.friends_timeline.billybob()
-      
+
       # Send a direct message
       twitter.direct_messages.new(
           user="billybob",
           text="I think yer swell!")
 
     Searching Twitter::
-        
+
       twitter_search = Twitter(domain="search.twitter.com")
 
       # Find the latest search trends
@@ -144,14 +141,14 @@ class Twitter(TwitterCall):
 
       # The screen name of the user who wrote the first 'tweet'
       x[0]['user']['screen_name']
-    
+
     Getting raw XML data::
-    
+
       If you prefer to get your Twitter data in XML format, pass
       format="xml" to the Twitter object when you instantiate it:
-      
+
       twitter = Twitter(format="xml")
-      
+
       The output will not be parsed in any way. It will be a raw string
       of XML.
     """
