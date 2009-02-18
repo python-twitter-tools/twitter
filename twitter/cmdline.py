@@ -48,6 +48,7 @@ import os.path
 from ConfigParser import SafeConfigParser
 
 from api import Twitter, TwitterError
+import ansi
 
 # Please don't change this, it was provided by the fine folks at Twitter.
 # If you change it, it will not work.
@@ -96,6 +97,16 @@ class StatusFormatter(object):
         return (u"%s %s" %(
             status['user']['screen_name'], status['text']))
 
+class AnsiStatusFormatter(object):
+    def __init__(self):
+        self._colourMap = ansi.ColourMap()
+        
+    def __call__(self, status):
+        colour = self._colourMap.colourFor(status['user']['screen_name'])
+        return (u"%s%s%s %s" %(
+            ansi.cmdColour(colour), status['user']['screen_name'],
+            ansi.cmdReset(), status['text']))    
+    
 class VerboseStatusFormatter(object):
     def __call__(self, status):
         return (u"-- %s (%s) on %s\n%s\n" %(
@@ -133,7 +144,8 @@ class URLAdminFormatter(object):
 status_formatters = {
     'default': StatusFormatter,
     'verbose': VerboseStatusFormatter,
-    'urls': URLStatusFormatter
+    'urls': URLStatusFormatter,
+    'ansi': AnsiStatusFormatter
 }    
 
 admin_formatters = {
