@@ -27,16 +27,18 @@ FORMATS for the --format option
 
  default         one line per status
  verbose         multiple lines per status, more verbose status info
- urls            nothing but URLs. Dare you click them?
-
+ urls            nothing but URLs
+ ansi            ansi colour (rainbow mode)
+ 
 CONFIG FILES
 
- The config file should contain a [twitter] header, your email and password
- like so:
+ The config file should contain a [twitter] header, and all the desired options
+ you wish to set, like so:
 
 [twitter]
 email: <username>
 password: <password>
+format: <desired_default_format_for_output>
 """
 
 import sys
@@ -54,7 +56,7 @@ import ansi
 # If you change it, it will not work.
 AGENT_STR = "twittercommandlinetoolpy"
 
-options = {
+OPTIONS = {
     'email': None,
     'password': None,
     'action': 'friends',
@@ -137,10 +139,6 @@ class VerboseAdminFormatter(object):
             user['name'],
             user['url']))
 
-class URLAdminFormatter(object):
-    def __call__(self, action, user):
-        return("Admin actions do not support the URL formatter")
-
 status_formatters = {
     'default': StatusFormatter,
     'verbose': VerboseStatusFormatter,
@@ -151,7 +149,8 @@ status_formatters = {
 admin_formatters = {
     'default': AdminFormatter,
     'verbose': VerboseAdminFormatter,
-    'urls': URLAdminFormatter
+    'urls': AdminFormatter,
+    'ansi': AdminFormatter
 }
 
 def get_status_formatter(options):
@@ -246,30 +245,35 @@ actions = {
 }
 
 def loadConfig(filename):
-    email = None
-    password = None
+    options = dict(OPTIONS)
     if os.path.exists(filename):
         cp = SafeConfigParser()
         cp.read([filename])
-        email = cp.get('twitter', 'email', None)
-        password = cp.get('twitter', 'password', None)
-    return email, password
+        for option in ('email', 'password', 'format'):
+            if cp.has_option('twitter', option):
+                options[option] = cp.get('twitter', option)
+    return options
 
-def main():
-    return main_with_args(sys.argv[1:])
-
-def main_with_args(args):
+def main(args=sys.argv[1:]):
+    arg_options = {}
     try:
-        parse_args(args, options)
+        parse_args(args, arg_options)
     except GetoptError, e:
         print >> sys.stderr, "I can't do that, %s." %(e)
         print >> sys.stderr
         sys.exit(1)
 
-    email, password = loadConfig(options['config_filename'])
-    if not options['email']: options['email'] = email
-    if not options['password']: options['password'] = password
+    config_options = loadConfig(
+        arg_options.get('config_filename') or OPTIONS.get('config_filename'))
 
+    # Apply the various options in order, the most important applied last.
+    # Defaults first, then what's read from config file, then command-line
+    # arguments.
+    options = dict(OPTIONS)
+    for d in config_options, arg_options:
+        for k,v in d.items():
+            if v: options[k] = v
+    
     if options['refresh'] and options['action'] not in (
         'friends', 'public', 'replies'):
         print >> sys.stderr, "You can only refresh the friends, public, or replies actions."
