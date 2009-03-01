@@ -64,12 +64,10 @@ class TwitterCall(object):
         headers = {}
         if (self.agent):
             headers["X-Twitter-Client"] = self.agent
-        if (self.username):
-            headers["Authorization"] = "Basic " + b64encode("%s:%s" %(
-                self.username, self.password))
 
         kwargs = {
-            "uri": "%s.%s%s" % (self.uri,self.format,argStr),
+            "uri": "http://%s%s.%s%s" % (
+                self.domain, self.uri, self.format, argStr),
             "method": method
         }
 
@@ -81,7 +79,8 @@ class TwitterCall(object):
 
         try:
             http = Http()
-            http.add_credentials(self.username, self.password, self.domain)
+            if (self.username):
+                http.add_credentials(self.username, self.password, self.domain)
             response, content = http.request(**kwargs)
             if (response.status == 304):
                 return []
