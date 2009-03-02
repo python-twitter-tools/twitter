@@ -3,10 +3,10 @@
 
     ..data::
 
-        `_POST_ACTIONS`: Methods that require the use of POST
+        `POST_ACTIONS`: Methods that require the use of POST
 '''
 
-_POST_ACTIONS = [
+POST_ACTIONS = [
 
     # Status Methods
     'update', 

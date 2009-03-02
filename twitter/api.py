@@ -6,7 +6,7 @@ import urllib2
 
 from exceptions import Exception
 
-from twitter.twitter_globals import _POST_ACTIONS
+from twitter.twitter_globals import POST_ACTIONS
 
 def _py26OrGreater():
     import sys
@@ -43,13 +43,13 @@ class TwitterCall(object):
     def __call__(self, **kwargs):
         uri = self.uri
         method = "GET"
-        for action in _POST_ACTIONS:
+        for action in POST_ACTIONS:
             if self.uri.endswith(action):
                 method = "POST"
                 if (self.agent):
                     kwargs["source"] = self.agent
                 break
-        
+
         id = kwargs.pop('id', None)
         if id:
             uri += "/%s" %(id)

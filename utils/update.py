@@ -1,16 +1,18 @@
+#!/usr/bin/env python
+
 '''
 This is a development script, intended for office use only.
 
-This script generates output the _POST_ACTIONS variable
+This script generates the POST_ACTIONS variable
 for placement in the twitter_globals.py
 
-Example Util:
+Example Usage:
 
-    python update.py >twitter_globals.py
+    %prog >twitter/twitter_globals.py
 
 Dependencies:
 
-    * (easy_install) BeautifulSoup
+    (easy_install) BeautifulSoup
 '''
 
 import sys
@@ -22,8 +24,8 @@ def uni2html(u):
     '''
     Convert unicode to html.
 
-    Basically leaves ascii chars as is, and attempts to encode unicode chars as
-    HTML entities. If the conversion fails the character is skipped.
+    Basically leaves ascii chars as is, and attempts to encode unicode chars
+    as HTML entities. If the conversion fails the character is skipped.
     '''
     htmlentities = list()
     for c in u:
@@ -66,8 +68,7 @@ def print_fw(iterable, joins=', ', prefix='', indent=0, width=79, trail=False):
         linew += len(sentry)
     sys.stdout.write('\n')
 
-
-def main():
+def main_with_options(options, files):
     '''
     Main function the prints twitter's _POST_ACTIONS to stdout
 
@@ -108,7 +109,7 @@ def main():
                     POST_ACTION_HASH[method_name] = (method_type,)
 
     # Reverse the POST_ACTION_HASH
-    # this is really only done to generate comment strings
+    # this is done to allow generation of nice comment strings
     POST_ACTION_HASH_R = {}
     for method, method_types in POST_ACTION_HASH.items():
         try:
@@ -116,21 +117,41 @@ def main():
         except KeyError:
             POST_ACTION_HASH_R[method_types] = [method]
 
-    ## Print the _POST_ACTIONS to stdout as a Python List
+    ## Print the POST_ACTIONS to stdout as a Python List
     print """'''
     This module is automatically generated using `update.py`
 
     ..data::
 
-        `_POST_ACTIONS`: Methods that require the use of POST
+        `POST_ACTIONS`: Methods that require the use of POST
 '''
 """
-    print '_POST_ACTIONS = [\n'
+    print 'POST_ACTIONS = [\n'
     for method_types, methods in POST_ACTION_HASH_R.items():
         print_fw(method_types, prefix='# ', indent=1)
         print_fw([repr(str(x)) for x in methods], indent=1, trail=True)
         print ""
     print ']'
+
+def main():
+    import optparse
+
+    class CustomFormatter(optparse.IndentedHelpFormatter):
+        """formatter that overrides description reformatting."""
+        def format_description(self, description):
+            ''' indents each line in the description '''
+            return "\n".join([
+                "%s%s" %(" "*((self.level+1)*self.indent_increment), line)
+                for line in description.splitlines()
+            ]) + "\n"
+
+    parser = optparse.OptionParser(
+            formatter=CustomFormatter(),
+            description=__doc__
+        )
+    (options, files) = parser.parse_args()
+    main_with_options(options, files)
+
 
 if __name__ == "__main__":
     main()
