@@ -58,11 +58,11 @@ class TwitterCall(object):
         argStr = ""
         argData = None
         encoded_kwargs = urlencode(kwargs.items())
-        if kwargs:
-            if (method == "GET"):
+        if (method == "GET"):
+            if kwargs:
                 argStr = "?%s" %(encoded_kwargs)
-            else:
-                argData = encoded_kwargs
+        else:
+            argData = encoded_kwargs
 
         headers = {}
         if (self.agent):
@@ -70,13 +70,13 @@ class TwitterCall(object):
         if (self.username):
             headers["Authorization"] = "Basic " + b64encode("%s:%s" %(
                 self.username, self.password))
-        
+
         req = urllib2.Request(
                 "http://%s/%s.%s%s" %(self.domain, self.uri, self.format, argStr),
                 argData, headers
             )
         try:
-            handle = urllib2.urlopen(req) 
+            handle = urllib2.urlopen(req)
             if "json" == self.format:
                 return json.loads(handle.read())
             else:
@@ -88,7 +88,7 @@ class TwitterCall(object):
                 raise TwitterError(
                     "Twitter sent status %i for URL: %s.%s using parameters: (%s)\ndetails: %s" %(
                         e.code, uri, self.format, encoded_kwargs, e.fp.read()))
-            
+
 class Twitter(TwitterCall):
     """
     The minimalist yet fully featured Twitter API class.
