@@ -250,16 +250,15 @@ def load_config(filename):
 
     return cp
 
-
-# Howdy, hacker!! You've found the secret Twitter business model!!
+# So there was a joke here about the twitter business model
+# but I got rid of it. Not because I want this codebase to
+# be "professional" in any way, but because someone forked
+# this and deleted the comment because they couldn't take
+# a joke. Hi guy!
 #
-# 1. provide awesome status-update service
-# 2. buy a lot of new hardware to keep it running
-# 3. ???
-# 4. profit!
-#
-# I'm just kidding... :3
-
+# Fact: The number one use of Google Code is to look for that
+# comment in the Linux kernel that goes "FUCK me gently with
+# a chainsaw." Pretty sure Linus himself wrote it.
 
 def main():
     configFilename = "twitterbot.ini"

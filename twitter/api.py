@@ -54,7 +54,6 @@ class TwitterCall(object):
         if id:
             uri += "/%s" %(id)
 
-        encoded_kwargs = urlencode(kwargs.items())
         argStr = ""
         argData = None
         encoded_kwargs = urlencode(kwargs.items())
