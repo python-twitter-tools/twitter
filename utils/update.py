@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 '''
-This is a development script, intended for office use only.
+This is a development script, intended for development use only.
 
 This script generates the POST_ACTIONS variable
 for placement in the twitter_globals.py
