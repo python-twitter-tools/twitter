@@ -45,7 +45,7 @@ prompt: <twitter_shell_prompt e.g. '[cyan]twitter[R]> '>
 
 import sys
 import time
-from getopt import getopt, GetoptError
+from getopt import gnu_getopt as getopt, GetoptError
 from getpass import getpass
 import re
 import os.path
