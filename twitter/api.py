@@ -71,7 +71,7 @@ class TwitterCall(object):
                 self.username, self.password))
 
         req = urllib2.Request(
-                "http://%s/%s.%s%s" %(self.domain, self.uri, self.format, argStr),
+                "http://%s/%s.%s%s" %(self.domain, uri, self.format, argStr),
                 argData, headers
             )
         try:
