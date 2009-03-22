@@ -216,11 +216,11 @@ class RepliesAction(StatusAction):
 
 class FollowAction(AdminAction):
     def getUser(self, twitter, user):
-        return twitter.notifications.follow(id=user)
+        return twitter.friendships.create(id=user)
 
 class LeaveAction(AdminAction):
     def getUser(self, twitter, user):
-        return twitter.notifications.leave(id=user)
+        return twitter.friendships.destroy(id=user)
 
 class SetStatusAction(Action):
     def __call__(self, twitter, options):
