@@ -121,9 +121,8 @@ def main_with_options(options, files):
     print """'''
     This module is automatically generated using `update.py`
 
-    ..data::
-
-        `POST_ACTIONS`: Methods that require the use of POST
+    .. data:: POST_ACTIONS
+        List of twitter method names that require the use of POST
 '''
 """
     print 'POST_ACTIONS = [\n'
