@@ -5,3 +5,4 @@ Wes Devauld <wes@devauld.ca>
 
 Contributors:
 Horacio Duran <horacio.duran@gmail.com> (utf-8 patch for IRC bot)
+Anders Sandvig (cmdline -l, -d, and -t flags)
