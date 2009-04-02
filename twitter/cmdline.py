@@ -211,28 +211,28 @@ class Action(object):
         performed. When `careful`, the default answer is NO, otherwise YES.
         Returns the user answer in the form `True` or `False`.
         '''
-        sample = '(y/N)' if careful else '(Y/n)'
+        sample = '(y/N)'
+        if not careful:
+            sample = '(Y/n)'
+        
         prompt = 'You really want to %s %s? ' %(subject, sample)
         try:
             answer = raw_input(prompt).lower()
             if careful:
-                if answer not in ('yes', 'y'):
-                    return False
-                else:
-                    return True
+                return answer in ('yes', 'y')
             else:
-                if answer in ('no', 'n'):
-                    return False
-                else:
-                    return True
+                return answer not in ('no', 'n')
         except EOFError:
             print >>sys.stderr # Put Newline since Enter was never pressed
             # TODO:
                 #   Figure out why on OS X the raw_input keeps raising
                 #   EOFError and is never able to reset and get more input
                 #   Hint: Look at how IPython implements their console
-            default = False if careful else True
+            default = True
+            if careful:
+                default = False
             return default
+        
     def __call__(self, twitter, options):
         action = actions.get(options['action'], NoSuchAction)()
         try:
@@ -271,17 +271,17 @@ class StatusAction(Action):
 
 class AdminAction(Action):
     def __call__(self, twitter, options):
-        if not options['extra_args'][0]:
+        if not options['extra_args'] or options['extra_args'][0]:
             raise TwitterError("You need to specify a user (screen name)")
         af = get_admin_formatter(options)
         try:
             user = self.getUser(twitter, options['extra_args'][0])
         except TwitterError, e:
             print "There was a problem following or leaving the specified user."
-            print "  You may be trying to follow a user you are already following;"
-            print "  Leaving a user you are not currently following;"
-            print "  Or the user may not exist."
-            print "  Sorry."
+            print "You may be trying to follow a user you are already following;"
+            print "Leaving a user you are not currently following;"
+            print "Or the user may not exist."
+            print "Sorry."
             print
             print e
         else:
