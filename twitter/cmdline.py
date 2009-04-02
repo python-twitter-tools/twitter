@@ -204,8 +204,8 @@ def get_admin_formatter(options):
     return sf()
 
 class Action(object):
-    @staticmethod
-    def ask(subject='perform this action', careful=False):
+
+    def ask(self, subject='perform this action', careful=False):
         '''
         Requests fromt he user using `raw_input` if `subject` should be
         performed. When `careful`, the default answer is NO, otherwise YES.
@@ -271,7 +271,7 @@ class StatusAction(Action):
 
 class AdminAction(Action):
     def __call__(self, twitter, options):
-        if not options['extra_args'] or options['extra_args'][0]:
+        if not (options['extra_args'] and options['extra_args'][0]):
             raise TwitterError("You need to specify a user (screen name)")
         af = get_admin_formatter(options)
         try:
@@ -316,8 +316,8 @@ class SetStatusAction(Action):
         twitter.statuses.update(status=status)
 
 class TwitterShell(Action):
-    @staticmethod
-    def render_prompt(prompt):
+
+    def render_prompt(self, prompt):
         '''Parses the `prompt` string and returns the rendered version'''
         prompt = prompt.strip("'").replace("\\'","'")
         for colour in ansi.COLOURS_NAMED:
@@ -326,9 +326,11 @@ class TwitterShell(Action):
                             '[%s]' %(colour), ansi.cmdColourNamed(colour))
         prompt = prompt.replace('[R]', ansi.cmdReset())
         return prompt
+    
     def __call__(self, twitter, options):
         prompt = self.render_prompt(options.get('prompt', 'twitter> '))
         while True:
+            options['action'] = ""
             try:
                 args = raw_input(prompt).split()
                 parse_args(args, options)
