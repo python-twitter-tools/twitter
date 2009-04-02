@@ -21,7 +21,11 @@ OPTIONS:
  -R --refresh-rate <rate>   set the refresh rate (in seconds)
  -f --format <format>       specify the output format for status updates
  -c --config <filename>     read username and password from given config
-                              file (default ~/.twitter)
+                            file (default ~/.twitter)
+ -l --length <count>        specify number of status updates shown
+                            (default: 20, max: 200)
+ -t --timestamp             show time before status lines
+ -d --datestamp             shoe date before status lines
 
 FORMATS for the --format option
 
@@ -64,13 +68,16 @@ OPTIONS = {
     'refresh_rate': 600,
     'format': 'default',
     'config_filename': os.environ.get('HOME', '') + os.sep + '.twitter',
+    'length': 20,
+    'timestamp': False,
+    'datestamp': False,
     'extra_args': []
 }
 
 def parse_args(args, options):
     long_opts = ['email', 'password', 'help', 'format', 'refresh',
-                 'refresh-rate', 'config']
-    short_opts = "e:p:f:h?rR:c:"
+                 'refresh-rate', 'config', 'length', 'timestamp', 'datestamp']
+    short_opts = "e:p:f:h?rR:c:l:td"
     opts, extra_args = getopt(args, short_opts, long_opts)        
 
     for opt, arg in opts:
@@ -84,6 +91,12 @@ def parse_args(args, options):
             options['refresh'] = True
         elif opt in ('-R', '--refresh-rate'):
             options['refresh_rate'] = int(arg)
+        elif opt in ('-l', '--length'):
+            options["length"] = int(arg)
+        elif opt in ('-t', '--timestamp'):
+            options["timestamp"] = True
+        elif opt in ('-d', '--datestamp'):
+            options["datestamp"] = True
         elif opt in ('-?', '-h', '--help'):
             print __doc__
             sys.exit(0)
@@ -93,24 +106,38 @@ def parse_args(args, options):
     if extra_args:
         options['action'] = extra_args[0]
     options['extra_args'] = extra_args[1:]
+    
+def get_time_string(status, options):
+    timestamp = options["timestamp"]
+    datestamp = options["datestamp"]
+    t = time.strptime(status['created_at'], "%a %b %d %H:%M:%S +0000 %Y")
+    if timestamp and datestamp:
+        return time.strftime("%Y-%m-%d %H:%M:%S ", t)
+    elif timestamp:
+        return time.strftime("%H:%M:%S ", t)
+    elif datestamp:
+        return time.strftime("%Y-%m-%d ", t)
+    return ""                             
 
 class StatusFormatter(object):
     def __call__(self, status):
-        return (u"%s %s" %(
+        return (u"%S%s %s" %(
+            get_time_string(status, options),
             status['user']['screen_name'], status['text']))
 
 class AnsiStatusFormatter(object):
     def __init__(self):
         self._colourMap = ansi.ColourMap()
         
-    def __call__(self, status):
+    def __call__(self, status, options):
         colour = self._colourMap.colourFor(status['user']['screen_name'])
-        return (u"%s%s%s %s" %(
+        return (u"%s%s%s%s %s" %(
+            get_time_string(status, options),
             ansi.cmdColour(colour), status['user']['screen_name'],
             ansi.cmdReset(), status['text']))    
     
 class VerboseStatusFormatter(object):
-    def __call__(self, status):
+    def __call__(self, status, options):
         return (u"-- %s (%s) on %s\n%s\n" %(
             status['user']['screen_name'],
             status['user']['location'],
@@ -119,7 +146,7 @@ class VerboseStatusFormatter(object):
 
 class URLStatusFormatter(object):
     urlmatch = re.compile(r'https?://\S+')
-    def __call__(self, status):
+    def __call__(self, status, options):
         urls = self.urlmatch.findall(status['text'])
         return u'\n'.join(urls) if urls else ""
 
@@ -177,10 +204,10 @@ class NoSuchAction(Action):
 
 class StatusAction(Action):
     def __call__(self, twitter, options):
-        statuses = self.getStatuses(twitter)
+        statuses = self.getStatuses(twitter, options)
         sf = get_status_formatter(options)
         for status in statuses:
-            statusStr = sf(status)
+            statusStr = sf(status, options)
             if statusStr.strip():
                 print statusStr.encode(sys.stdout.encoding, 'replace')
 
@@ -203,16 +230,16 @@ class AdminAction(Action):
             print af(options['action'], user).encode(sys.stdout.encoding, 'replace')
 
 class FriendsAction(StatusAction):
-    def getStatuses(self, twitter):
-        return reversed(twitter.statuses.friends_timeline())
+    def getStatuses(self, twitter, options):
+        return reversed(twitter.statuses.friends_timeline(count=options["length"]))
 
 class PublicAction(StatusAction):
-    def getStatuses(self, twitter):
-        return reversed(twitter.statuses.public_timeline())
+    def getStatuses(self, twitter, options):
+        return reversed(twitter.statuses.public_timeline(count=options["length"]))
 
 class RepliesAction(StatusAction):
-    def getStatuses(self, twitter):
-        return reversed(twitter.statuses.replies())
+    def getStatuses(self, twitter, options):
+        return reversed(twitter.statuses.replies(count=options["length"]))
 
 class FollowAction(AdminAction):
     def getUser(self, twitter, user):
@@ -302,4 +329,3 @@ def main(args=sys.argv[1:]):
         sys.exit(1)
     except KeyboardInterrupt:
         pass
-
