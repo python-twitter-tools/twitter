@@ -54,6 +54,7 @@ from getpass import getpass
 import re
 import os.path
 from ConfigParser import SafeConfigParser
+import datetime
 
 from api import Twitter, TwitterError
 import ansi
@@ -113,6 +114,12 @@ def get_time_string(status, options):
     timestamp = options["timestamp"]
     datestamp = options["datestamp"]
     t = time.strptime(status['created_at'], "%a %b %d %H:%M:%S +0000 %Y")
+    i_hate_timezones = time.timezone
+    if (time.daylight):
+        i_hate_timezones = time.altzone
+    dt = datetime.datetime(*t[:-3]) - datetime.timedelta(
+        seconds=i_hate_timezones)
+    t = dt.timetuple()
     if timestamp and datestamp:
         return time.strftime("%Y-%m-%d %H:%M:%S ", t)
     elif timestamp:
