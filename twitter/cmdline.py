@@ -182,7 +182,10 @@ class StatusAction(Action):
         for status in statuses:
             statusStr = sf(status)
             if statusStr.strip():
-                print statusStr.encode(sys.stdout.encoding, 'replace')
+                if sys.stdout.encoding:
+                    print statusStr.encode(sys.stdout.encoding, 'replace')
+                else:
+                    print statusStr.encode('utf-8')
 
 class AdminAction(Action):
     def __call__(self, twitter, options):

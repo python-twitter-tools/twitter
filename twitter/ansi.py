@@ -4,6 +4,7 @@ Support for ANSI colours in command-line client.
 """
 
 import itertools
+import sys
 
 ESC = chr(0x1B)
 RESET = "0"
@@ -21,7 +22,13 @@ class ColourMap(object):
         return self._cmap[string]
 
 def cmdReset():
-    return ESC + "[0m"
+    if sys.stdout.isatty():
+        return ESC + "[0m"
+    else:
+        return ""
 
 def cmdColour(colour):
-    return ESC + "[" + colour + "m"
+    if sys.stdout.isatty():
+        return ESC + "[" + colour + "m"
+    else:
+        return ""
