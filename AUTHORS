@@ -6,3 +6,4 @@ Wes Devauld <wes@devauld.ca>
 Contributors:
 Horacio Duran <horacio.duran@gmail.com> (utf-8 patch for IRC bot)
 Rainer Michael Schmid (bugfix: crash when redirecting output to a file in 1.1)
+Anders Sandvig (cmdline -l, -d, and -t flags)
