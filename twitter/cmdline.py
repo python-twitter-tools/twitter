@@ -11,6 +11,7 @@ ACTIONS:
  public         get latest public tweets
  replies        get latest replies
  set            set your twitter status
+ shell          login the twitter shell
 
 OPTIONS:
 
@@ -33,7 +34,7 @@ FORMATS for the --format option
  verbose         multiple lines per status, more verbose status info
  urls            nothing but URLs
  ansi            ansi colour (rainbow mode)
- 
+
 CONFIG FILES
 
  The config file should contain a [twitter] header, and all the desired options
@@ -43,11 +44,12 @@ CONFIG FILES
 email: <username>
 password: <password>
 format: <desired_default_format_for_output>
+prompt: <twitter_shell_prompt e.g. '[cyan]twitter[R]> '>
 """
 
 import sys
 import time
-from getopt import getopt, GetoptError
+from getopt import gnu_getopt as getopt, GetoptError
 from getpass import getpass
 import re
 import os.path
@@ -67,6 +69,7 @@ OPTIONS = {
     'refresh': False,
     'refresh_rate': 600,
     'format': 'default',
+    'prompt': '[cyan]twitter[R]> ',
     'config_filename': os.environ.get('HOME', '') + os.sep + '.twitter',
     'length': 20,
     'timestamp': False,
@@ -98,12 +101,11 @@ def parse_args(args, options):
         elif opt in ('-d', '--datestamp'):
             options["datestamp"] = True
         elif opt in ('-?', '-h', '--help'):
-            print __doc__
-            sys.exit(0)
+            options['action'] = 'help'
         elif opt in ('-c', '--config'):
             options['config_filename'] = arg
 
-    if extra_args:
+    if extra_args and not ('action' in options and options['action'] == 'help'):
         options['action'] = extra_args[0]
     options['extra_args'] = extra_args[1:]
     
@@ -134,8 +136,8 @@ class AnsiStatusFormatter(object):
         return (u"%s%s%s%s %s" %(
             get_time_string(status, options),
             ansi.cmdColour(colour), status['user']['screen_name'],
-            ansi.cmdReset(), status['text']))    
-    
+            ansi.cmdReset(), status['text']))
+
 class VerboseStatusFormatter(object):
     def __call__(self, status, options):
         return (u"-- %s (%s) on %s\n%s\n" %(
@@ -161,8 +163,8 @@ class AdminFormatter(object):
 class VerboseAdminFormatter(object):
     def __call__(self, action, user):
         return(u"-- %s: %s (%s): %s" % (
-            "Following" if action == "follow" else "Leaving", 
-            user['screen_name'], 
+            "Following" if action == "follow" else "Leaving",
+            user['screen_name'],
             user['name'],
             user['url']))
 
@@ -171,7 +173,7 @@ status_formatters = {
     'verbose': VerboseStatusFormatter,
     'urls': URLStatusFormatter,
     'ansi': AnsiStatusFormatter
-}    
+}
 
 admin_formatters = {
     'default': AdminFormatter,
@@ -195,12 +197,55 @@ def get_admin_formatter(options):
     return sf()
 
 class Action(object):
+    @staticmethod
+    def ask(subject='perform this action', careful=False):
+        '''
+        Requests fromt he user using `raw_input` if `subject` should be
+        performed. When `careful`, the default answer is NO, otherwise YES.
+        Returns the user answer in the form `True` or `False`.
+        '''
+        sample = '(y/N)' if careful else '(Y/n)'
+        prompt = 'You really want to %s %s? ' %(subject, sample)
+        try:
+            answer = raw_input(prompt).lower()
+            if careful:
+                if answer not in ('yes', 'y'):
+                    return False
+                else:
+                    return True
+            else:
+                if answer in ('no', 'n'):
+                    return False
+                else:
+                    return True
+        except EOFError:
+            print >>sys.stderr # Put Newline since Enter was never pressed
+            # TODO:
+                #   Figure out why on OS X the raw_input keeps raising
+                #   EOFError and is never able to reset and get more input
+                #   Hint: Look at how IPython implements their console
+            default = False if careful else True
+            return default
+    def __call__(self, twitter, options):
+        action = actions.get(options['action'], NoSuchAction)()
+        try:
+            doAction = lambda : action(twitter, options)
+            if (options['refresh'] and isinstance(action, StatusAction)):
+                while True:
+                    doAction()
+                    time.sleep(options['refresh_rate'])
+            else:
+                doAction()
+        except KeyboardInterrupt:
+            print >>sys.stderr, '\n[Keyboard Interrupt]'
+            pass
+
+class NoSuchActionError(Exception):
     pass
 
 class NoSuchAction(Action):
     def __call__(self, twitter, options):
-        print >> sys.stderr, "No such action: ", options['action']
-        sys.exit(1)
+        raise NoSuchActionError("No such action: %s" %(options['action']))
 
 def printNicely(string):        
     if sys.stdout.encoding:
@@ -257,24 +302,70 @@ class LeaveAction(AdminAction):
 
 class SetStatusAction(Action):
     def __call__(self, twitter, options):
-        statusTxt = (u" ".join(options['extra_args']) 
-                     if options['extra_args'] 
+        statusTxt = (u" ".join(options['extra_args'])
+                     if options['extra_args']
                      else unicode(raw_input("message: ")))
         status = (statusTxt.encode('utf8', 'replace'))
         twitter.statuses.update(status=status)
+
+class TwitterShell(Action):
+    @staticmethod
+    def render_prompt(prompt):
+        '''Parses the `prompt` string and returns the rendered version'''
+        prompt = prompt.strip("'").replace("\\'","'")
+        for colour in ansi.COLOURS_NAMED:
+            if '[%s]' %(colour) in prompt:
+                prompt = prompt.replace(
+                            '[%s]' %(colour), ansi.cmdColourNamed(colour))
+        prompt = prompt.replace('[R]', ansi.cmdReset())
+        return prompt
+    def __call__(self, twitter, options):
+        prompt = self.render_prompt(options.get('prompt', 'twitter> '))
+        while True:
+            try:
+                args = raw_input(prompt).split()
+                parse_args(args, options)
+                if not options['action']:
+                    continue
+                elif options['action'] == 'exit':
+                    raise SystemExit(0)
+                elif options['action'] == 'shell':
+                    print >>sys.stderr, 'Sorry Xzibit does not work here!'
+                    continue
+                elif options['action'] == 'help':
+                    print >>sys.stderr, '''\ntwitter> `action`\n
+        The Shell Accepts all the command line actions along with:
+
+            exit    Leave the twitter shell (^D may also be used)
+
+        Full CMD Line help is appended below for your convinience.'''
+                Action()(twitter, options)
+                options['action'] = ''
+            except NoSuchActionError, e:
+                print >>sys.stderr, e
+            except KeyboardInterrupt:
+                print >>sys.stderr, '\n[Keyboard Interrupt]'
+            except EOFError:
+                print >>sys.stderr
+                leaving = self.ask(subject='Leave')
+                if not leaving:
+                    print >>sys.stderr, 'Excellent!'
+                else:
+                    raise SystemExit(0)
 
 class HelpAction(Action):
     def __call__(self, twitter, options):
         print __doc__
 
 actions = {
-    'follow': FollowAction,
-    'friends': FriendsAction,
-    'help': HelpAction,
-    'leave': LeaveAction,
-    'public': PublicAction,
-    'replies': RepliesAction,
-    'set': SetStatusAction,
+    'follow'    : FollowAction,
+    'friends'   : FriendsAction,
+    'help'      : HelpAction,
+    'leave'     : LeaveAction,
+    'public'    : PublicAction,
+    'replies'   : RepliesAction,
+    'set'       : SetStatusAction,
+    'shell'     : TwitterShell,
 }
 
 def loadConfig(filename):
@@ -282,7 +373,7 @@ def loadConfig(filename):
     if os.path.exists(filename):
         cp = SafeConfigParser()
         cp.read([filename])
-        for option in ('email', 'password', 'format'):
+        for option in ('email', 'password', 'format', 'prompt'):
             if cp.has_option('twitter', option):
                 options[option] = cp.get('twitter', option)
     return options
@@ -294,7 +385,7 @@ def main(args=sys.argv[1:]):
     except GetoptError, e:
         print >> sys.stderr, "I can't do that, %s." %(e)
         print >> sys.stderr
-        sys.exit(1)
+        raise SystemExit(1)
 
     config_options = loadConfig(
         arg_options.get('config_filename') or OPTIONS.get('config_filename'))
@@ -306,32 +397,23 @@ def main(args=sys.argv[1:]):
     for d in config_options, arg_options:
         for k,v in d.items():
             if v: options[k] = v
-    
+
     if options['refresh'] and options['action'] not in (
         'friends', 'public', 'replies'):
         print >> sys.stderr, "You can only refresh the friends, public, or replies actions."
         print >> sys.stderr, "Use 'twitter -h' for help."
-        sys.exit(1)
-        
+        raise SystemExit(1)
+
     if options['email'] and not options['password']:
         options['password'] = getpass("Twitter password: ")
-        
+
     twitter = Twitter(options['email'], options['password'], agent=AGENT_STR)
-    action = actions.get(options['action'], NoSuchAction)()
-    
     try:
-        doAction = lambda : action(twitter, options)
-
-        if (options['refresh'] and isinstance(action, StatusAction)):
-            while True:
-                doAction()
-                time.sleep(options['refresh_rate'])
-        else:
-            doAction()
-
+        Action()(twitter, options)
+    except NoSuchActionError, e:
+        print >>sys.stderr, e
+        raise SystemExit(1)
     except TwitterError, e:
         print >> sys.stderr, e.args[0]
         print >> sys.stderr, "Use 'twitter -h' for help."
-        sys.exit(1)
-    except KeyboardInterrupt:
-        pass
+        raise SystemExit(1)
