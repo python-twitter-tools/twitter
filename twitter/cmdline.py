@@ -175,6 +175,12 @@ class NoSuchAction(Action):
         print >> sys.stderr, "No such action: ", options['action']
         sys.exit(1)
 
+def printNicely(string):        
+    if sys.stdout.encoding:
+        print string.encode(sys.stdout.encoding, 'replace')
+    else:
+        print string.encode('utf-8')
+        
 class StatusAction(Action):
     def __call__(self, twitter, options):
         statuses = self.getStatuses(twitter)
@@ -182,10 +188,7 @@ class StatusAction(Action):
         for status in statuses:
             statusStr = sf(status)
             if statusStr.strip():
-                if sys.stdout.encoding:
-                    print statusStr.encode(sys.stdout.encoding, 'replace')
-                else:
-                    print statusStr.encode('utf-8')
+                printNicely(statusStr)
 
 class AdminAction(Action):
     def __call__(self, twitter, options):
@@ -203,7 +206,7 @@ class AdminAction(Action):
             print
             print e
         else:
-            print af(options['action'], user).encode(sys.stdout.encoding, 'replace')
+            printNicely(af(options['action'], user))
 
 class FriendsAction(StatusAction):
     def getStatuses(self, twitter):
