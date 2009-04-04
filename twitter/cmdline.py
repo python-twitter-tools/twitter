@@ -62,6 +62,13 @@ from urllib import quote
 from api import Twitter, TwitterError
 import ansi
 
+try:
+    import readline
+    import atexit # To save precious readline history
+except ImportError:
+    # Module readline not available, too bad you're missing out
+    readline = None
+
 # Please don't change this, it was provided by the fine folks at Twitter.
 # If you change it, it will not work.
 AGENT_STR = "twittercommandlinetoolpy"
@@ -262,14 +269,7 @@ class Action(object):
                 return answer not in ('no', 'n')
         except EOFError:
             print >>sys.stderr # Put Newline since Enter was never pressed
-            # TODO:
-                #   Figure out why on OS X the raw_input keeps raising
-                #   EOFError and is never able to reset and get more input
-                #   Hint: Look at how IPython implements their console
-            default = True
-            if careful:
-                default = False
-            return default
+            return False if careful else True
 
     def __call__(self, twitter, options):
         action = actions.get(options['action'], NoSuchAction)()
@@ -382,7 +382,28 @@ class TwitterShell(Action):
         prompt = prompt.replace('[R]', ansi.cmdReset())
         return prompt
 
+    def init_shell(self, shell_options):
+        if readline:
+            if shell_options.get('tab_complete'):
+                readline.parse_and_bind("tab: complete")
+                readline.set_completer(CmdlineCompleter().complete)
+            if shell_options.get('history'):
+                histfile = os.path.expanduser(
+                    os.path.expandvars(shell_options['history']))
+                if hasattr(readline, "read_history_file"):
+                    try:
+                        readline.read_history_file(histfile)
+                    except IOError:
+                        pass
+                    atexit.register(self.save_history, histfile)
+
+    def save_history(self, histfile):
+        readline.write_history_file(histfile)
+
     def __call__(self, twitter, options):
+        # prompt setup
+        self.init_shell(
+            {'tab_complete': True, 'history': '~/.twitter_history'})
         prompt = self.render_prompt(options.get('prompt', 'twitter> '))
         while True:
             options['action'] = ""
@@ -432,6 +453,70 @@ actions = {
     'set'       : SetStatusAction,
     'shell'     : TwitterShell,
 }
+
+class CmdlineCompleter(object):
+    # TODO: extend GetoptCompleter
+    ''' Class implementing Twitter command line completion functionality '''
+    def __init__(self):
+        self.text = None
+        self.actions = actions
+        self.getopt_complete = GetoptCompleter(short_opts, long_opts).complete
+    def complete(self, text, state, line_buffer=None):
+        '''
+        Returns completions for `text` given `state` 0, 1, ...
+        line_buffer is used to undrestand the context for the completion
+        When line_buffer is None, readline.get_line_buffer() is used
+        '''
+        if not line_buffer:
+            line_buffer = readline.get_line_buffer()
+        if text != self.text:
+            self.matches = [w for w in self.actions if w.startswith(text)]
+            self.text = text
+        try:
+            return self.matches[state]
+        except IndexError:
+            return self.getopt_complete(
+                text, state-len(self.matches), line_buffer)
+
+class GetoptCompleter(object):
+    ''' Class returns completions for getopt options '''
+    def __init__(self, short_opts, long_opts):
+        self.text = None
+        self.options = ['-%s' %opt for opt in list(short_opts) if opt != ':']
+        self.options += ['--%s' %opt for opt in long_opts]
+    def complete(self, text, state, line_buffer=None):
+        '''
+        Returns completions for `text` given `state` 0, 1, ...
+        line_buffer is used to undrestand the context for the completion
+        When line_buffer is None, readline.get_line_buffer() is used
+        '''
+        if not line_buffer:
+            line_buffer = readline.get_line_buffer()
+        try:
+            # This feature needs more research and work
+            # text is stripped for all punctiation, so we make our own
+            text = line_buffer.strip().split().pop()
+        except IndexError:
+            # seems empty, so never mind
+            pass
+        if text != self.text:
+            self.matches = [
+                opt for opt in self.options if opt.startswith(text)
+            ]
+            # This feature needs more research and work
+            for prefix in ('--', '-'):
+                if text.startswith(prefix):
+                    break
+            else:
+                prefix = None
+            if prefix:
+                self.matches = filter(None,
+                    [opt.partition(prefix)[-1] for opt in self.matches])
+            self.text = text
+        try:
+            return self.matches[state]
+        except IndexError:
+            return None
 
 def loadConfig(filename):
     options = dict(OPTIONS)
