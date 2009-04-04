@@ -409,7 +409,7 @@ class TwitterShell(Action):
                           Full CMD Line help is appended below for your convinience.'''
                 Action()(twitter, options)
                 options['action'] = ''
-            except NoSuchActionError, e:
+            except (NoSuchActionError, GetoptError), e:
                 print >>sys.stderr, e
             except KeyboardInterrupt:
                 print >>sys.stderr, '\n[Keyboard Interrupt]'
