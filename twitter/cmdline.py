@@ -82,13 +82,12 @@ OPTIONS = {
     'secure': True
 }
 
+long_opts = ['email=', 'password=', 'help', 'format=', 'refresh',
+             'refresh-rate=', 'config=', 'length=', 'timestamp', 'datestamp',
+             'no-ssl']
+short_opts = "e:p:f:h?rR:c:l:td"
 def parse_args(args, options):
-    long_opts = ['email', 'password', 'help', 'format', 'refresh',
-                 'refresh-rate', 'config', 'length', 'timestamp', 
-                 'datestamp', 'no-ssl']
-    short_opts = "e:p:f:h?rR:c:l:td"
     opts, extra_args = getopt(args, short_opts, long_opts)        
-
     for opt, arg in opts:
         if opt in ('-e', '--email'):
             options['email'] = arg
@@ -133,7 +132,7 @@ def get_time_string(status, options, format="%a %b %d %H:%M:%S +0000 %Y"):
         return time.strftime("%H:%M:%S ", t)
     elif datestamp:
         return time.strftime("%Y-%m-%d ", t)
-    return ""                             
+    return ""
 
 class StatusFormatter(object):
     def __call__(self, status, options):
@@ -253,10 +252,7 @@ class Action(object):
         performed. When `careful`, the default answer is NO, otherwise YES.
         Returns the user answer in the form `True` or `False`.
         '''
-        sample = '(y/N)'
-        if not careful:
-            sample = '(Y/n)'
-
+        sample = '(y/N)' if careful else '(Y/n)'
         prompt = 'You really want to %s %s? ' %(subject, sample)
         try:
             answer = raw_input(prompt).lower()
@@ -296,7 +292,7 @@ class NoSuchAction(Action):
     def __call__(self, twitter, options):
         raise NoSuchActionError("No such action: %s" %(options['action']))
 
-def printNicely(string):        
+def printNicely(string):
     if sys.stdout.encoding:
         print string.encode(sys.stdout.encoding, 'replace')
     else:
