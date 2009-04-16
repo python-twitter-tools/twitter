@@ -129,8 +129,8 @@ def get_time_string(status, options):
     return ""                             
 
 class StatusFormatter(object):
-    def __call__(self, status):
-        return (u"%S%s %s" %(
+    def __call__(self, status, options):
+        return (u"%s%s %s" %(
             get_time_string(status, options),
             status['user']['screen_name'], status['text']))
 
