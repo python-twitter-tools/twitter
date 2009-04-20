@@ -6,6 +6,8 @@ import urllib2
 
 from exceptions import Exception
 
+from twitter.twitter_globals import POST_ACTIONS
+
 def _py26OrGreater():
     import sys
     return sys.hexversion > 0x20600f0
@@ -21,11 +23,6 @@ class TwitterError(Exception):
     error interacting with twitter.com.
     """
     pass
-
-# These actions require POST http requests instead of GET
-_POST_ACTIONS = [
-    "create", "update", "destroy", "new", "follow", "leave",
-    ]
 
 class TwitterCall(object):
     def __init__(
@@ -46,7 +43,7 @@ class TwitterCall(object):
     def __call__(self, **kwargs):
         uri = self.uri
         method = "GET"
-        for action in _POST_ACTIONS:
+        for action in POST_ACTIONS:
             if self.uri.endswith(action):
                 method = "POST"
                 if (self.agent):
@@ -60,11 +57,11 @@ class TwitterCall(object):
         argStr = ""
         argData = None
         encoded_kwargs = urlencode(kwargs.items())
-        if kwargs:
-            if (method == "GET"):
+        if (method == "GET"):
+            if kwargs:
                 argStr = "?%s" %(encoded_kwargs)
-            else:
-                argData = encoded_kwargs
+        else:
+            argData = encoded_kwargs
 
         headers = {}
         if (self.agent):
@@ -72,13 +69,13 @@ class TwitterCall(object):
         if (self.username):
             headers["Authorization"] = "Basic " + b64encode("%s:%s" %(
                 self.username, self.password))
-        
+
         req = urllib2.Request(
-                "http://%s/%s.%s%s" %(self.domain, self.uri, self.format, argStr),
+                "http://%s/%s.%s%s" %(self.domain, uri, self.format, argStr),
                 argData, headers
             )
         try:
-            handle = urllib2.urlopen(req) 
+            handle = urllib2.urlopen(req)
             if "json" == self.format:
                 return json.loads(handle.read())
             else:
@@ -90,11 +87,11 @@ class TwitterCall(object):
                 raise TwitterError(
                     "Twitter sent status %i for URL: %s.%s using parameters: (%s)\ndetails: %s" %(
                         e.code, uri, self.format, encoded_kwargs, e.fp.read()))
-            
+
 class Twitter(TwitterCall):
     """
     The minimalist yet fully featured Twitter API class.
-    
+
     Get RESTful data by accessing members of this class. The result
     is decoded python objects (lists and dicts).
 
@@ -102,27 +99,27 @@ class Twitter(TwitterCall):
 
       http://apiwiki.twitter.com/
       http://groups.google.com/group/twitter-development-talk/web/api-documentation
-    
+
     Examples::
-    
+
       twitter = Twitter("hello@foo.com", "password123")
-      
+
       # Get the public timeline
       twitter.statuses.public_timeline()
-      
+
       # Get a particular friend's timeline
       twitter.statuses.friends_timeline(id="billybob")
-      
+
       # Also supported (but totally weird)
       twitter.statuses.friends_timeline.billybob()
-      
+
       # Send a direct message
       twitter.direct_messages.new(
           user="billybob",
           text="I think yer swell!")
 
     Searching Twitter::
-        
+
       twitter_search = Twitter(domain="search.twitter.com")
 
       # Find the latest search trends
@@ -143,14 +140,14 @@ class Twitter(TwitterCall):
 
       # The screen name of the user who wrote the first 'tweet'
       x[0]['user']['screen_name']
-    
+
     Getting raw XML data::
-    
+
       If you prefer to get your Twitter data in XML format, pass
       format="xml" to the Twitter object when you instantiate it:
-      
+
       twitter = Twitter(format="xml")
-      
+
       The output will not be parsed in any way. It will be a raw string
       of XML.
     """
