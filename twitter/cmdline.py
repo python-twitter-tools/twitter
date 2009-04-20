@@ -56,6 +56,7 @@ import re
 import os.path
 from ConfigParser import SafeConfigParser
 import datetime
+from urllib import quote
 
 from api import Twitter, TwitterError
 import ansi
@@ -310,7 +311,12 @@ class SearchAction(Action):
         # We need to be pointing at search.twitter.com to work, and it is less
         # tangly to do it here than in the main()
         twitter.domain="search.twitter.com"
-        results = twitter.search(q=options['extra_args'])['results']
+        # We need to bypass the TwitterCall parameter encoding, so we
+        # don't encode the plus sign, so we have to encode it ourselves
+        query_string = "+".join([quote(term) for term in options['extra_args']])
+        twitter.encoded_args = "q=%s" %(query_string)
+
+        results = twitter.search()['results']
         f = get_formatter('search', options)
         for result in results:
             resultStr = f(result, options)
