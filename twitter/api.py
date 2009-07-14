@@ -26,20 +26,23 @@ class TwitterError(Exception):
 
 class TwitterCall(object):
     def __init__(
-        self, username, password, format, domain, uri="", agent=None):
+        self, username, password, format, domain, uri="", agent=None, encoded_args=None):
         self.username = username
         self.password = password
         self.format = format
         self.domain = domain
         self.uri = uri
         self.agent = agent
+        self.encoded_args = encoded_args
+
     def __getattr__(self, k):
         try:
             return object.__getattr__(self, k)
         except AttributeError:
             return TwitterCall(
                 self.username, self.password, self.format, self.domain,
-                self.uri + "/" + k, self.agent)
+                self.uri + "/" + k, self.agent, self.encoded_args)
+
     def __call__(self, **kwargs):
         uri = self.uri
         method = "GET"
@@ -50,18 +53,19 @@ class TwitterCall(object):
                     kwargs["source"] = self.agent
                 break
 
-        id = kwargs.pop('id', None)
-        if id:
-            uri += "/%s" %(id)
+        if (not self.encoded_args):
+            if kwargs.has_key('id'):
+                uri += "/%s" %(kwargs['id'])
+    
+            self.encoded_args = urlencode(kwargs.items())
 
         argStr = ""
         argData = None
-        encoded_kwargs = urlencode(kwargs.items())
         if (method == "GET"):
-            if kwargs:
-                argStr = "?%s" %(encoded_kwargs)
+            if self.encoded_args:
+                argStr = "?%s" %(self.encoded_args)
         else:
-            argData = encoded_kwargs
+            argData = self.encoded_args
 
         headers = {}
         if (self.agent):

@@ -10,6 +10,7 @@ ACTIONS:
  leave          remove the specified user from your following list
  public         get latest public tweets
  replies        get latest replies
+ search         search twitter (Beware: octothorpe, escape it)
  set            set your twitter status
  shell          login the twitter shell
 
@@ -55,6 +56,7 @@ import re
 import os.path
 from ConfigParser import SafeConfigParser
 import datetime
+from urllib import quote
 
 from api import Twitter, TwitterError
 import ansi
@@ -110,10 +112,10 @@ def parse_args(args, options):
         options['action'] = extra_args[0]
     options['extra_args'] = extra_args[1:]
     
-def get_time_string(status, options):
+def get_time_string(status, options, format="%a %b %d %H:%M:%S +0000 %Y"):
     timestamp = options["timestamp"]
     datestamp = options["datestamp"]
-    t = time.strptime(status['created_at'], "%a %b %d %H:%M:%S +0000 %Y")
+    t = time.strptime(status['created_at'], format)
     i_hate_timezones = time.timezone
     if (time.daylight):
         i_hate_timezones = time.altzone
@@ -175,12 +177,40 @@ class VerboseAdminFormatter(object):
             user['name'],
             user['url']))
 
+class SearchFormatter(object):
+    def __call__(self, result, options):
+        return(u"%s%s %s" %(
+            get_time_string(result, options, "%a, %d %b %Y %H:%M:%S +0000"),
+            result['from_user'], result['text']))
+
+class VerboseSearchFormatter(SearchFormatter):
+	pass #Default to the regular one
+	
+class URLSearchFormatter(object):
+    urlmatch = re.compile(r'https?://\S+')
+    def __call__(self, result, options):
+        urls = self.urlmatch.findall(result['text'])
+        return u'\n'.join(urls) if urls else ""
+
+class AnsiSearchFormatter(object):
+    def __init__(self):
+        self._colourMap = ansi.ColourMap()
+        
+    def __call__(self, result, options):
+        colour = self._colourMap.colourFor(result['from_user'])
+        return (u"%s%s%s%s %s" %(
+            get_time_string(result, options, "%a, %d %b %Y %H:%M:%S +0000"),
+            ansi.cmdColour(colour), result['from_user'],
+            ansi.cmdReset(), result['text']))
+
+formatters = {}
 status_formatters = {
     'default': StatusFormatter,
     'verbose': VerboseStatusFormatter,
     'urls': URLStatusFormatter,
     'ansi': AnsiStatusFormatter
 }
+formatters['status'] = status_formatters
 
 admin_formatters = {
     'default': AdminFormatter,
@@ -188,20 +218,27 @@ admin_formatters = {
     'urls': AdminFormatter,
     'ansi': AdminFormatter
 }
+formatters['admin'] = admin_formatters
 
-def get_status_formatter(options):
-    sf = status_formatters.get(options['format'])
-    if (not sf):
-        raise TwitterError(
-            "Unknown formatter '%s'" %(options['format']))
-    return sf()
+search_formatters = {
+    'default': SearchFormatter,
+    'verbose': VerboseSearchFormatter,
+    'urls': URLSearchFormatter,
+    'ansi': AnsiSearchFormatter
+}
+formatters['search'] = search_formatters
 
-def get_admin_formatter(options):
-    sf = admin_formatters.get(options['format'])
-    if (not sf):
+def get_formatter(action_type, options):
+    formatters_dict = formatters.get(action_type)
+    if (not formatters_dict):
+         raise TwitterError(
+            "There was an error finding a class of formatters for your type (%s)"
+            %(action_type))
+    f = formatters_dict.get(options['format'])
+    if (not f):
         raise TwitterError(
-            "Unknown formatter '%s'" %(options['format']))
-    return sf()
+            "Unknown formatter '%s' for status actions" %(options['format']))
+    return f()
 
 class Action(object):
 
@@ -263,17 +300,34 @@ def printNicely(string):
 class StatusAction(Action):
     def __call__(self, twitter, options):
         statuses = self.getStatuses(twitter, options)
-        sf = get_status_formatter(options)
+        sf = get_formatter('status', options)
         for status in statuses:
             statusStr = sf(status, options)
             if statusStr.strip():
                 printNicely(statusStr)
 
+class SearchAction(Action):
+    def __call__(self, twitter, options):
+        # We need to be pointing at search.twitter.com to work, and it is less
+        # tangly to do it here than in the main()
+        twitter.domain="search.twitter.com"
+        # We need to bypass the TwitterCall parameter encoding, so we
+        # don't encode the plus sign, so we have to encode it ourselves
+        query_string = "+".join([quote(term) for term in options['extra_args']])
+        twitter.encoded_args = "q=%s" %(query_string)
+
+        results = twitter.search()['results']
+        f = get_formatter('search', options)
+        for result in results:
+            resultStr = f(result, options)
+            if resultStr.strip():
+                printNicely(resultStr)
+        
 class AdminAction(Action):
     def __call__(self, twitter, options):
         if not (options['extra_args'] and options['extra_args'][0]):
             raise TwitterError("You need to specify a user (screen name)")
-        af = get_admin_formatter(options)
+        af = get_formatter('admin', options)
         try:
             user = self.getUser(twitter, options['extra_args'][0])
         except TwitterError, e:
@@ -373,6 +427,7 @@ actions = {
     'leave'     : LeaveAction,
     'public'    : PublicAction,
     'replies'   : RepliesAction,
+    'search'    : SearchAction,
     'set'       : SetStatusAction,
     'shell'     : TwitterShell,
 }
