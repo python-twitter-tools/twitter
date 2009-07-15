@@ -173,6 +173,7 @@ class Twitter(TwitterCall):
         if (format not in ("json", "xml")):
             raise TwitterError("Unknown data format '%s'" %(format))
         TwitterCall.__init__(
-            self, email, password, format, domain, "", agent, secure)
+            self, email, password, format, domain, "", agent, 
+            secure=secure)
 
 __all__ = ["Twitter", "TwitterError"]
