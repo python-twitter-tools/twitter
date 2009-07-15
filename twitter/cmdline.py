@@ -111,7 +111,7 @@ def parse_args(args, options):
     if extra_args and not ('action' in options and options['action'] == 'help'):
         options['action'] = extra_args[0]
     options['extra_args'] = extra_args[1:]
-    
+
 def get_time_string(status, options, format="%a %b %d %H:%M:%S +0000 %Y"):
     timestamp = options["timestamp"]
     datestamp = options["datestamp"]
@@ -139,7 +139,7 @@ class StatusFormatter(object):
 class AnsiStatusFormatter(object):
     def __init__(self):
         self._colourMap = ansi.ColourMap()
-        
+
     def __call__(self, status, options):
         colour = self._colourMap.colourFor(status['user']['screen_name'])
         return (u"%s%s%s%s %s" %(
@@ -184,8 +184,8 @@ class SearchFormatter(object):
             result['from_user'], result['text']))
 
 class VerboseSearchFormatter(SearchFormatter):
-	pass #Default to the regular one
-	
+    pass #Default to the regular one
+
 class URLSearchFormatter(object):
     urlmatch = re.compile(r'https?://\S+')
     def __call__(self, result, options):
@@ -195,7 +195,7 @@ class URLSearchFormatter(object):
 class AnsiSearchFormatter(object):
     def __init__(self):
         self._colourMap = ansi.ColourMap()
-        
+
     def __call__(self, result, options):
         colour = self._colourMap.colourFor(result['from_user'])
         return (u"%s%s%s%s %s" %(
@@ -231,7 +231,7 @@ formatters['search'] = search_formatters
 def get_formatter(action_type, options):
     formatters_dict = formatters.get(action_type)
     if (not formatters_dict):
-         raise TwitterError(
+        raise TwitterError(
             "There was an error finding a class of formatters for your type (%s)"
             %(action_type))
     f = formatters_dict.get(options['format'])
@@ -251,7 +251,7 @@ class Action(object):
         sample = '(y/N)'
         if not careful:
             sample = '(Y/n)'
-        
+
         prompt = 'You really want to %s %s? ' %(subject, sample)
         try:
             answer = raw_input(prompt).lower()
@@ -269,7 +269,7 @@ class Action(object):
             if careful:
                 default = False
             return default
-        
+
     def __call__(self, twitter, options):
         action = actions.get(options['action'], NoSuchAction)()
         try:
@@ -296,7 +296,7 @@ def printNicely(string):
         print string.encode(sys.stdout.encoding, 'replace')
     else:
         print string.encode('utf-8')
-        
+
 class StatusAction(Action):
     def __call__(self, twitter, options):
         statuses = self.getStatuses(twitter, options)
@@ -322,7 +322,7 @@ class SearchAction(Action):
             resultStr = f(result, options)
             if resultStr.strip():
                 printNicely(resultStr)
-        
+
 class AdminAction(Action):
     def __call__(self, twitter, options):
         if not (options['extra_args'] and options['extra_args'][0]):
@@ -377,10 +377,10 @@ class TwitterShell(Action):
         for colour in ansi.COLOURS_NAMED:
             if '[%s]' %(colour) in prompt:
                 prompt = prompt.replace(
-                            '[%s]' %(colour), ansi.cmdColourNamed(colour))
+                    '[%s]' %(colour), ansi.cmdColourNamed(colour))
         prompt = prompt.replace('[R]', ansi.cmdReset())
         return prompt
-    
+
     def __call__(self, twitter, options):
         prompt = self.render_prompt(options.get('prompt', 'twitter> '))
         while True:
@@ -397,11 +397,11 @@ class TwitterShell(Action):
                     continue
                 elif options['action'] == 'help':
                     print >>sys.stderr, '''\ntwitter> `action`\n
-        The Shell Accepts all the command line actions along with:
+                          The Shell Accepts all the command line actions along with:
 
-            exit    Leave the twitter shell (^D may also be used)
+                          exit    Leave the twitter shell (^D may also be used)
 
-        Full CMD Line help is appended below for your convinience.'''
+                          Full CMD Line help is appended below for your convinience.'''
                 Action()(twitter, options)
                 options['action'] = ''
             except NoSuchActionError, e:
