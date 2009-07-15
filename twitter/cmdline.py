@@ -28,6 +28,7 @@ OPTIONS:
                             (default: 20, max: 200)
  -t --timestamp             show time before status lines
  -d --datestamp             shoe date before status lines
+    --no-ssl                use HTTP instead of more secure HTTPS
 
 FORMATS for the --format option
 
@@ -77,12 +78,14 @@ OPTIONS = {
     'length': 20,
     'timestamp': False,
     'datestamp': False,
-    'extra_args': []
+    'extra_args': [],
+    'secure': True
 }
 
 def parse_args(args, options):
     long_opts = ['email', 'password', 'help', 'format', 'refresh',
-                 'refresh-rate', 'config', 'length', 'timestamp', 'datestamp']
+                 'refresh-rate', 'config', 'length', 'timestamp', 
+                 'datestamp', 'no-ssl']
     short_opts = "e:p:f:h?rR:c:l:td"
     opts, extra_args = getopt(args, short_opts, long_opts)        
 
@@ -107,6 +110,8 @@ def parse_args(args, options):
             options['action'] = 'help'
         elif opt in ('-c', '--config'):
             options['config_filename'] = arg
+        elif opt == '--no-ssl':
+            options['secure'] = False
 
     if extra_args and not ('action' in options and options['action'] == 'help'):
         options['action'] = extra_args[0]
@@ -471,7 +476,9 @@ def main(args=sys.argv[1:]):
     if options['email'] and not options['password']:
         options['password'] = getpass("Twitter password: ")
 
-    twitter = Twitter(options['email'], options['password'], agent=AGENT_STR)
+    twitter = Twitter(
+        options['email'], options['password'], agent=AGENT_STR,
+        secure=options['secure'])
     try:
         Action()(twitter, options)
     except NoSuchActionError, e:

@@ -26,7 +26,8 @@ class TwitterError(Exception):
 
 class TwitterCall(object):
     def __init__(
-        self, username, password, format, domain, uri="", agent=None, encoded_args=None):
+        self, username, password, format, domain, uri="", agent=None,
+        encoded_args=None, secure=True):
         self.username = username
         self.password = password
         self.format = format
@@ -34,6 +35,7 @@ class TwitterCall(object):
         self.uri = uri
         self.agent = agent
         self.encoded_args = encoded_args
+        self.secure = secure
 
     def __getattr__(self, k):
         try:
@@ -74,10 +76,15 @@ class TwitterCall(object):
             headers["Authorization"] = "Basic " + b64encode("%s:%s" %(
                 self.username, self.password))
 
+        secure_str = ''
+        if self.secure:
+            secure_str = 's'
+
         req = urllib2.Request(
-                "http://%s/%s.%s%s" %(self.domain, uri, self.format, argStr),
-                argData, headers
-            )
+                "http%s://%s/%s.%s%s" %(
+                    secure_str, self.domain, uri, self.format, argStr),
+                argData, headers)
+        
         try:
             handle = urllib2.urlopen(req)
             if "json" == self.format:
@@ -157,7 +164,7 @@ class Twitter(TwitterCall):
     """
     def __init__(
         self, email=None, password=None, format="json", domain="twitter.com",
-        agent=None):
+        agent=None, secure=True):
         """
         Create a new twitter API connector using the specified
         credentials (email and password). Format specifies the output
@@ -165,6 +172,7 @@ class Twitter(TwitterCall):
         """
         if (format not in ("json", "xml")):
             raise TwitterError("Unknown data format '%s'" %(format))
-        TwitterCall.__init__(self, email, password, format, domain, "", agent)
+        TwitterCall.__init__(
+            self, email, password, format, domain, "", agent, secure)
 
 __all__ = ["Twitter", "TwitterError"]
