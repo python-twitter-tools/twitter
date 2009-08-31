@@ -1,5 +1,5 @@
 
-from base64 import b64encode
+from base64 import encodestring
 from urllib import urlencode
 
 import urllib2
@@ -73,8 +73,8 @@ class TwitterCall(object):
         if (self.agent):
             headers["X-Twitter-Client"] = self.agent
         if (self.username):
-            headers["Authorization"] = "Basic " + b64encode("%s:%s" %(
-                self.username, self.password))
+            headers["Authorization"] = "Basic " + encodestring("%s:%s" %(
+                self.username, self.password)).strip('\n')
 
         secure_str = ''
         if self.secure:
