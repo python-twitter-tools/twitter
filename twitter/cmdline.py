@@ -18,6 +18,9 @@ OPTIONS:
 
  -e --email <email>         your email to login to twitter
  -p --password <password>   your twitter password
+ -s --save-state            will save the output of one of the status commands
+                            in memory such that it will not be displayed again.
+                            Useful with '-r' or when running the 'shell'
  -r --refresh               run this command forever, polling every once
                             in a while (default: every 5 minutes)
  -R --refresh-rate <rate>   set the refresh rate (in seconds)
@@ -54,11 +57,13 @@ import time
 from getopt import gnu_getopt as getopt, GetoptError
 from getpass import getpass
 import re
+import shlex
 import os.path
 from ConfigParser import SafeConfigParser
 import datetime
 from urllib import quote
 
+from twitter import __version__ as twitter_version
 from api import Twitter, TwitterError
 import ansi
 
@@ -78,6 +83,7 @@ OPTIONS = {
     'password': None,
     'action': 'friends',
     'refresh': False,
+    'save_state': False,
     'refresh_rate': 600,
     'format': 'default',
     'prompt': '[cyan]twitter[R]> ',
@@ -89,10 +95,10 @@ OPTIONS = {
     'secure': True
 }
 
-long_opts = ['email=', 'password=', 'help', 'format=', 'refresh',
+long_opts = ['email=', 'password=', 'help', 'format=', 'save-state', 'refresh',
              'refresh-rate=', 'config=', 'length=', 'timestamp', 'datestamp',
              'no-ssl']
-short_opts = "e:p:f:h?rR:c:l:td"
+short_opts = "e:p:f:h?srR:c:l:td"
 def parse_args(args, options):
     opts, extra_args = getopt(args, short_opts, long_opts)        
     for opt, arg in opts:
@@ -102,6 +108,8 @@ def parse_args(args, options):
             options['password'] = arg
         elif opt in ('-f', '--format'):
             options['format'] = arg
+        elif opt in ('-s', '--save-state'):
+            options['save_state'] = True
         elif opt in ('-r', '--refresh'):
             options['refresh'] = True
         elif opt in ('-R', '--refresh-rate'):
@@ -300,12 +308,18 @@ def printNicely(string):
 
 class StatusAction(Action):
     def __call__(self, twitter, options):
+        if 'last_state' not in self.__class__.__dict__:
+            self.__class__.last_state = set()
         statuses = self.getStatuses(twitter, options)
         sf = get_formatter('status', options)
         for status in statuses:
-            statusStr = sf(status, options)
-            if statusStr.strip():
-                printNicely(statusStr)
+            if status['id'] not in self.__class__.last_state:
+                self.__class__.last_state.add(status['id'])
+                statusStr = sf(status, options)
+                if statusStr.strip():
+                    printNicely(statusStr)
+        if not options['save_state']:
+            self.__class__.last_state = set()
 
 class SearchAction(Action):
     def __call__(self, twitter, options):
@@ -401,16 +415,21 @@ class TwitterShell(Action):
         readline.write_history_file(histfile)
 
     def __call__(self, twitter, options):
+        print >>sys.stderr, '''Welcome to the Twitter Shell v%s, Happy Tweeting!
+
+        For Usage Information type help.
+        ''' %(twitter_version)
         # prompt setup
         self.init_shell(
             {'tab_complete': True, 'history': '~/.twitter_history'})
         prompt = self.render_prompt(options.get('prompt', 'twitter> '))
+        options['action'] = ''
         while True:
             options['action'] = ""
             try:
-                args = raw_input(prompt).split()
+                args = shlex.split(raw_input(prompt))
                 parse_args(args, options)
-                if not options['action']:
+                if not options['action'].strip():
                     continue
                 elif options['action'] == 'exit':
                     raise SystemExit(0)
@@ -418,10 +437,10 @@ class TwitterShell(Action):
                     print >>sys.stderr, 'Sorry Xzibit does not work here!'
                     continue
                 elif options['action'] == 'help':
-                    print >>sys.stderr, '''\ntwitter> `action`\n
+                    print >>sys.stderr, '''\ntwitter> `action` [options]\n
                           The Shell Accepts all the command line actions along with:
 
-                          exit    Leave the twitter shell (^D may also be used)
+                            exit    Leave the twitter shell [^D (win=^Z) may also be used]
 
                           Full CMD Line help is appended below for your convinience.'''
                 Action()(twitter, options)
@@ -437,6 +456,10 @@ class TwitterShell(Action):
                     print >>sys.stderr, 'Excellent!'
                 else:
                     raise SystemExit(0)
+            except Exception, e:
+                print >>sys.stderr, e
+            finally:
+                options['action'] = ''
 
 class HelpAction(Action):
     def __call__(self, twitter, options):
@@ -548,9 +571,10 @@ def main(args=sys.argv[1:]):
         for k,v in d.items():
             if v: options[k] = v
 
-    if options['refresh'] and options['action'] not in (
+    if (options['refresh'] or options['save_state']) and options['action'] not in (
         'friends', 'public', 'replies'):
-        print >> sys.stderr, "You can only refresh the friends, public, or replies actions."
+        print >> sys.stderr, ("You can only refresh and/or save-state "
+                              "with the friends, public, or replies actions.")
         print >> sys.stderr, "Use 'twitter -h' for help."
         raise SystemExit(1)
 
