@@ -100,7 +100,7 @@ long_opts = ['email=', 'password=', 'help', 'format=', 'save-state', 'refresh',
              'no-ssl']
 short_opts = "e:p:f:h?srR:c:l:td"
 def parse_args(args, options):
-    opts, extra_args = getopt(args, short_opts, long_opts)        
+    opts, extra_args = getopt(args, short_opts, long_opts)
     for opt, arg in opts:
         if opt in ('-e', '--email'):
             options['email'] = arg
@@ -346,13 +346,14 @@ class AdminAction(Action):
         try:
             user = self.getUser(twitter, options['extra_args'][0])
         except TwitterError, e:
-            print "There was a problem following or leaving the specified user."
-            print "You may be trying to follow a user you are already following;"
-            print "Leaving a user you are not currently following;"
-            print "Or the user may not exist."
-            print "Sorry."
-            print
-            print e
+            print >>sys.stderr, "\n".join(
+                "There was a problem following or leaving the specified user.",
+                "You may be trying to follow a user you are already following;",
+                "Leaving a user you are not currently following;",
+                "Or the user may not exist.",
+                "Sorry.")
+            print >>sys.stderr
+            print >>sys.stderr, e
         else:
             printNicely(af(options['action'], user))
 
@@ -423,28 +424,37 @@ class TwitterShell(Action):
         self.init_shell(
             {'tab_complete': True, 'history': '~/.twitter_history'})
         prompt = self.render_prompt(options.get('prompt', 'twitter> '))
-        options['action'] = ''
         while True:
             options['action'] = ""
             try:
-                args = shlex.split(raw_input(prompt))
-                parse_args(args, options)
-                if not options['action'].strip():
-                    continue
-                elif options['action'] == 'exit':
-                    raise SystemExit(0)
-                elif options['action'] == 'shell':
-                    print >>sys.stderr, 'Sorry Xzibit does not work here!'
-                    continue
-                elif options['action'] == 'help':
-                    print >>sys.stderr, '''\ntwitter> `action` [options]\n
-                          The Shell Accepts all the command line actions along with:
+                retry = 2
+                while True: # retry loop for timeout errors
+                    try:
+                        args = shlex.split(raw_input(prompt))
+                        parse_args(args, options)
+                        if not options['action'].strip():
+                            continue
+                        elif options['action'] == 'exit':
+                            raise SystemExit(0)
+                        elif options['action'] == 'shell':
+                            print >>sys.stderr, 'Sorry Xzibit does not work here!'
+                            continue
+                        elif options['action'] == 'help':
+                            print >>sys.stderr, '''\ntwitter> `action` [options]\n
+                                  The Shell Accepts all the command line actions along with:
 
-                            exit    Leave the twitter shell [^D (win=^Z) may also be used]
+                                    exit    Leave the twitter shell [^D (win=^Z) may also be used]
 
-                          Full CMD Line help is appended below for your convinience.'''
-                Action()(twitter, options)
-                options['action'] = ''
+                                  Full CMD Line help is appended below for your convinience.'''
+                        Action()(twitter, options)
+                    except IOError, e:
+                        # urllib couldn't connect, sometimes its a simple timeout
+                        # give it another chance
+                        retry -= 1
+                        if retry <= 0:
+                            raise
+                    else:
+                        break
             except (NoSuchActionError, GetoptError), e:
                 print >>sys.stderr, e
             except KeyboardInterrupt:
@@ -458,8 +468,6 @@ class TwitterShell(Action):
                     raise SystemExit(0)
             except Exception, e:
                 print >>sys.stderr, e
-            finally:
-                options['action'] = ''
 
 class HelpAction(Action):
     def __call__(self, twitter, options):
