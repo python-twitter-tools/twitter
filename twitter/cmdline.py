@@ -308,18 +308,24 @@ def printNicely(string):
 
 class StatusAction(Action):
     def __call__(self, twitter, options):
-        if 'last_state' not in self.__class__.__dict__:
+        if not options['save_state']:
+            # if you don't want to save, clear out what was saved earlier
+            self.__class__.last_state = set()
+        elif 'last_state' not in self.__class__.__dict__:
+            # create a class variable to keep state
             self.__class__.last_state = set()
         statuses = self.getStatuses(twitter, options)
         sf = get_formatter('status', options)
         for status in statuses:
-            if status['id'] not in self.__class__.last_state:
-                self.__class__.last_state.add(status['id'])
-                statusStr = sf(status, options)
-                if statusStr.strip():
-                    printNicely(statusStr)
-        if not options['save_state']:
-            self.__class__.last_state = set()
+            allow_print = True
+            if options['save_state']:
+                if status['id'] not in self.__class__.last_state:
+                    self.__class__.last_state.add(status['id'])
+                else:
+                    allow_print = False
+            statusStr = sf(status, options)
+            if allow_print and statusStr.strip():
+                printNicely(statusStr)
 
 class SearchAction(Action):
     def __call__(self, twitter, options):
@@ -424,8 +430,10 @@ class TwitterShell(Action):
         self.init_shell(
             {'tab_complete': True, 'history': '~/.twitter_history'})
         prompt = self.render_prompt(options.get('prompt', 'twitter> '))
+        options['action'] = '' # Clear the action that got us here
+        default_options = dict(options) # snapshot the original options
         while True:
-            options['action'] = ""
+            options = dict(default_options) # revert to the original options
             try:
                 retry = 2
                 while True: # retry loop for timeout errors
