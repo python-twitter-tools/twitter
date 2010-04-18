@@ -17,16 +17,18 @@ CONFIG_FILE
 server: <irc_server>
 port: <irc_port>
 nick: <irc_nickname>
-channel: <irc_channel_to_join>
+channel: <irc_channels_to_join>
 
 [twitter]
 email: <twitter_account_email>
 password: <twitter_account_password>
 
   If no config file is given "twitterbot.ini" will be used by default.
+
+  The channel argument can accept multiple channels separated by commas.
 """
 
-BOT_VERSION = "TwitterBot 1.0 (http://mike.verdone.ca/twitter)"
+BOT_VERSION = "TwitterBot 1.1 (http://mike.verdone.ca/twitter)"
 
 IRC_BOLD = chr(0x02)
 IRC_ITALIC = chr(0x16)
