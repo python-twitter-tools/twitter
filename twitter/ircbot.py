@@ -131,7 +131,7 @@ class TwitterBot(object):
                 # TODO This would be better if we only ignored messages
                 #   to people who are not on our following list.
                 if not text.startswith("@"):
-                    self.privmsg_channel(
+                    self.privmsg_channels(
                         u"=^_^=  %s%s%s %s" %(
                             IRC_BOLD, update['user']['screen_name'],
                             IRC_BOLD, text.decode('utf-8')))
@@ -179,6 +179,11 @@ class TwitterBot(object):
         return self.ircServer.privmsg(
             self.config.get('irc', 'channel'), msg.encode('utf-8'))
             
+    def privmsg_channels(self, msg):
+        return_response=True
+        channels=self.config.get('irc','channel').split(',')
+        return self.ircServer.privmsg_many(channels, msg.encode('utf-8'))
+            
     def follow(self, conn, evt, name):
         userNick = evt.source().split('!')[0]
         friends = [x['name'] for x in self.twitter.statuses.friends()]
@@ -198,7 +203,7 @@ class TwitterBot(object):
             conn.privmsg(
                 userNick,
                 "=^_^= Okay! I'm now following %s." %(name))
-            self.privmsg_channel(
+            self.privmsg_channels(
                 "=o_o= %s has asked me to start following %s" %(
                     userNick, name))
     
@@ -215,7 +220,7 @@ class TwitterBot(object):
             conn.privmsg(
                 userNick,
                 "=^_^= Okay! I've stopped following %s." %(name))
-            self.privmsg_channel(
+            self.privmsg_channels(
                 "=o_o= %s has asked me to stop following %s" %(
                     userNick, name))
     
@@ -224,7 +229,9 @@ class TwitterBot(object):
             self.config.get('irc', 'server'), 
             self.config.getint('irc', 'port'),
             self.config.get('irc', 'nick'))
-        self.ircServer.join(self.config.get('irc', 'channel'))
+        channels=self.config.get('irc', 'channel').split(',')
+        for channel in channels:
+            self.ircServer.join(channel)
 
         while True:
             try:
