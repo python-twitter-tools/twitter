@@ -27,3 +27,10 @@ class UserPassAuth(Auth):
     def generate_headers(self):
         return {"Authorization": "Basic " + encodestring("%s:%s" %(
                 self.username, self.password)).strip('\n')}
+
+class NoAuth(UserPassAuth):
+    def __init__(self):
+        pass
+
+    def generate_headers(self):
+        return {}

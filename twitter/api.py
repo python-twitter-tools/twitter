@@ -4,7 +4,7 @@ import urllib2
 from exceptions import Exception
 
 from twitter.twitter_globals import POST_ACTIONS
-from twitter.auth import UserPassAuth
+from twitter.auth import UserPassAuth, NoAuth
 
 def _py26OrGreater():
     import sys
@@ -170,6 +170,9 @@ class Twitter(TwitterCall):
             if auth is not None:
                 raise ValueError, "can't specify 'email' or 'password' and 'auth' params"
             auth = UserPassAuth(email, password)
+
+        if not auth:
+            auth = NoAuth()
 
         if (format not in ("json", "xml")):
             raise TwitterError("Unknown data format '%s'" %(format))

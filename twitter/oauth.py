@@ -33,8 +33,8 @@ class OAuth(Auth):
         message = '&'.join(
             urllib.quote(i, '') for i in [method.upper(), base_url, enc_params])
     
-        signature = hmac.new(key, message, hashlib.sha1
-                                        ).digest().encode('base64')[:-1]
+        signature = hmac.new(
+            key, message, hashlib.sha1).digest().encode('base64')[:-1]
         return enc_params + "&" + "oauth_signature=" + urllib.quote(signature, '')
 
     def generate_headers(self):

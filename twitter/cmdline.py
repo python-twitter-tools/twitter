@@ -477,7 +477,7 @@ def main(args=sys.argv[1:]):
         options['password'] = getpass("Twitter password: ")
 
     twitter = Twitter(
-        options['email'], options['password'], agent=AGENT_STR,
+        email=options['email'], password=options['password'], agent=AGENT_STR,
         secure=options['secure'])
     try:
         Action()(twitter, options)
