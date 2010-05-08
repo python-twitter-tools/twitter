@@ -52,7 +52,6 @@ prompt: <twitter_shell_prompt e.g. '[cyan]twitter[R]> '>
 
  OAuth authentication tokens are stored in the file .twitter_oauth in your
  home directory.
-
 """
 
 CONSUMER_KEY='uS6hO2sV6tDKIOeVjhnFnQ'
@@ -73,10 +72,6 @@ from api import Twitter, TwitterError
 from oauth import OAuth
 import ansi
 
-# Please don't change this, it was provided by the fine folks at Twitter.
-# If you change it, it will not work.
-AGENT_STR = "twittercommandlinetoolpy"
-
 OPTIONS = {
     'action': 'friends',
     'refresh': False,
@@ -94,7 +89,7 @@ OPTIONS = {
 
 def parse_args(args, options):
     long_opts = ['help', 'format=', 'refresh', 'oauth=',
-                 'refresh-rate', 'config', 'length', 'timestamp', 
+                 'refresh-rate=', 'config=', 'length=', 'timestamp', 
                  'datestamp', 'no-ssl']
     short_opts = "e:p:f:h?rR:c:l:td"
     opts, extra_args = getopt(args, short_opts, long_opts)        
