@@ -55,8 +55,11 @@ class TwitterCall(object):
         secure_str = ''
         if self.secure:
             secure_str = 's'
-        uriBase = "http%s://%s/%s.%s" %(
-                    secure_str, self.domain, uri, self.format)
+        dot = ""
+        if self.format != '':
+            dot = "."
+        uriBase = "http%s://%s/%s%s%s" %(
+                    secure_str, self.domain, uri, dot, self.format)
 
         if (not self.encoded_args):
             if kwargs.has_key('id'):
@@ -174,7 +177,7 @@ class Twitter(TwitterCall):
         if not auth:
             auth = NoAuth()
 
-        if (format not in ("json", "xml")):
+        if (format not in ("json", "xml", "")):
             raise TwitterError("Unknown data format '%s'" %(format))
         TwitterCall.__init__(
             self, auth, format, domain, "", agent, 

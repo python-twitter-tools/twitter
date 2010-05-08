@@ -10,7 +10,7 @@ ACTIONS:
  leave          remove the specified user from your following list
  public         get latest public tweets
  replies        get latest replies
- search         search twitter (Beware: octothorpe, escape it)
+ search         searchtwitter (Beware: octothorpe, escape it)
  set            set your twitter status
  shell          login the twitter shell
 
@@ -49,6 +49,9 @@ format: <desired_default_format_for_output>
 prompt: <twitter_shell_prompt e.g. '[cyan]twitter[R]> '>
 """
 
+CONSUMER_KEY='uS6hO2sV6tDKIOeVjhnFnQ'
+CONSUMER_SECRET='MEYTOS97VvlHX7K1rwHPEqVpTSqZ71HtvoK4sVuYk'
+
 import sys
 import time
 from getopt import gnu_getopt as getopt, GetoptError
@@ -58,8 +61,10 @@ import os.path
 from ConfigParser import SafeConfigParser
 import datetime
 from urllib import quote
+import webbrowser
 
 from api import Twitter, TwitterError
+from oauth import OAuth
 import ansi
 
 # Please don't change this, it was provided by the fine folks at Twitter.
@@ -75,11 +80,12 @@ OPTIONS = {
     'format': 'default',
     'prompt': '[cyan]twitter[R]> ',
     'config_filename': os.environ.get('HOME', '') + os.sep + '.twitter',
+    'oauth_filename': os.environ.get('HOME', '') + os.sep + '.twitter_oauth',
     'length': 20,
     'timestamp': False,
     'datestamp': False,
     'extra_args': [],
-    'secure': True
+    'secure': True,
 }
 
 def parse_args(args, options):
@@ -425,6 +431,46 @@ class HelpAction(Action):
     def __call__(self, twitter, options):
         print __doc__
 
+def parse_oauth_tokens(result):
+    for r in result.split('&'):
+        k, v = r.split('=')
+        if k == 'oauth_token':
+            oauth_token = v
+        elif k == 'oauth_token_secret':
+            oauth_token_secret = v
+    return oauth_token, oauth_token_secret
+
+def oauth_dance(options):
+    print ("Hi there! We're gonna get you all set up to use Twitter"
+           " on the command-line.")
+    twitter = Twitter(
+        auth=OAuth('', '', CONSUMER_KEY, CONSUMER_SECRET),
+        format='')
+    oauth_token, oauth_token_secret = parse_oauth_tokens(
+        twitter.oauth.request_token())
+    print """
+In the web browser window that opens please choose to Allow access to the
+command-line tool. Copy the PIN number that appears on the next page and
+paste or type it here:
+"""
+    webbrowser.open(
+        'http://api.twitter.com/oauth/authorize?oauth_token=' +
+        oauth_token)
+    oauth_verifier = raw_input("Please type the PIN: ").strip()
+    twitter = Twitter(
+        auth=OAuth(
+            oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET),
+        format='')
+    oauth_token, oauth_token_secret = parse_oauth_tokens(
+        twitter.oauth.access_token(oauth_verifier=oauth_verifier))
+    oauth_file = open(options['oauth_filename'], 'w')
+    print >> oauth_file, oauth_token
+    print >> oauth_file, oauth_token_secret
+    oauth_file.close()
+    print "That's it! Your authorization keys have been written to %s." % (
+        options['oauth_filename'])
+
+
 actions = {
     'follow'    : FollowAction,
     'friends'   : FriendsAction,
@@ -475,6 +521,10 @@ def main(args=sys.argv[1:]):
 
     if options['email'] and not options['password']:
         options['password'] = getpass("Twitter password: ")
+
+    if options['action'] == 'authorize':
+        oauth_dance(options)
+        return 0
 
     twitter = Twitter(
         email=options['email'], password=options['password'], agent=AGENT_STR,

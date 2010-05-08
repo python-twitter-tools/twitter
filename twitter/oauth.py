@@ -19,7 +19,9 @@ class OAuth(Auth):
     def encode_params(self, base_url, method, params):
         params = params.copy()
 
-        params['oauth_token'] = self.token
+        if self.token:
+            params['oauth_token'] = self.token
+
         params['oauth_consumer_key'] = self.consumer_key
         params['oauth_signature_method'] = 'HMAC-SHA1'
         params['oauth_version'] = '1.0'
