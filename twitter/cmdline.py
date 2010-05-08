@@ -30,7 +30,7 @@ OPTIONS:
  -t --timestamp             show time before status lines
  -d --datestamp             shoe date before status lines
     --no-ssl                use HTTP instead of more secure HTTPS
-
+    --oauth <filename>      filename to read/store oauth credentials to
 
 FORMATS for the --format option
 
@@ -93,7 +93,7 @@ OPTIONS = {
 }
 
 def parse_args(args, options):
-    long_opts = ['help', 'format', 'refresh',
+    long_opts = ['help', 'format=', 'refresh', 'oauth=',
                  'refresh-rate', 'config', 'length', 'timestamp', 
                  'datestamp', 'no-ssl']
     short_opts = "e:p:f:h?rR:c:l:td"
@@ -118,6 +118,8 @@ def parse_args(args, options):
             options['config_filename'] = arg
         elif opt == '--no-ssl':
             options['secure'] = False
+        elif opt == '--oauth':
+            options['oauth_filename'] = arg
 
     if extra_args and not ('action' in options and options['action'] == 'help'):
         options['action'] = extra_args[0]
