@@ -3,7 +3,9 @@ USAGE:
 
  twitter [action] [options]
 
+
 ACTIONS:
+ authorize      authorize the command-line tool to interact with Twitter
  follow         add the specified user to your follow list
  friends        get latest tweets from your friends (default action)
  help           print this help text that you are currently reading
@@ -14,10 +16,9 @@ ACTIONS:
  set            set your twitter status
  shell          login the twitter shell
 
+
 OPTIONS:
 
- -e --email <email>         your email to login to twitter
- -p --password <password>   your twitter password
  -r --refresh               run this command forever, polling every once
                             in a while (default: every 5 minutes)
  -R --refresh-rate <rate>   set the refresh rate (in seconds)
@@ -30,6 +31,7 @@ OPTIONS:
  -d --datestamp             shoe date before status lines
     --no-ssl                use HTTP instead of more secure HTTPS
 
+
 FORMATS for the --format option
 
  default         one line per status
@@ -37,16 +39,20 @@ FORMATS for the --format option
  urls            nothing but URLs
  ansi            ansi colour (rainbow mode)
 
+
 CONFIG FILES
 
- The config file should contain a [twitter] header, and all the desired options
- you wish to set, like so:
+ The config file should be placed in your home directory and be named .twitter.
+ It must contain a [twitter] header, and all the desired options you wish to
+ set, like so:
 
 [twitter]
-email: <username>
-password: <password>
 format: <desired_default_format_for_output>
 prompt: <twitter_shell_prompt e.g. '[cyan]twitter[R]> '>
+
+ OAuth authentication tokens are stored in the file .twitter_oauth in your
+ home directory.
+
 """
 
 CONSUMER_KEY='uS6hO2sV6tDKIOeVjhnFnQ'
@@ -72,8 +78,6 @@ import ansi
 AGENT_STR = "twittercommandlinetoolpy"
 
 OPTIONS = {
-    'email': None,
-    'password': None,
     'action': 'friends',
     'refresh': False,
     'refresh_rate': 600,
@@ -89,18 +93,14 @@ OPTIONS = {
 }
 
 def parse_args(args, options):
-    long_opts = ['email', 'password', 'help', 'format', 'refresh',
+    long_opts = ['help', 'format', 'refresh',
                  'refresh-rate', 'config', 'length', 'timestamp', 
                  'datestamp', 'no-ssl']
     short_opts = "e:p:f:h?rR:c:l:td"
     opts, extra_args = getopt(args, short_opts, long_opts)        
 
     for opt, arg in opts:
-        if opt in ('-e', '--email'):
-            options['email'] = arg
-        elif opt in ('-p', '--password'):
-            options['password'] = arg
-        elif opt in ('-f', '--format'):
+        if opt in ('-f', '--format'):
             options['format'] = arg
         elif opt in ('-r', '--refresh'):
             options['refresh'] = True
@@ -431,6 +431,10 @@ class HelpAction(Action):
     def __call__(self, twitter, options):
         print __doc__
 
+class DoNothingAction(Action):
+    def __call__(self, twitter, options):
+        pass
+
 def parse_oauth_tokens(result):
     for r in result.split('&'):
         k, v = r.split('=')
@@ -472,6 +476,7 @@ paste or type it here:
 
 
 actions = {
+    'authorize' : DoNothingAction,
     'follow'    : FollowAction,
     'friends'   : FriendsAction,
     'help'      : HelpAction,
@@ -488,10 +493,14 @@ def loadConfig(filename):
     if os.path.exists(filename):
         cp = SafeConfigParser()
         cp.read([filename])
-        for option in ('email', 'password', 'format', 'prompt'):
+        for option in ('format', 'prompt'):
             if cp.has_option('twitter', option):
                 options[option] = cp.get('twitter', option)
     return options
+
+def read_oauth_file(fn):
+    f = open(fn)
+    return f.readline().strip(), f.readline().strip()
 
 def main(args=sys.argv[1:]):
     arg_options = {}
@@ -517,18 +526,19 @@ def main(args=sys.argv[1:]):
         'friends', 'public', 'replies'):
         print >> sys.stderr, "You can only refresh the friends, public, or replies actions."
         print >> sys.stderr, "Use 'twitter -h' for help."
-        raise SystemExit(1)
+        return 1
 
-    if options['email'] and not options['password']:
-        options['password'] = getpass("Twitter password: ")
-
-    if options['action'] == 'authorize':
+    if (options['action'] == 'authorize'
+        or not os.path.exists(options['oauth_filename'])):
         oauth_dance(options)
-        return 0
 
+    oauth_token, oauth_token_secret = read_oauth_file(options['oauth_filename'])
+    
     twitter = Twitter(
-        email=options['email'], password=options['password'], agent=AGENT_STR,
+        auth=OAuth(
+            oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET),
         secure=options['secure'])
+
     try:
         Action()(twitter, options)
     except NoSuchActionError, e:
