@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '1.3'
+version = '1.3.1'
 
-install_requires=[
+install_requires = [
     # -*- Extra requirements: -*-
     "python-dateutil>=1.1",
-    ],
+    ]
 
 def _py26OrGreater():
     return sys.hexversion > 0x20600f0
