@@ -17,10 +17,25 @@ else:
 
 class TwitterError(Exception):
     """
-    Exception thrown by the Twitter object when there is an
-    error interacting with twitter.com.
+    Base Exception thrown by the Twitter object when there is a
+    general error interacting with the API.
     """
     pass
+
+class TwitterHTTPError(TwitterError):
+    """
+    Exception thrown by the Twitter object when there is an
+    HTTP error interacting with twitter.com.
+    """
+    def __init__(self, e, uri, format, encoded_args):
+      self.e = e
+      self.uri = uri
+      self.format = format
+      self.encoded_args = encoded_args
+
+    def __str__(self):
+        return "Twitter sent status %i for URL: %s.%s using parameters: (%s)\ndetails: %s" %(
+                    self.e.code, self.uri, self.format, self.encoded_args, self.e.fp.read())
 
 class TwitterCall(object):
     def __init__(
@@ -93,9 +108,7 @@ class TwitterCall(object):
             if (e.code == 304):
                 return []
             else:
-                raise TwitterError(
-                    "Twitter sent status %i for URL: %s.%s using parameters: (%s)\ndetails: %s" %(
-                        e.code, uri, self.format, self.encoded_args, e.fp.read()))
+                raise TwitterHTTPError(e, uri, self.format, self.encoded_args)
 
 class Twitter(TwitterCall):
     """
@@ -183,4 +196,4 @@ class Twitter(TwitterCall):
             self, auth, format, domain, "", agent, 
             secure=secure)
 
-__all__ = ["Twitter", "TwitterError"]
+__all__ = ["Twitter", "TwitterError", "TwitterHTTPError"]
