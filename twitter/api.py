@@ -184,7 +184,7 @@ class Twitter(TwitterCall):
     def __init__(
         self, email=None, password=None, format="json",
         domain="api.twitter.com", agent=None, secure=True, auth=None,
-        api_version=1):
+        api_version=''):
         """
         Create a new twitter API connector.
 
@@ -205,11 +205,15 @@ class Twitter(TwitterCall):
         header. This is deprecated. Instead Twitter determines the
         application using the OAuth Client Key and Client Key Secret
         parameters.
+
+        `api_version` is used to set the base uri. By default it's
+        nothing, but if you set it to '1' your URI will start with
+        '1/'.
         """
         
         if email is not None or password is not None:
             if auth:
-                raise (
+                raise ValueError(
                     "Can't specify 'email'/'password' and 'auth' params"
                     " simultaneously.")
             auth = UserPassAuth(email, password)

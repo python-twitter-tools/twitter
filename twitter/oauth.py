@@ -8,9 +8,16 @@ import hashlib
 import hmac
 
 
-# An OAuth implementation with various helpers...
 class OAuth(Auth):
+    """
+    An OAuth authenticator.
+    """
     def __init__(self, token, token_secret, consumer_key, consumer_secret):
+        """
+        Create the authenticator. If you are in the initial stages of
+        the OAuth dance and don't yet have a token or token_secret,
+        pass empty strings for these params.
+        """
         self.token = token
         self.token_secret = token_secret
         self.consumer_key = consumer_key

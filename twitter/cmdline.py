@@ -319,6 +319,7 @@ class SearchAction(Action):
         # We need to be pointing at search.twitter.com to work, and it is less
         # tangly to do it here than in the main()
         twitter.domain="search.twitter.com"
+        twitter.uri=""
         # We need to bypass the TwitterCall parameter encoding, so we
         # don't encode the plus sign, so we have to encode it ourselves
         query_string = "+".join([quote(term) for term in options['extra_args']])
@@ -538,7 +539,8 @@ def main(args=sys.argv[1:]):
     twitter = Twitter(
         auth=OAuth(
             oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET),
-        secure=options['secure'])
+        secure=options['secure'],
+        api_version='1')
 
     try:
         Action()(twitter, options)

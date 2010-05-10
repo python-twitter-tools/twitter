@@ -1,7 +1,11 @@
 import urllib
 from base64 import encodestring
 
-class Auth:
+class Auth(object):
+    """
+    ABC for Authenticator objects.
+    """
+
     def encode_params(self, base_url, method, params):
         """Encodes parameters for a request suitable for including in a URL
         or POST body.  This method may also add new params to the request
@@ -13,8 +17,12 @@ class Auth:
         by the authentication scheme in use."""
         raise NotImplementedError
 
-# An implementation using username and password.
+
 class UserPassAuth(Auth):
+    """
+    Basic auth authentication using email/username and
+    password. Deprecated.
+    """
     def __init__(self, username, password):
         self.username = username
         self.password = password
@@ -29,6 +37,9 @@ class UserPassAuth(Auth):
                 self.username, self.password)).strip('\n')}
 
 class NoAuth(UserPassAuth):
+    """
+    No authentication authenticator.
+    """
     def __init__(self):
         pass
 
