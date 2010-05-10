@@ -457,6 +457,9 @@ paste or type it here:
     webbrowser.open(
         'http://api.twitter.com/oauth/authorize?oauth_token=' +
         oauth_token)
+    time.sleep(2) # Sometimes the last command can print some
+                  # crap. Wait a bit so it doesn't mess up the next
+                  # prompt.
     oauth_verifier = raw_input("Please type the PIN: ").strip()
     twitter = Twitter(
         auth=OAuth(
@@ -468,6 +471,7 @@ paste or type it here:
     print >> oauth_file, oauth_token
     print >> oauth_file, oauth_token_secret
     oauth_file.close()
+    print
     print "That's it! Your authorization keys have been written to %s." % (
         options['oauth_filename'])
 

@@ -34,8 +34,11 @@ class TwitterHTTPError(TwitterError):
       self.encoded_args = encoded_args
 
     def __str__(self):
-        return "Twitter sent status %i for URL: %s.%s using parameters: (%s)\ndetails: %s" %(
-                    self.e.code, self.uri, self.format, self.encoded_args, self.e.fp.read())
+        return (
+            "Twitter sent status %i for URL: %s.%s using parameters: "
+            "(%s)\ndetails: %s" %(
+                self.e.code, self.uri, self.format, self.encoded_args, 
+                self.e.fp.read()))
 
 class TwitterCall(object):
     def __init__(
@@ -150,10 +153,12 @@ class Twitter(TwitterCall):
       # Search for the latest News on #gaza
       twitter_search.search(q="#gaza")
 
-    Using the data returned::
 
-      Twitter API calls return decoded JSON. This is converted into
-      a bunch of Python lists, dicts, ints, and strings. For example,
+    Using the data returned
+    -----------------------
+
+    Twitter API calls return decoded JSON. This is converted into
+    a bunch of Python lists, dicts, ints, and strings. For example::
 
       x = twitter.statuses.public_timeline()
 
@@ -163,37 +168,64 @@ class Twitter(TwitterCall):
       # The screen name of the user who wrote the first 'tweet'
       x[0]['user']['screen_name']
 
-    Getting raw XML data::
 
-      If you prefer to get your Twitter data in XML format, pass
-      format="xml" to the Twitter object when you instantiate it:
+    Getting raw XML data
+    --------------------
+
+    If you prefer to get your Twitter data in XML format, pass
+    format="xml" to the Twitter object when you instantiate it::
 
       twitter = Twitter(format="xml")
 
       The output will not be parsed in any way. It will be a raw string
       of XML.
+
     """
     def __init__(
-        self, email=None, password=None, format="json", domain="twitter.com",
-        agent=None, secure=True, auth=None):
+        self, email=None, password=None, format="json",
+        domain="api.twitter.com", agent=None, secure=True, auth=None,
+        api_version=1):
         """
-        Create a new twitter API connector using the specified
-        credentials (email and password). Format specifies the output
-        format ("json" (default) or "xml").
+        Create a new twitter API connector.
+
+        Pass an `auth` parameter to use the credentials of a specific
+        user. Generally you'll want to pass an `OAuth`
+        instance. Alternately you can pass `email` and `password`
+        parameters but this authentication mode will be deactive by
+        Twitter in the future and is not recommended.
+
+        `domain` lets you change the domain you are connecting. By
+        default it's twitter.com but `search.twitter.com` may be
+        useful too.
+
+        If `secure` is False you will connect with HTTP instead of
+        HTTPS.
+
+        The value of `agent` is sent in the `X-Twitter-Client`
+        header. This is deprecated. Instead Twitter determines the
+        application using the OAuth Client Key and Client Key Secret
+        parameters.
         """
         
         if email is not None or password is not None:
-            if auth is not None:
-                raise ValueError, "can't specify 'email' or 'password' and 'auth' params"
+            if auth:
+                raise (
+                    "Can't specify 'email'/'password' and 'auth' params"
+                    " simultaneously.")
             auth = UserPassAuth(email, password)
 
         if not auth:
             auth = NoAuth()
 
         if (format not in ("json", "xml", "")):
-            raise TwitterError("Unknown data format '%s'" %(format))
+            raise ValueError("Unknown data format '%s'" %(format))
+
+        uri = ""
+        if api_version:
+            uri = str(api_version)
+
         TwitterCall.__init__(
-            self, auth, format, domain, "", agent, 
+            self, auth, format, domain, uri, agent, 
             secure=secure)
 
 __all__ = ["Twitter", "TwitterError", "TwitterHTTPError"]
