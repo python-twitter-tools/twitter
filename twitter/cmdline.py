@@ -12,7 +12,7 @@ ACTIONS:
  leave          remove the specified user from your following list
  public         get latest public tweets
  replies        get latest replies
- search         searchtwitter (Beware: octothorpe, escape it)
+ search         search twitter (Beware: octothorpe, escape it)
  set            set your twitter status
  shell          login the twitter shell
 
