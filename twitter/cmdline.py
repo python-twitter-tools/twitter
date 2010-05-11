@@ -211,6 +211,17 @@ class AnsiSearchFormatter(object):
             ansi.cmdColour(colour), result['from_user'],
             ansi.cmdReset(), result['text']))
 
+_term_encoding = None
+def get_term_encoding():
+    global _term_encoding
+    if not _term_encoding:
+        lang = os.getenv('LANG', 'unknown.UTF-8').split('.')
+        if lang[1:]:
+            _term_encoding = lang[1]
+        else:
+            _term_encoding = 'UTF-8'
+    return _term_encoding
+
 formatters = {}
 status_formatters = {
     'default': StatusFormatter,
@@ -322,7 +333,9 @@ class SearchAction(Action):
         twitter.uri=""
         # We need to bypass the TwitterCall parameter encoding, so we
         # don't encode the plus sign, so we have to encode it ourselves
-        query_string = "+".join([quote(term) for term in options['extra_args']])
+        query_string = "+".join(
+            [quote(term.decode(get_term_encoding()))
+             for term in options['extra_args']])
         twitter.encoded_args = "q=%s" %(query_string)
 
         results = twitter.search()['results']
@@ -372,7 +385,7 @@ class LeaveAction(AdminAction):
 
 class SetStatusAction(Action):
     def __call__(self, twitter, options):
-        statusTxt = (u" ".join(options['extra_args'])
+        statusTxt = (" ".join(options['extra_args']).decode(get_term_encoding())
                      if options['extra_args']
                      else unicode(raw_input("message: ")))
         status = (statusTxt.encode('utf8', 'replace'))
