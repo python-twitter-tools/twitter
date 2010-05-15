@@ -8,6 +8,17 @@ import hashlib
 import hmac
 
 
+def write_token_file(filename, oauth_token, oauth_token_secret):
+    oauth_file = open(filename, 'w')
+    print >> oauth_file, oauth_token
+    print >> oauth_file, oauth_token_secret
+    oauth_file.close()
+
+def read_token_file(filename):
+    f = open(filename)
+    return f.readline().strip(), f.readline().strip()
+
+
 class OAuth(Auth):
     """
     An OAuth authenticator.

@@ -69,7 +69,8 @@ from urllib import quote
 import webbrowser
 
 from api import Twitter, TwitterError
-from oauth import OAuth
+from oauth import OAuth, write_token_file, read_token_file
+from oauth_dance import oauth_dance
 import ansi
 
 OPTIONS = {
@@ -455,41 +456,6 @@ def parse_oauth_tokens(result):
             oauth_token_secret = v
     return oauth_token, oauth_token_secret
 
-def oauth_dance(options):
-    print ("Hi there! We're gonna get you all set up to use Twitter"
-           " on the command-line.")
-    twitter = Twitter(
-        auth=OAuth('', '', CONSUMER_KEY, CONSUMER_SECRET),
-        format='')
-    oauth_token, oauth_token_secret = parse_oauth_tokens(
-        twitter.oauth.request_token())
-    print """
-In the web browser window that opens please choose to Allow access to the
-command-line tool. Copy the PIN number that appears on the next page and
-paste or type it here:
-"""
-    webbrowser.open(
-        'http://api.twitter.com/oauth/authorize?oauth_token=' +
-        oauth_token)
-    time.sleep(2) # Sometimes the last command can print some
-                  # crap. Wait a bit so it doesn't mess up the next
-                  # prompt.
-    oauth_verifier = raw_input("Please type the PIN: ").strip()
-    twitter = Twitter(
-        auth=OAuth(
-            oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET),
-        format='')
-    oauth_token, oauth_token_secret = parse_oauth_tokens(
-        twitter.oauth.access_token(oauth_verifier=oauth_verifier))
-    oauth_file = open(options['oauth_filename'], 'w')
-    print >> oauth_file, oauth_token
-    print >> oauth_file, oauth_token_secret
-    oauth_file.close()
-    print
-    print "That's it! Your authorization keys have been written to %s." % (
-        options['oauth_filename'])
-
-
 actions = {
     'authorize' : DoNothingAction,
     'follow'    : FollowAction,
@@ -512,10 +478,6 @@ def loadConfig(filename):
             if cp.has_option('twitter', option):
                 options[option] = cp.get('twitter', option)
     return options
-
-def read_oauth_file(fn):
-    f = open(fn)
-    return f.readline().strip(), f.readline().strip()
 
 def main(args=sys.argv[1:]):
     arg_options = {}
@@ -545,9 +507,11 @@ def main(args=sys.argv[1:]):
 
     if (options['action'] == 'authorize'
         or not os.path.exists(options['oauth_filename'])):
-        oauth_dance(options)
+        oauth_dance(
+            "the Command-Line Tool", CONSUMER_KEY, CONSUMER_SECRET,
+            options['oauth_filename'])
 
-    oauth_token, oauth_token_secret = read_oauth_file(options['oauth_filename'])
+    oauth_token, oauth_token_secret = read_token_file(options['oauth_filename'])
     
     twitter = Twitter(
         auth=OAuth(
