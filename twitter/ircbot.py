@@ -20,15 +20,20 @@ nick: <irc_nickname>
 channel: <irc_channels_to_join>
 
 [twitter]
-email: <twitter_account_email>
-password: <twitter_account_password>
+oauth_token_file: <oauth_token_filename>
 
   If no config file is given "twitterbot.ini" will be used by default.
 
   The channel argument can accept multiple channels separated by commas.
+
+  The default token file is ~/.twitterbot_oauth.
+
 """
 
-BOT_VERSION = "TwitterBot 1.1 (http://mike.verdone.ca/twitter)"
+BOT_VERSION = "TwitterBot 1.4 (http://mike.verdone.ca/twitter)"
+
+CONSUMER_KEY = "XryIxN3J2ACaJs50EizfLQ"
+CONSUMER_SECRET = "j7IuDCNjftVY8DBauRdqXs4jDl5Fgk1IJRag8iE"
 
 IRC_BOLD = chr(0x02)
 IRC_ITALIC = chr(0x16)
@@ -41,9 +46,12 @@ from dateutil.parser import parse
 from ConfigParser import SafeConfigParser
 from heapq import heappop, heappush
 import traceback
+import os
 import os.path
 
 from api import Twitter, TwitterError
+from oauth import OAuth, read_token_file
+from oauth_dance import oauth_dance
 from util import htmlentitydecode
 
 try:
@@ -52,6 +60,8 @@ except:
     raise ImportError(
         "This module requires python irclib available from "
         + "http://python-irclib.sourceforge.net/")
+
+OAUTH_FILE = os.environ.get('HOME', '') + os.sep + '.twitterbot_oauth'
 
 def debug(msg):
     # uncomment this for debug text stuff
@@ -100,13 +110,22 @@ class TwitterBot(object):
     def __init__(self, configFilename):
         self.configFilename = configFilename
         self.config = load_config(self.configFilename)
+
+        oauth_file = self.config.get('twitter', 'oauth_token_file')
+        if not os.path.exists(oauth_file):
+            oauth_dance("IRC Bot", CONSUMER_KEY, CONSUMER_SECRET, oauth_file)
+        oauth_token, oauth_secret = read_token_file(oauth_file)
+
+        self.twitter = Twitter(
+            auth=OAuth(
+                oauth_token, oauth_secret, CONSUMER_KEY, CONSUMER_SECRET),
+            api_version='1')
+
         self.irc = irclib.IRC()
         self.irc.add_global_handler('privmsg', self.handle_privmsg)
         self.irc.add_global_handler('ctcp', self.handle_ctcp)
         self.ircServer = self.irc.server()
-        self.twitter = Twitter(
-            self.config.get('twitter', 'email'),
-            self.config.get('twitter', 'password'))
+
         self.sched = Scheduler(
             (SchedTask(self.process_events, 1),
              SchedTask(self.check_statuses, 120)))
@@ -245,13 +264,14 @@ class TwitterBot(object):
                 pass
 
 def load_config(filename):
-    defaults = dict(server=dict(port=6667, nick="twitterbot"))
+    defaults = dict(
+        server=dict(port=6667, nick="twitterbot"),
+        twitter=dict(oauth_token_file=OAUTH_FILE))
     cp = SafeConfigParser(defaults)
     cp.read((filename,))
     
     # attempt to read these properties-- they are required
-    cp.get('twitter', 'email'),
-    cp.get('twitter', 'password')
+    cp.get('twitter', 'oauth_token_file'),
     cp.get('irc', 'server')
     cp.getint('irc', 'port')
     cp.get('irc', 'nick')
