@@ -22,6 +22,7 @@ channel: <irc_channels_to_join>
 [twitter]
 oauth_token_file: <oauth_token_filename>
 
+
   If no config file is given "twitterbot.ini" will be used by default.
 
   The channel argument can accept multiple channels separated by commas.
