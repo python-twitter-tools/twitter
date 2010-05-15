@@ -127,7 +127,8 @@ class Twitter(TwitterCall):
 
     Examples::
 
-      twitter = Twitter("hello@foo.com", "password123")
+      twitter = Twitter(
+          auth=OAuth(token, token_key, con_secret, con_secret_key)))
 
       # Get the public timeline
       twitter.statuses.public_timeline()
@@ -142,6 +143,7 @@ class Twitter(TwitterCall):
       twitter.direct_messages.new(
           user="billybob",
           text="I think yer swell!")
+
 
     Searching Twitter::
 
@@ -190,9 +192,18 @@ class Twitter(TwitterCall):
 
         Pass an `auth` parameter to use the credentials of a specific
         user. Generally you'll want to pass an `OAuth`
-        instance. Alternately you can pass `email` and `password`
-        parameters but this authentication mode will be deactive by
-        Twitter in the future and is not recommended.
+        instance::
+
+            twitter = Twitter(auth=OAuth(
+                    token, token_secret, consumer_key, consumer_secret))
+
+
+        Alternately you can pass `email` and `password` parameters but
+        this authentication mode will be deactive by Twitter very soon
+        and is not recommended::
+
+            twitter = Twitter(email="blah@blah.com", password="foobar")
+
 
         `domain` lets you change the domain you are connecting. By
         default it's twitter.com but `search.twitter.com` may be
