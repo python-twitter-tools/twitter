@@ -447,15 +447,6 @@ class DoNothingAction(Action):
     def __call__(self, twitter, options):
         pass
 
-def parse_oauth_tokens(result):
-    for r in result.split('&'):
-        k, v = r.split('=')
-        if k == 'oauth_token':
-            oauth_token = v
-        elif k == 'oauth_token_secret':
-            oauth_token_secret = v
-    return oauth_token, oauth_token_secret
-
 actions = {
     'authorize' : DoNothingAction,
     'follow'    : FollowAction,

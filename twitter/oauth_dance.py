@@ -1,4 +1,6 @@
 
+import webbrowser
+import time
 
 from api import Twitter
 from oauth import OAuth, write_token_file
@@ -36,14 +38,23 @@ type it here:
     oauth_verifier = raw_input("Please type the PIN: ").strip()
     twitter = Twitter(
         auth=OAuth(
-            oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET),
+            oauth_token, oauth_token_secret, consumer_key, consumer_secret),
         format='')
     oauth_token, oauth_token_secret = parse_oauth_tokens(
         twitter.oauth.access_token(oauth_verifier=oauth_verifier))
     if token_filename:
         write_token_file(
             token_filename, oauth_token, oauth_token_secret)
-    print
-    print "That's it! Your authorization keys have been written to %s." % (
-        options['oauth_filename'])
+        print
+        print "That's it! Your authorization keys have been written to %s." % (
+            token_filename)
+    return oauth_token, oauth_token_secret
+
+def parse_oauth_tokens(result):
+    for r in result.split('&'):
+        k, v = r.split('=')
+        if k == 'oauth_token':
+            oauth_token = v
+        elif k == 'oauth_token_secret':
+            oauth_token_secret = v
     return oauth_token, oauth_token_secret
