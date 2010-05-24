@@ -185,7 +185,7 @@ class Twitter(TwitterCall):
     """
     def __init__(
         self, email=None, password=None, format="json",
-        domain="api.twitter.com", agent=None, secure=True, auth=None,
+        domain="twitter.com", agent=None, secure=True, auth=None,
         api_version=''):
         """
         Create a new twitter API connector.
