@@ -508,7 +508,8 @@ def main(args=sys.argv[1:]):
         auth=OAuth(
             oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET),
         secure=options['secure'],
-        api_version='1')
+        api_version='1',
+        domain='api.twitter.com')
 
     try:
         Action()(twitter, options)
@@ -516,6 +517,6 @@ def main(args=sys.argv[1:]):
         print >>sys.stderr, e
         raise SystemExit(1)
     except TwitterError, e:
-        print >> sys.stderr, e.args[0]
+        print >> sys.stderr, str(e)
         print >> sys.stderr, "Use 'twitter -h' for help."
         raise SystemExit(1)
