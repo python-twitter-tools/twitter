@@ -479,8 +479,9 @@ def main(args=sys.argv[1:]):
         print >> sys.stderr
         raise SystemExit(1)
 
-    config_options = loadConfig(
+    config_path = os.path.expanduser(
         arg_options.get('config_filename') or OPTIONS.get('config_filename'))
+    config_options = loadConfig(config_path)
 
     # Apply the various options in order, the most important applied last.
     # Defaults first, then what's read from config file, then command-line
@@ -496,13 +497,15 @@ def main(args=sys.argv[1:]):
         print >> sys.stderr, "Use 'twitter -h' for help."
         return 1
 
+    oauth_filename = os.path.expanduser(options['oauth_filename'])
+
     if (options['action'] == 'authorize'
-        or not os.path.exists(options['oauth_filename'])):
+        or not os.path.exists(oauth_filename)):
         oauth_dance(
             "the Command-Line Tool", CONSUMER_KEY, CONSUMER_SECRET,
             options['oauth_filename'])
 
-    oauth_token, oauth_token_secret = read_token_file(options['oauth_filename'])
+    oauth_token, oauth_token_secret = read_token_file(oauth_filename)
     
     twitter = Twitter(
         auth=OAuth(
