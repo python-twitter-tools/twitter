@@ -1,3 +1,8 @@
+"""
+Attempting to patch to accommodate API like the list interface.
+Note: Make sure not to use keyword substitutions that have the same name
+as an argument that will get encoded.
+"""
 
 from base64 import b64encode
 from urllib import urlencode
@@ -26,30 +31,44 @@ class TwitterError(Exception):
 
 class TwitterCall(object):
     def __init__(
-        self, username, password, format, domain, uri="", agent=None):
+        self, username, password, format, domain, uri="", agent=None,  uriparts=()):
         self.username = username
         self.password = password
         self.format = format
         self.domain = domain
         self.uri = uri
         self.agent = agent
+        self.uriparts = uriparts
+        
     def __getattr__(self, k):
         try:
             return object.__getattr__(self, k)
         except AttributeError:
+            """Instead of incrementally building the uri string, now we
+            just append to uriparts.  We'll build the uri later."""
             return TwitterCall(
                 self.username, self.password, self.format, self.domain,
-                self.uri + "/" + k, self.agent)
+                self.uri, self.agent, self.uriparts + (k,))
     def __call__(self, **kwargs):
+        #build the uri
         uri = self.uri
+        for uripart in self.uriparts:
+            #if this part matches a keyword argument, use the supplied value
+            #otherwise, just use the part
+            uri = uri + "/" + kwargs.pop(uripart,uripart)
+
         method = "GET"
         for action in POST_ACTIONS:
-            if self.uri.endswith(action):
+            if uri.endswith(action):
                 method = "POST"
                 if (self.agent):
                     kwargs["source"] = self.agent
                 break
 
+        """This handles a special case. It isn't really needed anymore because now
+        we can insert an id value (or any other value) at the end of the
+        uri (or anywhere else).
+        However we can leave it for backward compatibility."""
         id = kwargs.pop('id', None)
         if id:
             uri += "/%s" %(id)
@@ -118,6 +137,9 @@ class Twitter(TwitterCall):
           user="billybob",
           text="I think yer swell!")
 
+      # Get the members of a particular list of a particular friend
+      twitter.user.listname.members(user="billybob", listname="billysbuds")
+
     Searching Twitter::
 
       twitter_search = Twitter(domain="search.twitter.com")
@@ -161,6 +183,6 @@ class Twitter(TwitterCall):
         """
         if (format not in ("json", "xml")):
             raise TwitterError("Unknown data format '%s'" %(format))
-        TwitterCall.__init__(self, email, password, format, domain, "", agent)
+        TwitterCall.__init__(self, email, password, format, domain, "", agent,  ())
 
 __all__ = ["Twitter", "TwitterError"]
