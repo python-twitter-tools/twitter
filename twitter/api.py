@@ -4,14 +4,12 @@ Note: Make sure not to use keyword substitutions that have the same name
 as an argument that will get encoded.
 """
 
-from base64 import b64encode
-from urllib import urlencode
-
 import urllib2
 
 from exceptions import Exception
 
 from twitter.twitter_globals import POST_ACTIONS
+from twitter.auth import UserPassAuth, NoAuth
 
 def _py26OrGreater():
     import sys
@@ -24,22 +22,41 @@ else:
 
 class TwitterError(Exception):
     """
-    Exception thrown by the Twitter object when there is an
-    error interacting with twitter.com.
+    Base Exception thrown by the Twitter object when there is a
+    general error interacting with the API.
     """
     pass
 
+class TwitterHTTPError(TwitterError):
+    """
+    Exception thrown by the Twitter object when there is an
+    HTTP error interacting with twitter.com.
+    """
+    def __init__(self, e, uri, format, encoded_args):
+      self.e = e
+      self.uri = uri
+      self.format = format
+      self.encoded_args = encoded_args
+
+    def __str__(self):
+        return (
+            "Twitter sent status %i for URL: %s.%s using parameters: "
+            "(%s)\ndetails: %s" %(
+                self.e.code, self.uri, self.format, self.encoded_args, 
+                self.e.fp.read()))
+
 class TwitterCall(object):
     def __init__(
-        self, username, password, format, domain, uri="", agent=None,  uriparts=()):
-        self.username = username
-        self.password = password
+        self, auth, format, domain, uri="", agent=None,
+        uriparts=None, secure=True):
+        self.auth = auth
         self.format = format
         self.domain = domain
         self.uri = uri
         self.agent = agent
         self.uriparts = uriparts
-        
+        self.secure = secure
+
     def __getattr__(self, k):
         try:
             return object.__getattr__(self, k)
@@ -47,8 +64,9 @@ class TwitterCall(object):
             """Instead of incrementally building the uri string, now we
             just append to uriparts.  We'll build the uri later."""
             return TwitterCall(
-                self.username, self.password, self.format, self.domain,
+                self.auth, self.format, self.domain,
                 self.uri, self.agent, self.uriparts + (k,))
+
     def __call__(self, **kwargs):
         #build the uri
         uri = self.uri
@@ -56,7 +74,6 @@ class TwitterCall(object):
             #if this part matches a keyword argument, use the supplied value
             #otherwise, just use the part
             uri = uri + "/" + kwargs.pop(uripart,uripart)
-
         method = "GET"
         for action in POST_ACTIONS:
             if uri.endswith(action):
@@ -73,26 +90,31 @@ class TwitterCall(object):
         if id:
             uri += "/%s" %(id)
 
+        secure_str = ''
+        if self.secure:
+            secure_str = 's'
+        dot = ""
+        if self.format != '':
+            dot = "."
+        uriBase = "http%s://%s/%s%s%s" %(
+                    secure_str, self.domain, uri, dot, self.format)
+
         argStr = ""
         argData = None
-        encoded_kwargs = urlencode(kwargs.items())
         if (method == "GET"):
-            if kwargs:
-                argStr = "?%s" %(encoded_kwargs)
+            if self.encoded_args:
+                argStr = "?%s" %(self.encoded_args)
         else:
-            argData = encoded_kwargs
+            argData = self.encoded_args
 
         headers = {}
         if (self.agent):
             headers["X-Twitter-Client"] = self.agent
-        if (self.username):
-            headers["Authorization"] = "Basic " + b64encode("%s:%s" %(
-                self.username, self.password))
+        if self.auth is not None:
+            headers.update(self.auth.generate_headers())
 
-        req = urllib2.Request(
-                "http://%s/%s.%s%s" %(self.domain, uri, self.format, argStr),
-                argData, headers
-            )
+        req = urllib2.Request(uriBase+argStr, argData, headers)
+        
         try:
             handle = urllib2.urlopen(req)
             if "json" == self.format:
@@ -103,9 +125,7 @@ class TwitterCall(object):
             if (e.code == 304):
                 return []
             else:
-                raise TwitterError(
-                    "Twitter sent status %i for URL: %s.%s using parameters: (%s)\ndetails: %s" %(
-                        e.code, uri, self.format, encoded_kwargs, e.fp.read()))
+                raise TwitterHTTPError(e, uri, self.format, self.encoded_args)
 
 class Twitter(TwitterCall):
     """
@@ -121,7 +141,8 @@ class Twitter(TwitterCall):
 
     Examples::
 
-      twitter = Twitter("hello@foo.com", "password123")
+      twitter = Twitter(
+          auth=OAuth(token, token_key, con_secret, con_secret_key)))
 
       # Get the public timeline
       twitter.statuses.public_timeline()
@@ -140,6 +161,7 @@ class Twitter(TwitterCall):
       # Get the members of a particular list of a particular friend
       twitter.user.listname.members(user="billybob", listname="billysbuds")
 
+
     Searching Twitter::
 
       twitter_search = Twitter(domain="search.twitter.com")
@@ -150,10 +172,12 @@ class Twitter(TwitterCall):
       # Search for the latest News on #gaza
       twitter_search.search(q="#gaza")
 
-    Using the data returned::
 
-      Twitter API calls return decoded JSON. This is converted into
-      a bunch of Python lists, dicts, ints, and strings. For example,
+    Using the data returned
+    -----------------------
+
+    Twitter API calls return decoded JSON. This is converted into
+    a bunch of Python lists, dicts, ints, and strings. For example::
 
       x = twitter.statuses.public_timeline()
 
@@ -163,26 +187,77 @@ class Twitter(TwitterCall):
       # The screen name of the user who wrote the first 'tweet'
       x[0]['user']['screen_name']
 
-    Getting raw XML data::
 
-      If you prefer to get your Twitter data in XML format, pass
-      format="xml" to the Twitter object when you instantiate it:
+    Getting raw XML data
+    --------------------
+
+    If you prefer to get your Twitter data in XML format, pass
+    format="xml" to the Twitter object when you instantiate it::
 
       twitter = Twitter(format="xml")
 
       The output will not be parsed in any way. It will be a raw string
       of XML.
+
     """
     def __init__(
-        self, email=None, password=None, format="json", domain="twitter.com",
-        agent=None):
+        self, email=None, password=None, format="json",
+        domain="twitter.com", agent=None, secure=True, auth=None,
+        api_version=''):
         """
-        Create a new twitter API connector using the specified
-        credentials (email and password). Format specifies the output
-        format ("json" (default) or "xml").
-        """
-        if (format not in ("json", "xml")):
-            raise TwitterError("Unknown data format '%s'" %(format))
-        TwitterCall.__init__(self, email, password, format, domain, "", agent,  ())
+        Create a new twitter API connector.
 
-__all__ = ["Twitter", "TwitterError"]
+        Pass an `auth` parameter to use the credentials of a specific
+        user. Generally you'll want to pass an `OAuth`
+        instance::
+
+            twitter = Twitter(auth=OAuth(
+                    token, token_secret, consumer_key, consumer_secret))
+
+
+        Alternately you can pass `email` and `password` parameters but
+        this authentication mode will be deactive by Twitter very soon
+        and is not recommended::
+
+            twitter = Twitter(email="blah@blah.com", password="foobar")
+
+
+        `domain` lets you change the domain you are connecting. By
+        default it's twitter.com but `search.twitter.com` may be
+        useful too.
+
+        If `secure` is False you will connect with HTTP instead of
+        HTTPS.
+
+        The value of `agent` is sent in the `X-Twitter-Client`
+        header. This is deprecated. Instead Twitter determines the
+        application using the OAuth Client Key and Client Key Secret
+        parameters.
+
+        `api_version` is used to set the base uri. By default it's
+        nothing, but if you set it to '1' your URI will start with
+        '1/'.
+        """
+        if email is not None or password is not None:
+            if auth:
+                raise ValueError(
+                    "Can't specify 'email'/'password' and 'auth' params"
+                    " simultaneously.")
+            auth = UserPassAuth(email, password)
+
+        if not auth:
+            auth = NoAuth()
+
+        if (format not in ("json", "xml", "")):
+            raise ValueError("Unknown data format '%s'" %(format))
+
+        uri = ""
+        if api_version:
+            uri = str(api_version)
+
+        TwitterCall.__init__(
+            self, auth, format, domain, uri, agent, 
+            (), secure=secure)
+
+
+__all__ = ["Twitter", "TwitterError", "TwitterHTTPError"]

@@ -3,20 +3,22 @@ USAGE:
 
  twitter [action] [options]
 
+
 ACTIONS:
+ authorize      authorize the command-line tool to interact with Twitter
  follow         add the specified user to your follow list
  friends        get latest tweets from your friends (default action)
  help           print this help text that you are currently reading
  leave          remove the specified user from your following list
  public         get latest public tweets
  replies        get latest replies
+ search         search twitter (Beware: octothorpe, escape it)
  set            set your twitter status
  shell          login the twitter shell
 
+
 OPTIONS:
 
- -e --email <email>         your email to login to twitter
- -p --password <password>   your twitter password
  -r --refresh               run this command forever, polling every once
                             in a while (default: every 5 minutes)
  -R --refresh-rate <rate>   set the refresh rate (in seconds)
@@ -27,6 +29,8 @@ OPTIONS:
                             (default: 20, max: 200)
  -t --timestamp             show time before status lines
  -d --datestamp             shoe date before status lines
+    --no-ssl                use HTTP instead of more secure HTTPS
+    --oauth <filename>      filename to read/store oauth credentials to
 
 FORMATS for the --format option
 
@@ -35,17 +39,23 @@ FORMATS for the --format option
  urls            nothing but URLs
  ansi            ansi colour (rainbow mode)
 
+
 CONFIG FILES
 
- The config file should contain a [twitter] header, and all the desired options
- you wish to set, like so:
+ The config file should be placed in your home directory and be named .twitter.
+ It must contain a [twitter] header, and all the desired options you wish to
+ set, like so:
 
 [twitter]
-email: <username>
-password: <password>
 format: <desired_default_format_for_output>
 prompt: <twitter_shell_prompt e.g. '[cyan]twitter[R]> '>
+
+ OAuth authentication tokens are stored in the file .twitter_oauth in your
+ home directory.
 """
+
+CONSUMER_KEY='uS6hO2sV6tDKIOeVjhnFnQ'
+CONSUMER_SECRET='MEYTOS97VvlHX7K1rwHPEqVpTSqZ71HtvoK4sVuYk'
 
 import sys
 import time
@@ -55,41 +65,38 @@ import re
 import os.path
 from ConfigParser import SafeConfigParser
 import datetime
+from urllib import quote
+import webbrowser
 
 from api import Twitter, TwitterError
+from oauth import OAuth, write_token_file, read_token_file
+from oauth_dance import oauth_dance
 import ansi
 
-# Please don't change this, it was provided by the fine folks at Twitter.
-# If you change it, it will not work.
-AGENT_STR = "twittercommandlinetoolpy"
-
 OPTIONS = {
-    'email': None,
-    'password': None,
     'action': 'friends',
     'refresh': False,
     'refresh_rate': 600,
     'format': 'default',
     'prompt': '[cyan]twitter[R]> ',
     'config_filename': os.environ.get('HOME', '') + os.sep + '.twitter',
+    'oauth_filename': os.environ.get('HOME', '') + os.sep + '.twitter_oauth',
     'length': 20,
     'timestamp': False,
     'datestamp': False,
-    'extra_args': []
+    'extra_args': [],
+    'secure': True,
 }
 
 def parse_args(args, options):
-    long_opts = ['email', 'password', 'help', 'format', 'refresh',
-                 'refresh-rate', 'config', 'length', 'timestamp', 'datestamp']
+    long_opts = ['help', 'format=', 'refresh', 'oauth=',
+                 'refresh-rate=', 'config=', 'length=', 'timestamp', 
+                 'datestamp', 'no-ssl']
     short_opts = "e:p:f:h?rR:c:l:td"
     opts, extra_args = getopt(args, short_opts, long_opts)        
 
     for opt, arg in opts:
-        if opt in ('-e', '--email'):
-            options['email'] = arg
-        elif opt in ('-p', '--password'):
-            options['password'] = arg
-        elif opt in ('-f', '--format'):
+        if opt in ('-f', '--format'):
             options['format'] = arg
         elif opt in ('-r', '--refresh'):
             options['refresh'] = True
@@ -105,15 +112,19 @@ def parse_args(args, options):
             options['action'] = 'help'
         elif opt in ('-c', '--config'):
             options['config_filename'] = arg
+        elif opt == '--no-ssl':
+            options['secure'] = False
+        elif opt == '--oauth':
+            options['oauth_filename'] = arg
 
     if extra_args and not ('action' in options and options['action'] == 'help'):
         options['action'] = extra_args[0]
     options['extra_args'] = extra_args[1:]
-    
-def get_time_string(status, options):
+
+def get_time_string(status, options, format="%a %b %d %H:%M:%S +0000 %Y"):
     timestamp = options["timestamp"]
     datestamp = options["datestamp"]
-    t = time.strptime(status['created_at'], "%a %b %d %H:%M:%S +0000 %Y")
+    t = time.strptime(status['created_at'], format)
     i_hate_timezones = time.timezone
     if (time.daylight):
         i_hate_timezones = time.altzone
@@ -137,7 +148,7 @@ class StatusFormatter(object):
 class AnsiStatusFormatter(object):
     def __init__(self):
         self._colourMap = ansi.ColourMap()
-        
+
     def __call__(self, status, options):
         colour = self._colourMap.colourFor(status['user']['screen_name'])
         return (u"%s%s%s%s %s" %(
@@ -175,12 +186,51 @@ class VerboseAdminFormatter(object):
             user['name'],
             user['url']))
 
+class SearchFormatter(object):
+    def __call__(self, result, options):
+        return(u"%s%s %s" %(
+            get_time_string(result, options, "%a, %d %b %Y %H:%M:%S +0000"),
+            result['from_user'], result['text']))
+
+class VerboseSearchFormatter(SearchFormatter):
+    pass #Default to the regular one
+
+class URLSearchFormatter(object):
+    urlmatch = re.compile(r'https?://\S+')
+    def __call__(self, result, options):
+        urls = self.urlmatch.findall(result['text'])
+        return u'\n'.join(urls) if urls else ""
+
+class AnsiSearchFormatter(object):
+    def __init__(self):
+        self._colourMap = ansi.ColourMap()
+
+    def __call__(self, result, options):
+        colour = self._colourMap.colourFor(result['from_user'])
+        return (u"%s%s%s%s %s" %(
+            get_time_string(result, options, "%a, %d %b %Y %H:%M:%S +0000"),
+            ansi.cmdColour(colour), result['from_user'],
+            ansi.cmdReset(), result['text']))
+
+_term_encoding = None
+def get_term_encoding():
+    global _term_encoding
+    if not _term_encoding:
+        lang = os.getenv('LANG', 'unknown.UTF-8').split('.')
+        if lang[1:]:
+            _term_encoding = lang[1]
+        else:
+            _term_encoding = 'UTF-8'
+    return _term_encoding
+
+formatters = {}
 status_formatters = {
     'default': StatusFormatter,
     'verbose': VerboseStatusFormatter,
     'urls': URLStatusFormatter,
     'ansi': AnsiStatusFormatter
 }
+formatters['status'] = status_formatters
 
 admin_formatters = {
     'default': AdminFormatter,
@@ -188,20 +238,27 @@ admin_formatters = {
     'urls': AdminFormatter,
     'ansi': AdminFormatter
 }
+formatters['admin'] = admin_formatters
 
-def get_status_formatter(options):
-    sf = status_formatters.get(options['format'])
-    if (not sf):
-        raise TwitterError(
-            "Unknown formatter '%s'" %(options['format']))
-    return sf()
+search_formatters = {
+    'default': SearchFormatter,
+    'verbose': VerboseSearchFormatter,
+    'urls': URLSearchFormatter,
+    'ansi': AnsiSearchFormatter
+}
+formatters['search'] = search_formatters
 
-def get_admin_formatter(options):
-    sf = admin_formatters.get(options['format'])
-    if (not sf):
+def get_formatter(action_type, options):
+    formatters_dict = formatters.get(action_type)
+    if (not formatters_dict):
         raise TwitterError(
-            "Unknown formatter '%s'" %(options['format']))
-    return sf()
+            "There was an error finding a class of formatters for your type (%s)"
+            %(action_type))
+    f = formatters_dict.get(options['format'])
+    if (not f):
+        raise TwitterError(
+            "Unknown formatter '%s' for status actions" %(options['format']))
+    return f()
 
 class Action(object):
 
@@ -214,7 +271,7 @@ class Action(object):
         sample = '(y/N)'
         if not careful:
             sample = '(Y/n)'
-        
+
         prompt = 'You really want to %s %s? ' %(subject, sample)
         try:
             answer = raw_input(prompt).lower()
@@ -232,7 +289,7 @@ class Action(object):
             if careful:
                 default = False
             return default
-        
+
     def __call__(self, twitter, options):
         action = actions.get(options['action'], NoSuchAction)()
         try:
@@ -259,21 +316,41 @@ def printNicely(string):
         print string.encode(sys.stdout.encoding, 'replace')
     else:
         print string.encode('utf-8')
-        
+
 class StatusAction(Action):
     def __call__(self, twitter, options):
         statuses = self.getStatuses(twitter, options)
-        sf = get_status_formatter(options)
+        sf = get_formatter('status', options)
         for status in statuses:
             statusStr = sf(status, options)
             if statusStr.strip():
                 printNicely(statusStr)
 
+class SearchAction(Action):
+    def __call__(self, twitter, options):
+        # We need to be pointing at search.twitter.com to work, and it is less
+        # tangly to do it here than in the main()
+        twitter.domain="search.twitter.com"
+        twitter.uri=""
+        # We need to bypass the TwitterCall parameter encoding, so we
+        # don't encode the plus sign, so we have to encode it ourselves
+        query_string = "+".join(
+            [quote(term.decode(get_term_encoding()))
+             for term in options['extra_args']])
+        twitter.encoded_args = "q=%s" %(query_string)
+
+        results = twitter.search()['results']
+        f = get_formatter('search', options)
+        for result in results:
+            resultStr = f(result, options)
+            if resultStr.strip():
+                printNicely(resultStr)
+
 class AdminAction(Action):
     def __call__(self, twitter, options):
         if not (options['extra_args'] and options['extra_args'][0]):
             raise TwitterError("You need to specify a user (screen name)")
-        af = get_admin_formatter(options)
+        af = get_formatter('admin', options)
         try:
             user = self.getUser(twitter, options['extra_args'][0])
         except TwitterError, e:
@@ -309,7 +386,7 @@ class LeaveAction(AdminAction):
 
 class SetStatusAction(Action):
     def __call__(self, twitter, options):
-        statusTxt = (u" ".join(options['extra_args'])
+        statusTxt = (" ".join(options['extra_args']).decode(get_term_encoding())
                      if options['extra_args']
                      else unicode(raw_input("message: ")))
         status = (statusTxt.encode('utf8', 'replace'))
@@ -323,10 +400,10 @@ class TwitterShell(Action):
         for colour in ansi.COLOURS_NAMED:
             if '[%s]' %(colour) in prompt:
                 prompt = prompt.replace(
-                            '[%s]' %(colour), ansi.cmdColourNamed(colour))
+                    '[%s]' %(colour), ansi.cmdColourNamed(colour))
         prompt = prompt.replace('[R]', ansi.cmdReset())
         return prompt
-    
+
     def __call__(self, twitter, options):
         prompt = self.render_prompt(options.get('prompt', 'twitter> '))
         while True:
@@ -343,11 +420,11 @@ class TwitterShell(Action):
                     continue
                 elif options['action'] == 'help':
                     print >>sys.stderr, '''\ntwitter> `action`\n
-        The Shell Accepts all the command line actions along with:
+                          The Shell Accepts all the command line actions along with:
 
-            exit    Leave the twitter shell (^D may also be used)
+                          exit    Leave the twitter shell (^D may also be used)
 
-        Full CMD Line help is appended below for your convinience.'''
+                          Full CMD Line help is appended below for your convinience.'''
                 Action()(twitter, options)
                 options['action'] = ''
             except NoSuchActionError, e:
@@ -366,13 +443,19 @@ class HelpAction(Action):
     def __call__(self, twitter, options):
         print __doc__
 
+class DoNothingAction(Action):
+    def __call__(self, twitter, options):
+        pass
+
 actions = {
+    'authorize' : DoNothingAction,
     'follow'    : FollowAction,
     'friends'   : FriendsAction,
     'help'      : HelpAction,
     'leave'     : LeaveAction,
     'public'    : PublicAction,
     'replies'   : RepliesAction,
+    'search'    : SearchAction,
     'set'       : SetStatusAction,
     'shell'     : TwitterShell,
 }
@@ -382,7 +465,7 @@ def loadConfig(filename):
     if os.path.exists(filename):
         cp = SafeConfigParser()
         cp.read([filename])
-        for option in ('email', 'password', 'format', 'prompt'):
+        for option in ('format', 'prompt'):
             if cp.has_option('twitter', option):
                 options[option] = cp.get('twitter', option)
     return options
@@ -396,8 +479,9 @@ def main(args=sys.argv[1:]):
         print >> sys.stderr
         raise SystemExit(1)
 
-    config_options = loadConfig(
+    config_path = os.path.expanduser(
         arg_options.get('config_filename') or OPTIONS.get('config_filename'))
+    config_options = loadConfig(config_path)
 
     # Apply the various options in order, the most important applied last.
     # Defaults first, then what's read from config file, then command-line
@@ -411,18 +495,31 @@ def main(args=sys.argv[1:]):
         'friends', 'public', 'replies'):
         print >> sys.stderr, "You can only refresh the friends, public, or replies actions."
         print >> sys.stderr, "Use 'twitter -h' for help."
-        raise SystemExit(1)
+        return 1
 
-    if options['email'] and not options['password']:
-        options['password'] = getpass("Twitter password: ")
+    oauth_filename = os.path.expanduser(options['oauth_filename'])
 
-    twitter = Twitter(options['email'], options['password'], agent=AGENT_STR)
+    if (options['action'] == 'authorize'
+        or not os.path.exists(oauth_filename)):
+        oauth_dance(
+            "the Command-Line Tool", CONSUMER_KEY, CONSUMER_SECRET,
+            options['oauth_filename'])
+
+    oauth_token, oauth_token_secret = read_token_file(oauth_filename)
+    
+    twitter = Twitter(
+        auth=OAuth(
+            oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET),
+        secure=options['secure'],
+        api_version='1',
+        domain='api.twitter.com')
+
     try:
         Action()(twitter, options)
     except NoSuchActionError, e:
         print >>sys.stderr, e
         raise SystemExit(1)
     except TwitterError, e:
-        print >> sys.stderr, e.args[0]
+        print >> sys.stderr, str(e)
         print >> sys.stderr, "Use 'twitter -h' for help."
         raise SystemExit(1)
