@@ -266,10 +266,14 @@ class TwitterBot(object):
                 pass
 
 def load_config(filename):
-    defaults = dict(
-        server=dict(port=6667, nick="twitterbot"),
-        twitter=dict(oauth_token_file=OAUTH_FILE))
-    cp = SafeConfigParser(defaults)
+    # Note: Python ConfigParser module has the worst interface in the
+    # world. Mega gross.
+    cp = SafeConfigParser()
+    cp.add_section('irc')
+    cp.set('irc', 'port', '6667')
+    cp.set('irc', 'nick', 'twitterbot')
+    cp.add_section('twitter')
+    cp.set('twitter', 'oauth_token_file', OAUTH_FILE)
     cp.read((filename,))
 
     # attempt to read these properties-- they are required
