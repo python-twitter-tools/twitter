@@ -29,13 +29,22 @@ In the web browser window that opens please choose to Allow
 access. Copy the PIN number that appears on the next page and paste or
 type it here:
 """
-    webbrowser.open(
-        'http://api.twitter.com/oauth/authorize?oauth_token=' +
-        oauth_token)
-    time.sleep(2) # Sometimes the last command can print some
-                  # crap. Wait a bit so it doesn't mess up the next
-                  # prompt.
-    oauth_verifier = raw_input("Please type the PIN: ").strip()
+    oauth_url = ('http://api.twitter.com/oauth/authorize?oauth_token=' +
+                 oauth_token)
+    try:
+        r = webbrowser.open(oauth_url)
+        time.sleep(2) # Sometimes the last command can print some
+                      # crap. Wait a bit so it doesn't mess up the next
+                      # prompt.
+        if not r:
+            raise Exception()
+    except:
+        print """
+Uh, I couldn't open a browser on your computer. Please go here to get
+your PIN:
+
+""" + oauth_url
+    oauth_verifier = raw_input("Please enter the PIN: ").strip()
     twitter = Twitter(
         auth=OAuth(
             oauth_token, oauth_token_secret, consumer_key, consumer_secret),
