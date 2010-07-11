@@ -90,10 +90,10 @@ OPTIONS = {
 
 def parse_args(args, options):
     long_opts = ['help', 'format=', 'refresh', 'oauth=',
-                 'refresh-rate=', 'config=', 'length=', 'timestamp', 
+                 'refresh-rate=', 'config=', 'length=', 'timestamp',
                  'datestamp', 'no-ssl']
     short_opts = "e:p:f:h?rR:c:l:td"
-    opts, extra_args = getopt(args, short_opts, long_opts)        
+    opts, extra_args = getopt(args, short_opts, long_opts)
 
     for opt, arg in opts:
         if opt in ('-f', '--format'):
@@ -137,7 +137,7 @@ def get_time_string(status, options, format="%a %b %d %H:%M:%S +0000 %Y"):
         return time.strftime("%H:%M:%S ", t)
     elif datestamp:
         return time.strftime("%Y-%m-%d ", t)
-    return ""                             
+    return ""
 
 class StatusFormatter(object):
     def __call__(self, status, options):
@@ -311,7 +311,7 @@ class NoSuchAction(Action):
     def __call__(self, twitter, options):
         raise NoSuchActionError("No such action: %s" %(options['action']))
 
-def printNicely(string):        
+def printNicely(string):
     if sys.stdout.encoding:
         print string.encode(sys.stdout.encoding, 'replace')
     else:
@@ -506,7 +506,7 @@ def main(args=sys.argv[1:]):
             options['oauth_filename'])
 
     oauth_token, oauth_token_secret = read_token_file(oauth_filename)
-    
+
     twitter = Twitter(
         auth=OAuth(
             oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET),
