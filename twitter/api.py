@@ -59,9 +59,6 @@ class TwitterResponse(object):
         except AttributeError:
             return getattr(self._real_response, k)
 
-    def __iter__(self):
-        return iter(self._real_response)
-
     @property
     def rate_limit_remaining(self):
         """
@@ -75,6 +72,17 @@ class TwitterResponse(object):
         Time in UTC epoch seconds when the rate limit will reset.
         """
         return int(self.headers.getheader('X-RateLimit-Reset'))
+
+
+# Multiple inheritance makes my inner Java nerd cry. Why can't I just
+# add arbitrary attributes to list or str objects?! Guido, we need to
+# talk.
+class TwitterJsonResponse(list, TwitterResponse):
+    __doc__ = """Twitter JSON Response
+    """ + TwitterResponse.__doc__
+class TwitterXmlResponse(str, TwitterResponse):
+    __doc__ = """Twitter XML Response
+    """ + TwitterResponse.__doc__
 
 
 class TwitterCall(object):
@@ -143,10 +151,9 @@ class TwitterCall(object):
         try:
             handle = urllib2.urlopen(req)
             if "json" == self.format:
-                msg_data = json.loads(handle.read())
+                return TwitterJsonResponse(json.loads(handle.read()))
             else:
-                msg_data = handle.read()
-            return TwitterResponse(msg_data, handle.headers)
+                return TwitterXmlResponse(handle.read())
         except urllib2.HTTPError, e:
             if (e.code == 304):
                 return []
@@ -272,4 +279,5 @@ class Twitter(TwitterCall):
             secure=secure, uriparts=uriparts)
 
 
-__all__ = ["Twitter", "TwitterError", "TwitterHTTPError"]
+__all__ = ["Twitter", "TwitterError", "TwitterHTTPError", "TwitterJsonResponse",
+           "TwitterXmlResponse"]
