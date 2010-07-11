@@ -39,6 +39,41 @@ class TwitterHTTPError(TwitterError):
                 self.e.code, self.uri, self.format, self.uriparts,
                 self.e.fp.read()))
 
+class TwitterResponse(object):
+    """
+    Response from a twitter request. Behaves like a list or a string
+    (depending on requested format) but it has a few other interesting
+    attributes.
+
+    `headers` gives you access to the response headers as an
+    httplib.HTTPHeaders instance. You can do
+    `response.headers.getheader('h')` to retrieve a header.
+    """
+    def __init__(self, real_response, headers):
+        self._real_response = real_response
+        self.headers = headers
+
+    def __getattr__(self, k):
+        try:
+            return object.__getattr__(self, k)
+        except AttributeError:
+            return getattr(self._real_response, k)
+
+    @property
+    def rate_limit_remaining(self):
+        """
+        Remaining requests in the current rate-limit.
+        """
+        return int(self.headers.getheader('X-RateLimit-Remaining'))
+
+    @property
+    def rate_limit_reset(self):
+        """
+        Time in UTC epoch seconds when the rate limit will reset.
+        """
+        return int(self.headers.getheader('X-RateLimit-Reset'))
+
+
 class TwitterCall(object):
     def __init__(
         self, auth, format, domain, uri="", agent=None,
@@ -105,9 +140,10 @@ class TwitterCall(object):
         try:
             handle = urllib2.urlopen(req)
             if "json" == self.format:
-                return json.loads(handle.read())
+                msg_data = json.loads(handle.read())
             else:
-                return handle.read()
+                msg_data = handle.read()
+            return TwitterResponse(msg_data, handle.headers)
         except urllib2.HTTPError, e:
             if (e.code == 304):
                 return []
