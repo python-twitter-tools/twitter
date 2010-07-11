@@ -9,12 +9,18 @@ import hmac
 
 
 def write_token_file(filename, oauth_token, oauth_token_secret):
+    """
+    Write a token file to hold the oauth token and oauth token secret.
+    """
     oauth_file = open(filename, 'w')
     print >> oauth_file, oauth_token
     print >> oauth_file, oauth_token_secret
     oauth_file.close()
 
 def read_token_file(filename):
+    """
+    Read a token file and return the oauth token and oauth token secret.
+    """
     f = open(filename)
     return f.readline().strip(), f.readline().strip()
 
@@ -52,7 +58,7 @@ class OAuth(Auth):
 
         message = '&'.join(
             urllib.quote(i, '') for i in [method.upper(), base_url, enc_params])
-    
+
         signature = hmac.new(
             key, message, hashlib.sha1).digest().encode('base64')[:-1]
         return enc_params + "&" + "oauth_signature=" + urllib.quote(signature, '')
@@ -68,7 +74,7 @@ def urlencode_noplus(query):
     if hasattr(query,"items"):
         # mapping objects
         query = query.items()
-    
+
     encoded_bits = []
     for n, v in query:
         # and do unicode here while we are at it...

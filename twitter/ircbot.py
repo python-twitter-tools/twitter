@@ -4,7 +4,7 @@ twitterbot
   A twitter IRC bot. Twitterbot connected to an IRC server and idles in
   a channel, polling a twitter account and broadcasting all updates to
   friends.
-  
+
 USAGE
 
   twitterbot [config_file]
@@ -12,7 +12,7 @@ USAGE
 CONFIG_FILE
 
   The config file is an ini-style file that must contain the following:
-  
+
 [irc]
 server: <irc_server>
 port: <irc_port>
@@ -78,10 +78,10 @@ class SchedTask(object):
     def __repr__(self):
         return "<SchedTask %s next:%i delta:%i>" %(
             self.task.__name__, self.next, self.delta)
-    
+
     def __cmp__(self, other):
         return cmp(self.next, other.next)
-    
+
     def __call__(self):
         return self.task()
 
@@ -90,7 +90,7 @@ class Scheduler(object):
         self.task_heap = []
         for task in tasks:
             heappush(self.task_heap, task)
-    
+
     def next_task(self):
         now = time.time()
         task = heappop(self.task_heap)
@@ -101,12 +101,12 @@ class Scheduler(object):
             time.sleep(wait)
         task()
         debug("tasks: " + str(self.task_heap))
-        
+
     def run_forever(self):
         while True:
             self.next_task()
 
-            
+
 class TwitterBot(object):
     def __init__(self, configFilename):
         self.configFilename = configFilename
@@ -120,7 +120,8 @@ class TwitterBot(object):
         self.twitter = Twitter(
             auth=OAuth(
                 oauth_token, oauth_secret, CONSUMER_KEY, CONSUMER_SECRET),
-            api_version='1')
+            api_version='1',
+            domain='api.twitter.com')
 
         self.irc = irclib.IRC()
         self.irc.add_global_handler('privmsg', self.handle_privmsg)
@@ -140,7 +141,7 @@ class TwitterBot(object):
             print >> sys.stderr, "Exception while querying twitter:"
             traceback.print_exc(file=sys.stderr)
             return
-        
+
         nextLastUpdate = self.lastUpdate
         for update in updates:
             crt = parse(update['created_at']).utctimetuple()
@@ -157,16 +158,16 @@ class TwitterBot(object):
                         u"=^_^=  %s%s%s %s" %(
                             IRC_BOLD, update['user']['screen_name'],
                             IRC_BOLD, text.decode('utf-8')))
-                
+
                 nextLastUpdate = crt
             else:
                 break
         self.lastUpdate = nextLastUpdate
-        
+
     def process_events(self):
         debug("In process_events")
         self.irc.process_once()
-    
+
     def handle_privmsg(self, conn, evt):
         debug('got privmsg')
         args = evt.arguments()[0].split(' ')
@@ -179,13 +180,13 @@ class TwitterBot(object):
                 self.unfollow(conn, evt, args[1])
             else:
                 conn.privmsg(
-                    evt.source().split('!')[0], 
+                    evt.source().split('!')[0],
                     "=^_^= Hi! I'm Twitterbot! you can (follow "
                     + "<twitter_name>) to make me follow a user or "
                     + "(unfollow <twitter_name>) to make me stop.")
         except Exception:
             traceback.print_exc(file=sys.stderr)
-    
+
     def handle_ctcp(self, conn, evt):
         args = evt.arguments()
         source = evt.source().split('!')[0]
@@ -200,12 +201,12 @@ class TwitterBot(object):
     def privmsg_channel(self, msg):
         return self.ircServer.privmsg(
             self.config.get('irc', 'channel'), msg.encode('utf-8'))
-            
+
     def privmsg_channels(self, msg):
         return_response=True
         channels=self.config.get('irc','channel').split(',')
         return self.ircServer.privmsg_many(channels, msg.encode('utf-8'))
-            
+
     def follow(self, conn, evt, name):
         userNick = evt.source().split('!')[0]
         friends = [x['name'] for x in self.twitter.statuses.friends()]
@@ -228,7 +229,7 @@ class TwitterBot(object):
             self.privmsg_channels(
                 "=o_o= %s has asked me to start following %s" %(
                     userNick, name))
-    
+
     def unfollow(self, conn, evt, name):
         userNick = evt.source().split('!')[0]
         friends = [x['name'] for x in self.twitter.statuses.friends()]
@@ -245,10 +246,10 @@ class TwitterBot(object):
             self.privmsg_channels(
                 "=o_o= %s has asked me to stop following %s" %(
                     userNick, name))
-    
+
     def run(self):
         self.ircServer.connect(
-            self.config.get('irc', 'server'), 
+            self.config.get('irc', 'server'),
             self.config.getint('irc', 'port'),
             self.config.get('irc', 'nick'))
         channels=self.config.get('irc', 'channel').split(',')
@@ -270,7 +271,7 @@ def load_config(filename):
         twitter=dict(oauth_token_file=OAUTH_FILE))
     cp = SafeConfigParser(defaults)
     cp.read((filename,))
-    
+
     # attempt to read these properties-- they are required
     cp.get('twitter', 'oauth_token_file'),
     cp.get('irc', 'server')
@@ -294,7 +295,7 @@ def main():
     configFilename = "twitterbot.ini"
     if (sys.argv[1:]):
         configFilename = sys.argv[1]
-        
+
     try:
         if not os.path.exists(configFilename):
             raise Exception()

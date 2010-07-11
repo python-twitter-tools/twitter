@@ -59,6 +59,9 @@ class TwitterResponse(object):
         except AttributeError:
             return getattr(self._real_response, k)
 
+    def __iter__(self):
+        return iter(self._real_response)
+
     @property
     def rate_limit_remaining(self):
         """
