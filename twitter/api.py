@@ -3,7 +3,7 @@ import urllib2
 from exceptions import Exception
 
 from twitter.twitter_globals import POST_ACTIONS
-from twitter.auth import UserPassAuth, NoAuth
+from twitter.auth import NoAuth
 
 def _py26OrGreater():
     import sys
@@ -61,26 +61,22 @@ class TwitterCall(object):
                 secure=self.secure)
 
     def __call__(self, **kwargs):
-        #build the uri
+        # Build the uri.
         uriparts = []
         for uripart in self.uriparts:
-            #if this part matches a keyword argument, use the supplied value
-            #otherwise, just use the part
-            uriparts.append(kwargs.pop(uripart,uripart))
+            # If this part matches a keyword argument, use the
+            # supplied value otherwise, just use the part.
+            uriparts.append(kwargs.pop(uripart, uripart))
         uri = '/'.join(uriparts)
 
         method = "GET"
         for action in POST_ACTIONS:
             if uri.endswith(action):
                 method = "POST"
-                if (self.agent):
-                    kwargs["source"] = self.agent
                 break
 
-        """This handles a special case. It isn't really needed anymore because now
-        we can insert an id value (or any other value) at the end of the
-        uri (or anywhere else).
-        However we can leave it for backward compatibility."""
+        # If an id kwarg is present and there is no id to fill in in
+        # the list of uriparts, assume the id goes at the end.
         id = kwargs.pop('id', None)
         if id:
             uri += "/%s" %(id)
@@ -95,8 +91,6 @@ class TwitterCall(object):
                     secure_str, self.domain, uri, dot, self.format)
 
         headers = {}
-        if (self.agent):
-            headers["X-Twitter-Client"] = self.agent
         if self.auth:
             headers.update(self.auth.generate_headers())
             arg_data = self.auth.encode_params(uriBase, method, kwargs)
@@ -118,7 +112,7 @@ class TwitterCall(object):
             if (e.code == 304):
                 return []
             else:
-                raise TwitterHTTPError(e, uriBase, self.format, self.uriparts)
+                raise TwitterHTTPError(e, uri, self.format, arg_data)
 
 class Twitter(TwitterCall):
     """
@@ -129,8 +123,8 @@ class Twitter(TwitterCall):
 
     The Twitter API is documented here:
 
-      http://apiwiki.twitter.com/
-      http://groups.google.com/group/twitter-development-talk/web/api-documentation
+      http://dev.twitter.com/doc
+
 
     Examples::
 
@@ -194,8 +188,8 @@ class Twitter(TwitterCall):
 
     """
     def __init__(
-        self, email=None, password=None, format="json",
-        domain="twitter.com", agent=None, secure=True, auth=None,
+        self, format="json",
+        domain="twitter.com", secure=True, auth=None,
         api_version=''):
         """
         Create a new twitter API connector.
@@ -206,13 +200,6 @@ class Twitter(TwitterCall):
 
             twitter = Twitter(auth=OAuth(
                     token, token_secret, consumer_key, consumer_secret))
-
-
-        Alternately you can pass `email` and `password` parameters but
-        this authentication mode will be deactive by Twitter very soon
-        and is not recommended::
-
-            twitter = Twitter(email="blah@blah.com", password="foobar")
 
 
         `domain` lets you change the domain you are connecting. By
@@ -231,13 +218,6 @@ class Twitter(TwitterCall):
         nothing, but if you set it to '1' your URI will start with
         '1/'.
         """
-        if email is not None or password is not None:
-            if auth:
-                raise ValueError(
-                    "Can't specify 'email'/'password' and 'auth' params"
-                    " simultaneously.")
-            auth = UserPassAuth(email, password)
-
         if not auth:
             auth = NoAuth()
 
@@ -249,7 +229,7 @@ class Twitter(TwitterCall):
             uriparts += (str(api_version),)
 
         TwitterCall.__init__(
-            self, auth=auth, format=format, domain=domain, agent=agent,
+            self, auth=auth, format=format, domain=domain,
             secure=secure, uriparts=uriparts)
 
 

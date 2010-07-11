@@ -5,5 +5,5 @@ For building your own applications, look at the `Twitter` class.
 """
 
 from api import *
-from auth import NoAuth, UserPassAuth
+from auth import NoAuth
 from oauth import OAuth
