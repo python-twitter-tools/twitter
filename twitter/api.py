@@ -1,9 +1,3 @@
-"""
-Attempting to patch to accommodate API like the list interface.
-Note: Make sure not to use keyword substitutions that have the same name
-as an argument that will get encoded.
-"""
-
 import urllib2
 
 from exceptions import Exception
@@ -32,17 +26,17 @@ class TwitterHTTPError(TwitterError):
     Exception thrown by the Twitter object when there is an
     HTTP error interacting with twitter.com.
     """
-    def __init__(self, e, uri, format, encoded_args):
+    def __init__(self, e, uri, format, uriparts):
       self.e = e
       self.uri = uri
       self.format = format
-      self.encoded_args = encoded_args
+      self.uriparts = uriparts
 
     def __str__(self):
         return (
             "Twitter sent status %i for URL: %s.%s using parameters: "
             "(%s)\ndetails: %s" %(
-                self.e.code, self.uri, self.format, self.encoded_args, 
+                self.e.code, self.uri, self.format, self.uriparts,
                 self.e.fp.read()))
 
 class TwitterCall(object):
@@ -61,19 +55,20 @@ class TwitterCall(object):
         try:
             return object.__getattr__(self, k)
         except AttributeError:
-            """Instead of incrementally building the uri string, now we
-            just append to uriparts.  We'll build the uri later."""
             return TwitterCall(
-                self.auth, self.format, self.domain,
-                self.uri, self.agent, self.uriparts + (k,))
+                auth=self.auth, format=self.format, domain=self.domain,
+                agent=self.agent, uriparts=self.uriparts + (k,),
+                secure=self.secure)
 
     def __call__(self, **kwargs):
         #build the uri
-        uri = self.uri
+        uriparts = []
         for uripart in self.uriparts:
             #if this part matches a keyword argument, use the supplied value
             #otherwise, just use the part
-            uri = uri + "/" + kwargs.pop(uripart,uripart)
+            uriparts.append(kwargs.pop(uripart,uripart))
+        uri = '/'.join(uriparts)
+
         method = "GET"
         for action in POST_ACTIONS:
             if uri.endswith(action):
@@ -94,27 +89,25 @@ class TwitterCall(object):
         if self.secure:
             secure_str = 's'
         dot = ""
-        if self.format != '':
+        if self.format:
             dot = "."
         uriBase = "http%s://%s/%s%s%s" %(
                     secure_str, self.domain, uri, dot, self.format)
 
-        argStr = ""
-        argData = None
-        if (method == "GET"):
-            if self.encoded_args:
-                argStr = "?%s" %(self.encoded_args)
-        else:
-            argData = self.encoded_args
-
         headers = {}
         if (self.agent):
             headers["X-Twitter-Client"] = self.agent
-        if self.auth is not None:
+        if self.auth:
             headers.update(self.auth.generate_headers())
+            arg_data = self.auth.encode_params(uriBase, method, kwargs)
+            if method == 'GET':
+                uriBase += '?' + arg_data
+                body = None
+            else:
+                body = arg_data
 
-        req = urllib2.Request(uriBase+argStr, argData, headers)
-        
+        req = urllib2.Request(uriBase, body, headers)
+
         try:
             handle = urllib2.urlopen(req)
             if "json" == self.format:
@@ -125,7 +118,7 @@ class TwitterCall(object):
             if (e.code == 304):
                 return []
             else:
-                raise TwitterHTTPError(e, uri, self.format, self.encoded_args)
+                raise TwitterHTTPError(e, uriBase, self.format, self.uriparts)
 
 class Twitter(TwitterCall):
     """
@@ -251,13 +244,13 @@ class Twitter(TwitterCall):
         if (format not in ("json", "xml", "")):
             raise ValueError("Unknown data format '%s'" %(format))
 
-        uri = ""
+        uriparts = ()
         if api_version:
-            uri = str(api_version)
+            uriparts += (str(api_version),)
 
         TwitterCall.__init__(
-            self, auth, format, domain, uri, agent, 
-            (), secure=secure)
+            self, auth=auth, format=format, domain=domain, agent=agent,
+            secure=secure, uriparts=uriparts)
 
 
 __all__ = ["Twitter", "TwitterError", "TwitterHTTPError"]
