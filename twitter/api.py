@@ -49,15 +49,8 @@ class TwitterResponse(object):
     httplib.HTTPHeaders instance. You can do
     `response.headers.getheader('h')` to retrieve a header.
     """
-    def __init__(self, real_response, headers):
-        self._real_response = real_response
+    def __init__(self, headers):
         self.headers = headers
-
-    def __getattr__(self, k):
-        try:
-            return object.__getattr__(self, k)
-        except AttributeError:
-            return getattr(self._real_response, k)
 
     @property
     def rate_limit_remaining(self):
@@ -77,10 +70,14 @@ class TwitterResponse(object):
 # Multiple inheritance makes my inner Java nerd cry. Why can't I just
 # add arbitrary attributes to list or str objects?! Guido, we need to
 # talk.
-class TwitterJsonResponse(list, TwitterResponse):
+class TwitterJsonResponse(TwitterResponse, list):
     __doc__ = """Twitter JSON Response
     """ + TwitterResponse.__doc__
-class TwitterXmlResponse(str, TwitterResponse):
+    def __init__(self, lst, headers):
+        TwitterResponse.__init__(self, headers)
+        list.__init__(self, lst)
+
+class TwitterXmlResponse(TwitterResponse, str):
     __doc__ = """Twitter XML Response
     """ + TwitterResponse.__doc__
 
@@ -112,8 +109,8 @@ class TwitterCall(object):
         for uripart in self.uriparts:
             # If this part matches a keyword argument, use the
             # supplied value otherwise, just use the part.
-            uriparts.append(kwargs.pop(uripart, uripart))
-        uri = '/'.join(uriparts)
+            uriparts.append(unicode(kwargs.pop(uripart, uripart)))
+        uri = u'/'.join(uriparts)
 
         method = "GET"
         for action in POST_ACTIONS:
@@ -151,9 +148,12 @@ class TwitterCall(object):
         try:
             handle = urllib2.urlopen(req)
             if "json" == self.format:
-                return TwitterJsonResponse(json.loads(handle.read()))
+                return TwitterJsonResponse(json.loads(handle.read()),
+                                           handle.headers)
             else:
-                return TwitterXmlResponse(handle.read())
+                r = TwitterXmlResponse(handle.read())
+                r.headers = handle.headers
+                return r
         except urllib2.HTTPError, e:
             if (e.code == 304):
                 return []
