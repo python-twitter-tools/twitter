@@ -331,15 +331,14 @@ class SearchAction(Action):
         # We need to be pointing at search.twitter.com to work, and it is less
         # tangly to do it here than in the main()
         twitter.domain="search.twitter.com"
-        twitter.uri=""
+        twitter.uriparts=()
         # We need to bypass the TwitterCall parameter encoding, so we
         # don't encode the plus sign, so we have to encode it ourselves
         query_string = "+".join(
             [quote(term.decode(get_term_encoding()))
              for term in options['extra_args']])
-        twitter.encoded_args = "q=%s" %(query_string)
 
-        results = twitter.search()['results']
+        results = twitter.search(q=query_string)['results']
         f = get_formatter('search', options)
         for result in results:
             resultStr = f(result, options)
