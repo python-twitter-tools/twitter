@@ -67,25 +67,17 @@ class TwitterResponse(object):
         return int(self.headers.getheader('X-RateLimit-Reset'))
 
 
-# Multiple inheritance makes my inner Java nerd cry. Why can't I just
-# add arbitrary attributes to list or str objects?! Guido, we need to
-# talk.
-class TwitterJsonListResponse(TwitterResponse, list):
-    __doc__ = """Twitter JSON Response
-    """ + TwitterResponse.__doc__
-    def __init__(self, lst, headers):
-        TwitterResponse.__init__(self, headers)
-        list.__init__(self, lst)
-class TwitterJsonDictResponse(TwitterResponse, dict):
-    __doc__ = """Twitter JSON Response
-    """ + TwitterResponse.__doc__
-    def __init__(self, d, headers):
-        TwitterResponse.__init__(self, headers)
-        dict.__init__(self, d)
+def wrap_response(response, headers):
+    response_typ = type(response)
+    class WrappedTwitterResponse(TwitterResponse, response_typ):
+        __doc__ = TwitterResponse.__doc__
 
-class TwitterXmlResponse(TwitterResponse, str):
-    __doc__ = """Twitter XML Response
-    """ + TwitterResponse.__doc__
+        def __init__(self, response, headers):
+            response_typ.__init__(self, response)
+            TwitterResponse.__init__(self, headers)
+
+    return WrappedTwitterResponse(response, headers)
+
 
 
 class TwitterCall(object):
@@ -155,14 +147,9 @@ class TwitterCall(object):
             handle = urllib2.urlopen(req)
             if "json" == self.format:
                 res = json.loads(handle.read())
-                response_cls = (
-                    TwitterJsonListResponse if type(res) is list
-                    else TwitterJsonDictResponse)
-                return response_cls(res, handle.headers)
+                return wrap_response(res, handle.headers)
             else:
-                r = TwitterXmlResponse(handle.read())
-                r.headers = handle.headers
-                return r
+                return wrap_response(handle.read(), handle.headers)
         except urllib2.HTTPError, e:
             if (e.code == 304):
                 return []
@@ -288,6 +275,4 @@ class Twitter(TwitterCall):
             secure=secure, uriparts=uriparts)
 
 
-__all__ = ["Twitter", "TwitterError", "TwitterHTTPError",
-           "TwitterJsonListResponse", "TwitterJsonDictResponse",
-           "TwitterXmlResponse"]
+__all__ = ["Twitter", "TwitterError", "TwitterHTTPError", "TwitterResponse"]
