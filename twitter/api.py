@@ -69,6 +69,9 @@ class TwitterResponse(object):
 
 def wrap_response(response, headers):
     response_typ = type(response)
+    if response_typ is bool:
+        # HURF DURF MY NAME IS PYTHON AND I CAN'T SUBCLASS bool.
+        response_typ = int
     class WrappedTwitterResponse(TwitterResponse, response_typ):
         __doc__ = TwitterResponse.__doc__
 
@@ -149,7 +152,7 @@ class TwitterCall(object):
                 res = json.loads(handle.read())
                 return wrap_response(res, handle.headers)
             else:
-                return wrap_response(handle.read(), handle.headers)
+                return wrap_response(str(handle.read()), handle.headers)
         except urllib2.HTTPError, e:
             if (e.code == 304):
                 return []
