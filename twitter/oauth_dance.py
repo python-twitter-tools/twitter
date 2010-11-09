@@ -31,6 +31,8 @@ type it here:
 """
     oauth_url = ('http://api.twitter.com/oauth/authorize?oauth_token=' +
                  oauth_token)
+    print "Opening: %s\n" % oauth_url
+
     try:
         r = webbrowser.open(oauth_url)
         time.sleep(2) # Sometimes the last command can print some
