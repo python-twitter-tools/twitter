@@ -524,3 +524,6 @@ def main(args=sys.argv[1:]):
         print >> sys.stderr, str(e)
         print >> sys.stderr, "Use 'twitter -h' for help."
         raise SystemExit(1)
+
+if __name__ == '__main__':
+    main()
