@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # encoding: utf-8
 """
 USAGE:
@@ -172,6 +171,7 @@ class URLStatusFormatter(object):
     def __call__(self, status, options):
         urls = self.urlmatch.findall(status['text'])
         return u'\n'.join(urls) if urls else ""
+
 
 class ListsFormatter(object):
     def __call__(self, list):
@@ -400,13 +400,30 @@ class AdminAction(Action):
 
 class ListsAction(StatusAction):
     def getStatuses(self, twitter, options):
-        screen_name = twitter.account.verify_credentials()['screen_name']
-        if not (options['extra_args'] and options['extra_args'][0]):
-            for list in twitter.user.lists(user=screen_name)['lists']:
+        if not options['extra_args']:
+            raise TwitterError("Please provide a user to query for lists")
+
+        screen_name = options['extra_args'][0]
+
+        if not options['extra_args'][1:]:
+            lists = twitter.user.lists(user=screen_name)['lists']
+            if not lists:
+                printNicely("This user has no lists.")
+            for list in lists:
                 lf = get_formatter('lists', options)
                 printNicely(lf(list))
-            raise SystemExit(0)
-        return reversed(twitter.user.lists.list.statuses(user=screen_name, list=options['extra_args'][0]))
+            return []
+        else:
+            return reversed(twitter.user.lists.list.statuses(
+                    user=screen_name, list=options['extra_args'][1]))
+
+
+class MyListsAction(ListsAction):
+    def getStatuses(self, twitter, options):
+        screen_name = twitter.account.verify_credentials()['screen_name']
+        options['extra_args'].insert(0, screen_name)
+        return ListsAction.getStatuses(self, twitter, options)
+
 
 class FriendsAction(StatusAction):
     def getStatuses(self, twitter, options):
@@ -496,6 +513,7 @@ actions = {
     'follow'    : FollowAction,
     'friends'   : FriendsAction,
     'list'      : ListsAction,
+    'mylist'    : MyListsAction,
     'help'      : HelpAction,
     'leave'     : LeaveAction,
     'public'    : PublicAction,
