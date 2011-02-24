@@ -13,6 +13,7 @@ ACTIONS:
  help           print this help text that you are currently reading
  leave          remove the specified user from your following list
  public         get latest public tweets
+ list           get list of user lists
  replies        get latest replies
  search         search twitter (Beware: octothorpe, escape it)
  set            set your twitter status
@@ -172,6 +173,30 @@ class URLStatusFormatter(object):
         urls = self.urlmatch.findall(status['text'])
         return u'\n'.join(urls) if urls else ""
 
+class ListsFormatter(object):
+    def __call__(self, list):
+        if list['description']:
+            list_str = u"%-30s (%s)" % (list['name'], list['description'])
+        else:
+            list_str = u"%-30s" % (list['name'])
+        return u"%s\n" % list_str
+
+class ListsVerboseFormatter(object):
+    def __call__(self, list):
+        list_str = u"%-30s\n description: %s\n members: %s\n mode:%s\n" % (list['name'], list['description'], list['member_count'], list['mode'])
+        return list_str
+
+class AnsiListsFormatter(object):
+    def __init__(self):
+        self._colourMap = ansi.ColourMap()
+
+    def __call__(self, list):
+        colour = self._colourMap.colourFor(list['name'])
+        return (u"%s%-15s%s %s" %(
+            ansi.cmdColour(colour), list['name'],
+            ansi.cmdReset(), list['description']))
+
+
 class AdminFormatter(object):
     def __call__(self, action, user):
         user_str = u"%s (%s)" %(user['screen_name'], user['name'])
@@ -249,6 +274,14 @@ search_formatters = {
     'ansi': AnsiSearchFormatter
 }
 formatters['search'] = search_formatters
+
+lists_formatters = {
+    'default': ListsFormatter,
+    'verbose': ListsVerboseFormatter,
+    'urls': None,
+    'ansi': AnsiListsFormatter
+}
+formatters['lists'] = lists_formatters
 
 def get_formatter(action_type, options):
     formatters_dict = formatters.get(action_type)
@@ -365,6 +398,16 @@ class AdminAction(Action):
         else:
             printNicely(af(options['action'], user))
 
+class ListsAction(StatusAction):
+    def getStatuses(self, twitter, options):
+        screen_name = twitter.account.verify_credentials()['screen_name']
+        if not (options['extra_args'] and options['extra_args'][0]):
+            for list in twitter.user.lists(user=screen_name)['lists']:
+                lf = get_formatter('lists', options)
+                printNicely(lf(list))
+            raise SystemExit(0)
+        return reversed(twitter.user.lists.list.statuses(user=screen_name, list=options['extra_args'][0]))
+
 class FriendsAction(StatusAction):
     def getStatuses(self, twitter, options):
         return reversed(twitter.statuses.friends_timeline(count=options["length"]))
@@ -452,6 +495,7 @@ actions = {
     'authorize' : DoNothingAction,
     'follow'    : FollowAction,
     'friends'   : FriendsAction,
+    'list'      : ListsAction,
     'help'      : HelpAction,
     'leave'     : LeaveAction,
     'public'    : PublicAction,
