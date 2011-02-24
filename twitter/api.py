@@ -77,7 +77,8 @@ def wrap_response(response, headers):
         __doc__ = TwitterResponse.__doc__
 
         def __init__(self, response):
-            response_typ.__init__(self, response)
+            if response_typ is not int:
+                response_typ.__init__(self, response)
             TwitterResponse.__init__(self, headers)
 
     return WrappedTwitterResponse(response)
