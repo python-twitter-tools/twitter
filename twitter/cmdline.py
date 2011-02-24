@@ -7,16 +7,19 @@ USAGE:
 
 ACTIONS:
  authorize      authorize the command-line tool to interact with Twitter
- follow         add the specified user to your follow list
+ follow         follow a user
  friends        get latest tweets from your friends (default action)
  help           print this help text that you are currently reading
- leave          remove the specified user from your following list
+ leave          stop following a user
+ list           get list of a user's lists; give a list name to get
+                    tweets from that list
+ mylist         get list of your lists; give a list name to get tweets
+                    from that list
  public         get latest public tweets
- list           get list of user lists
- replies        get latest replies
+ replies        get latest replies to you
  search         search twitter (Beware: octothorpe, escape it)
  set            set your twitter status
- shell          login the twitter shell
+ shell          login to the twitter shell
 
 
 OPTIONS:
@@ -30,8 +33,8 @@ OPTIONS:
  -l --length <count>        specify number of status updates shown
                             (default: 20, max: 200)
  -t --timestamp             show time before status lines
- -d --datestamp             shoe date before status lines
-    --no-ssl                use HTTP instead of more secure HTTPS
+ -d --datestamp             show date before status lines
+    --no-ssl                use less-secure HTTP instead of HTTPS
     --oauth <filename>      filename to read/store oauth credentials to
 
 FORMATS for the --format option
