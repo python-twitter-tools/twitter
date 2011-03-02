@@ -350,10 +350,8 @@ class NoSuchAction(Action):
         raise NoSuchActionError("No such action: %s" %(options['action']))
 
 def printNicely(string):
-    if sys.stdout.encoding:
-        print(string.encode(sys.stdout.encoding, 'replace'))
-    else:
-        print(string.encode('utf-8'))
+    sys.stdout.buffer.write(string.encode('utf8'))
+    print()
 
 class StatusAction(Action):
     def __call__(self, twitter, options):
