@@ -1,4 +1,4 @@
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from twitter.twitter_globals import POST_ACTIONS
 from twitter.auth import NoAuth
@@ -110,8 +110,8 @@ class TwitterCall(object):
         for uripart in self.uriparts:
             # If this part matches a keyword argument, use the
             # supplied value otherwise, just use the part.
-            uriparts.append(unicode(kwargs.pop(uripart, uripart)))
-        uri = u'/'.join(uriparts)
+            uriparts.append(str(kwargs.pop(uripart, uripart)))
+        uri = '/'.join(uriparts)
 
         method = "GET"
         for action in POST_ACTIONS:
@@ -144,16 +144,16 @@ class TwitterCall(object):
             else:
                 body = arg_data
 
-        req = urllib2.Request(uriBase, body, headers)
+        req = urllib.request.Request(uriBase, body, headers)
 
         try:
-            handle = urllib2.urlopen(req)
+            handle = urllib.request.urlopen(req)
             if "json" == self.format:
                 res = json.loads(handle.read())
                 return wrap_response(res, handle.headers)
             else:
                 return wrap_response(str(handle.read()), handle.headers)
-        except urllib2.HTTPError, e:
+        except urllib.error.HTTPError as e:
             if (e.code == 304):
                 return []
             else:

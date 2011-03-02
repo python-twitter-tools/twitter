@@ -7,11 +7,11 @@ Internal utility functions.
 
 
 import re
-from htmlentitydefs import name2codepoint
+from html.entities import name2codepoint
 
 def htmlentitydecode(s):
     return re.sub(
         '&(%s);' % '|'.join(name2codepoint), 
-        lambda m: unichr(name2codepoint[m.group(1)]), s)
+        lambda m: chr(name2codepoint[m.group(1)]), s)
 
 __all__ = ["htmlentitydecode"]

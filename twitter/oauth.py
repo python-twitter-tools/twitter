@@ -3,7 +3,7 @@ from twitter.auth import Auth
 from time import time
 from random import getrandbits
 from time import time
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import hashlib
 import hmac
 
@@ -13,8 +13,8 @@ def write_token_file(filename, oauth_token, oauth_token_secret):
     Write a token file to hold the oauth token and oauth token secret.
     """
     oauth_file = open(filename, 'w')
-    print >> oauth_file, oauth_token
-    print >> oauth_file, oauth_token_secret
+    print(oauth_token, file=oauth_file)
+    print(oauth_token_secret, file=oauth_file)
     oauth_file.close()
 
 def read_token_file(filename):
@@ -52,16 +52,16 @@ class OAuth(Auth):
         params['oauth_timestamp'] = str(int(time()))
         params['oauth_nonce'] = str(getrandbits(64))
 
-        enc_params = urlencode_noplus(sorted(params.iteritems()))
+        enc_params = urlencode_noplus(sorted(params.items()))
 
-        key = self.consumer_secret + "&" + urllib.quote(self.token_secret, '')
+        key = self.consumer_secret + "&" + urllib.parse.quote(self.token_secret, '')
 
         message = '&'.join(
-            urllib.quote(i, '') for i in [method.upper(), base_url, enc_params])
+            urllib.parse.quote(i, '') for i in [method.upper(), base_url, enc_params])
 
         signature = hmac.new(
             key, message, hashlib.sha1).digest().encode('base64')[:-1]
-        return enc_params + "&" + "oauth_signature=" + urllib.quote(signature, '')
+        return enc_params + "&" + "oauth_signature=" + urllib.parse.quote(signature, '')
 
     def generate_headers(self):
         return {}
@@ -73,18 +73,18 @@ class OAuth(Auth):
 def urlencode_noplus(query):
     if hasattr(query,"items"):
         # mapping objects
-        query = query.items()
+        query = list(query.items())
 
     encoded_bits = []
     for n, v in query:
         # and do unicode here while we are at it...
-        if isinstance(n, unicode):
+        if isinstance(n, str):
             n = n.encode('utf-8')
         else:
             n = str(n)
-        if isinstance(v, unicode):
+        if isinstance(v, str):
             v = v.encode('utf-8')
         else:
             v = str(v)
-        encoded_bits.append("%s=%s" % (urllib.quote(n, ""), urllib.quote(v, "")))
+        encoded_bits.append("%s=%s" % (urllib.parse.quote(n, ""), urllib.parse.quote(v, "")))
     return "&".join(encoded_bits)

@@ -68,15 +68,15 @@ from getopt import gnu_getopt as getopt, GetoptError
 from getpass import getpass
 import re
 import os.path
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 import datetime
-from urllib import quote
+from urllib.parse import quote
 import webbrowser
 
-from api import Twitter, TwitterError
-from oauth import OAuth, write_token_file, read_token_file
-from oauth_dance import oauth_dance
-import ansi
+from .api import Twitter, TwitterError
+from .oauth import OAuth, write_token_file, read_token_file
+from .oauth_dance import oauth_dance
+from . import ansi
 
 OPTIONS = {
     'action': 'friends',
@@ -146,7 +146,7 @@ def get_time_string(status, options, format="%a %b %d %H:%M:%S +0000 %Y"):
 
 class StatusFormatter(object):
     def __call__(self, status, options):
-        return (u"%s%s %s" %(
+        return ("%s%s %s" %(
             get_time_string(status, options),
             status['user']['screen_name'], status['text']))
 
@@ -156,14 +156,14 @@ class AnsiStatusFormatter(object):
 
     def __call__(self, status, options):
         colour = self._colourMap.colourFor(status['user']['screen_name'])
-        return (u"%s%s%s%s %s" %(
+        return ("%s%s%s%s %s" %(
             get_time_string(status, options),
             ansi.cmdColour(colour), status['user']['screen_name'],
             ansi.cmdReset(), status['text']))
 
 class VerboseStatusFormatter(object):
     def __call__(self, status, options):
-        return (u"-- %s (%s) on %s\n%s\n" %(
+        return ("-- %s (%s) on %s\n%s\n" %(
             status['user']['screen_name'],
             status['user']['location'],
             status['created_at'],
@@ -173,20 +173,20 @@ class URLStatusFormatter(object):
     urlmatch = re.compile(r'https?://\S+')
     def __call__(self, status, options):
         urls = self.urlmatch.findall(status['text'])
-        return u'\n'.join(urls) if urls else ""
+        return '\n'.join(urls) if urls else ""
 
 
 class ListsFormatter(object):
     def __call__(self, list):
         if list['description']:
-            list_str = u"%-30s (%s)" % (list['name'], list['description'])
+            list_str = "%-30s (%s)" % (list['name'], list['description'])
         else:
-            list_str = u"%-30s" % (list['name'])
-        return u"%s\n" % list_str
+            list_str = "%-30s" % (list['name'])
+        return "%s\n" % list_str
 
 class ListsVerboseFormatter(object):
     def __call__(self, list):
-        list_str = u"%-30s\n description: %s\n members: %s\n mode:%s\n" % (list['name'], list['description'], list['member_count'], list['mode'])
+        list_str = "%-30s\n description: %s\n members: %s\n mode:%s\n" % (list['name'], list['description'], list['member_count'], list['mode'])
         return list_str
 
 class AnsiListsFormatter(object):
@@ -195,22 +195,22 @@ class AnsiListsFormatter(object):
 
     def __call__(self, list):
         colour = self._colourMap.colourFor(list['name'])
-        return (u"%s%-15s%s %s" %(
+        return ("%s%-15s%s %s" %(
             ansi.cmdColour(colour), list['name'],
             ansi.cmdReset(), list['description']))
 
 
 class AdminFormatter(object):
     def __call__(self, action, user):
-        user_str = u"%s (%s)" %(user['screen_name'], user['name'])
+        user_str = "%s (%s)" %(user['screen_name'], user['name'])
         if action == "follow":
-            return u"You are now following %s.\n" %(user_str)
+            return "You are now following %s.\n" %(user_str)
         else:
-            return u"You are no longer following %s.\n" %(user_str)
+            return "You are no longer following %s.\n" %(user_str)
 
 class VerboseAdminFormatter(object):
     def __call__(self, action, user):
-        return(u"-- %s: %s (%s): %s" % (
+        return("-- %s: %s (%s): %s" % (
             "Following" if action == "follow" else "Leaving",
             user['screen_name'],
             user['name'],
@@ -218,7 +218,7 @@ class VerboseAdminFormatter(object):
 
 class SearchFormatter(object):
     def __call__(self, result, options):
-        return(u"%s%s %s" %(
+        return("%s%s %s" %(
             get_time_string(result, options, "%a, %d %b %Y %H:%M:%S +0000"),
             result['from_user'], result['text']))
 
@@ -229,7 +229,7 @@ class URLSearchFormatter(object):
     urlmatch = re.compile(r'https?://\S+')
     def __call__(self, result, options):
         urls = self.urlmatch.findall(result['text'])
-        return u'\n'.join(urls) if urls else ""
+        return '\n'.join(urls) if urls else ""
 
 class AnsiSearchFormatter(object):
     def __init__(self):
@@ -237,7 +237,7 @@ class AnsiSearchFormatter(object):
 
     def __call__(self, result, options):
         colour = self._colourMap.colourFor(result['from_user'])
-        return (u"%s%s%s%s %s" %(
+        return ("%s%s%s%s %s" %(
             get_time_string(result, options, "%a, %d %b %Y %H:%M:%S +0000"),
             ansi.cmdColour(colour), result['from_user'],
             ansi.cmdReset(), result['text']))
@@ -312,13 +312,13 @@ class Action(object):
 
         prompt = 'You really want to %s %s? ' %(subject, sample)
         try:
-            answer = raw_input(prompt).lower()
+            answer = input(prompt).lower()
             if careful:
                 return answer in ('yes', 'y')
             else:
                 return answer not in ('no', 'n')
         except EOFError:
-            print >>sys.stderr # Put Newline since Enter was never pressed
+            print(file=sys.stderr) # Put Newline since Enter was never pressed
             # TODO:
                 #   Figure out why on OS X the raw_input keeps raising
                 #   EOFError and is never able to reset and get more input
@@ -339,7 +339,7 @@ class Action(object):
             else:
                 doAction()
         except KeyboardInterrupt:
-            print >>sys.stderr, '\n[Keyboard Interrupt]'
+            print('\n[Keyboard Interrupt]', file=sys.stderr)
             pass
 
 class NoSuchActionError(Exception):
@@ -351,9 +351,9 @@ class NoSuchAction(Action):
 
 def printNicely(string):
     if sys.stdout.encoding:
-        print string.encode(sys.stdout.encoding, 'replace')
+        print(string.encode(sys.stdout.encoding, 'replace'))
     else:
-        print string.encode('utf-8')
+        print(string.encode('utf-8'))
 
 class StatusAction(Action):
     def __call__(self, twitter, options):
@@ -390,14 +390,14 @@ class AdminAction(Action):
         af = get_formatter('admin', options)
         try:
             user = self.getUser(twitter, options['extra_args'][0])
-        except TwitterError, e:
-            print "There was a problem following or leaving the specified user."
-            print "You may be trying to follow a user you are already following;"
-            print "Leaving a user you are not currently following;"
-            print "Or the user may not exist."
-            print "Sorry."
-            print
-            print e
+        except TwitterError as e:
+            print("There was a problem following or leaving the specified user.")
+            print("You may be trying to follow a user you are already following;")
+            print("Leaving a user you are not currently following;")
+            print("Or the user may not exist.")
+            print("Sorry.")
+            print()
+            print(e)
         else:
             printNicely(af(options['action'], user))
 
@@ -452,7 +452,7 @@ class SetStatusAction(Action):
     def __call__(self, twitter, options):
         statusTxt = (" ".join(options['extra_args']).decode(get_term_encoding())
                      if options['extra_args']
-                     else unicode(raw_input("message: ")))
+                     else str(input("message: ")))
         status = (statusTxt.encode('utf8', 'replace'))
         twitter.statuses.update(status=status)
 
@@ -473,39 +473,39 @@ class TwitterShell(Action):
         while True:
             options['action'] = ""
             try:
-                args = raw_input(prompt).split()
+                args = input(prompt).split()
                 parse_args(args, options)
                 if not options['action']:
                     continue
                 elif options['action'] == 'exit':
                     raise SystemExit(0)
                 elif options['action'] == 'shell':
-                    print >>sys.stderr, 'Sorry Xzibit does not work here!'
+                    print('Sorry Xzibit does not work here!', file=sys.stderr)
                     continue
                 elif options['action'] == 'help':
-                    print >>sys.stderr, '''\ntwitter> `action`\n
+                    print('''\ntwitter> `action`\n
                           The Shell Accepts all the command line actions along with:
 
                           exit    Leave the twitter shell (^D may also be used)
 
-                          Full CMD Line help is appended below for your convinience.'''
+                          Full CMD Line help is appended below for your convinience.''', file=sys.stderr)
                 Action()(twitter, options)
                 options['action'] = ''
-            except NoSuchActionError, e:
-                print >>sys.stderr, e
+            except NoSuchActionError as e:
+                print(e, file=sys.stderr)
             except KeyboardInterrupt:
-                print >>sys.stderr, '\n[Keyboard Interrupt]'
+                print('\n[Keyboard Interrupt]', file=sys.stderr)
             except EOFError:
-                print >>sys.stderr
+                print(file=sys.stderr)
                 leaving = self.ask(subject='Leave')
                 if not leaving:
-                    print >>sys.stderr, 'Excellent!'
+                    print('Excellent!', file=sys.stderr)
                 else:
                     raise SystemExit(0)
 
 class HelpAction(Action):
     def __call__(self, twitter, options):
-        print __doc__
+        print(__doc__)
 
 class DoNothingAction(Action):
     def __call__(self, twitter, options):
@@ -540,9 +540,9 @@ def main(args=sys.argv[1:]):
     arg_options = {}
     try:
         parse_args(args, arg_options)
-    except GetoptError, e:
-        print >> sys.stderr, "I can't do that, %s." %(e)
-        print >> sys.stderr
+    except GetoptError as e:
+        print("I can't do that, %s." %(e), file=sys.stderr)
+        print(file=sys.stderr)
         raise SystemExit(1)
 
     config_path = os.path.expanduser(
@@ -554,13 +554,13 @@ def main(args=sys.argv[1:]):
     # arguments.
     options = dict(OPTIONS)
     for d in config_options, arg_options:
-        for k,v in d.items():
+        for k,v in list(d.items()):
             if v: options[k] = v
 
     if options['refresh'] and options['action'] not in (
         'friends', 'public', 'replies'):
-        print >> sys.stderr, "You can only refresh the friends, public, or replies actions."
-        print >> sys.stderr, "Use 'twitter -h' for help."
+        print("You can only refresh the friends, public, or replies actions.", file=sys.stderr)
+        print("Use 'twitter -h' for help.", file=sys.stderr)
         return 1
 
     oauth_filename = os.path.expanduser(options['oauth_filename'])
@@ -582,10 +582,10 @@ def main(args=sys.argv[1:]):
 
     try:
         Action()(twitter, options)
-    except NoSuchActionError, e:
-        print >>sys.stderr, e
+    except NoSuchActionError as e:
+        print(e, file=sys.stderr)
         raise SystemExit(1)
-    except TwitterError, e:
-        print >> sys.stderr, str(e)
-        print >> sys.stderr, "Use 'twitter -h' for help."
+    except TwitterError as e:
+        print(str(e), file=sys.stderr)
+        print("Use 'twitter -h' for help.", file=sys.stderr)
         raise SystemExit(1)

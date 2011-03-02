@@ -20,12 +20,12 @@ import sys
 ESC = chr(0x1B)
 RESET = "0"
 
-COLOURS_NAMED = dict(zip(
+COLOURS_NAMED = dict(list(zip(
     ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'],
     [str(x) for x in range(30, 38)]
-))
+)))
 COLOURS_MIDS = [
-    colour for name, colour in COLOURS_NAMED.items()
+    colour for name, colour in list(COLOURS_NAMED.items())
     if name not in ('black', 'white')
 ]
 
@@ -47,8 +47,8 @@ class ColourMap(object):
         Returns an ansi colour value given a `string`.
         The same ansi colour value is always returned for the same string
         '''
-        if not self._cmap.has_key(string):
-            self._cmap[string] = self._colourIter.next()
+        if string not in self._cmap:
+            self._cmap[string] = next(self._colourIter)
         return self._cmap[string]
 
 def cmdReset():

@@ -44,16 +44,16 @@ IRC_REGULAR = chr(0x0f)
 import sys
 import time
 from dateutil.parser import parse
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 from heapq import heappop, heappush
 import traceback
 import os
 import os.path
 
-from api import Twitter, TwitterError
-from oauth import OAuth, read_token_file
-from oauth_dance import oauth_dance
-from util import htmlentitydecode
+from .api import Twitter, TwitterError
+from .oauth import OAuth, read_token_file
+from .oauth_dance import oauth_dance
+from .util import htmlentitydecode
 
 try:
     import irclib
@@ -77,10 +77,10 @@ class SchedTask(object):
 
     def __repr__(self):
         return "<SchedTask %s next:%i delta:%i>" %(
-            self.task.__name__, self.next, self.delta)
+            self.task.__name__, self.__next__, self.delta)
 
     def __cmp__(self, other):
-        return cmp(self.next, other.next)
+        return cmp(self.__next__, other.__next__)
 
     def __call__(self):
         return self.task()
@@ -94,7 +94,7 @@ class Scheduler(object):
     def next_task(self):
         now = time.time()
         task = heappop(self.task_heap)
-        wait = task.next - now
+        wait = task.__next__ - now
         task.next = now + task.delta
         heappush(self.task_heap, task)
         if (wait > 0):
@@ -137,8 +137,8 @@ class TwitterBot(object):
         debug("In check_statuses")
         try:
             updates = self.twitter.statuses.friends_timeline()
-        except Exception, e:
-            print >> sys.stderr, "Exception while querying twitter:"
+        except Exception as e:
+            print("Exception while querying twitter:", file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
             return
 
@@ -155,7 +155,7 @@ class TwitterBot(object):
                 #   to people who are not on our following list.
                 if not text.startswith("@"):
                     self.privmsg_channels(
-                        u"=^_^=  %s%s%s %s" %(
+                        "=^_^=  %s%s%s %s" %(
                             IRC_BOLD, update['user']['screen_name'],
                             IRC_BOLD, text.decode('utf-8')))
 
@@ -304,11 +304,11 @@ def main():
         if not os.path.exists(configFilename):
             raise Exception()
         load_config(configFilename)
-    except Exception, e:
-        print >> sys.stderr, "Error while loading ini file %s" %(
-            configFilename)
-        print >> sys.stderr, e
-        print >> sys.stderr, __doc__
+    except Exception as e:
+        print("Error while loading ini file %s" %(
+            configFilename), file=sys.stderr)
+        print(e, file=sys.stderr)
+        print(__doc__, file=sys.stderr)
         sys.exit(1)
 
     bot = TwitterBot(configFilename)
