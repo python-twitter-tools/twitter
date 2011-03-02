@@ -451,8 +451,7 @@ class SetStatusAction(Action):
         statusTxt = (" ".join(options['extra_args'])
                      if options['extra_args']
                      else str(input("message: ")))
-        status = (statusTxt.encode('utf8', 'replace'))
-        twitter.statuses.update(status=status)
+        twitter.statuses.update(status=statusTxt)
 
 class TwitterShell(Action):
 
