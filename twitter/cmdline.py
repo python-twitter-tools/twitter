@@ -448,7 +448,7 @@ class LeaveAction(AdminAction):
 
 class SetStatusAction(Action):
     def __call__(self, twitter, options):
-        statusTxt = (" ".join(options['extra_args']).decode(get_term_encoding())
+        statusTxt = (" ".join(options['extra_args'])
                      if options['extra_args']
                      else str(input("message: ")))
         status = (statusTxt.encode('utf8', 'replace'))
