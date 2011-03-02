@@ -154,7 +154,7 @@ class TwitterCall(object):
             else:
                 return wrap_response(
                     handle.read().decode('utf8'), handle.headers)
-        except urllib.HTTPError as e:
+        except urllib2.HTTPError as e:
             if (e.code == 304):
                 return []
             else:
