@@ -15,7 +15,7 @@ if sys.version_info < (3,):
     install_requires.append("python-dateutil>=1.1")
 
 
-setup(name='twitter',
+setup(name='twitter3',
       version=version,
       description="An API and command-line toolset for Twitter (twitter.com)",
       long_description=open("./README", "r").read(),
@@ -45,6 +45,5 @@ setup(name='twitter',
       # -*- Entry points: -*-
       [console_scripts]
       twitter=twitter.cmdline:main
-      twitterbot=twitter.ircbot:main
       """,
       )
