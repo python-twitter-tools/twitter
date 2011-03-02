@@ -6,7 +6,7 @@ from time import time
 import urllib.request, urllib.parse, urllib.error
 import hashlib
 import hmac
-
+import base64
 
 def write_token_file(filename, oauth_token, oauth_token_secret):
     """
@@ -59,8 +59,9 @@ class OAuth(Auth):
         message = '&'.join(
             urllib.parse.quote(i, '') for i in [method.upper(), base_url, enc_params])
 
-        signature = hmac.new(
-            key, message, hashlib.sha1).digest().encode('base64')[:-1]
+        signature = (base64.b64encode(hmac.new(
+                    key.encode('ascii'), message.encode('ascii'), hashlib.sha1)
+                                      .digest()))
         return enc_params + "&" + "oauth_signature=" + urllib.parse.quote(signature, '')
 
     def generate_headers(self):
