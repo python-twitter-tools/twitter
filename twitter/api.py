@@ -142,7 +142,7 @@ class TwitterCall(object):
                 uriBase += '?' + arg_data
                 body = None
             else:
-                body = arg_data
+                body = arg_data.encode('utf8')
 
         req = urllib.request.Request(uriBase, body, headers)
 
