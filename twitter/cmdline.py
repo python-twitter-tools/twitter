@@ -371,7 +371,7 @@ class SearchAction(Action):
         # We need to bypass the TwitterCall parameter encoding, so we
         # don't encode the plus sign, so we have to encode it ourselves
         query_string = "+".join(
-            [quote(term.decode(get_term_encoding()))
+            [quote(term)
              for term in options['extra_args']])
 
         results = twitter.search(q=query_string)['results']
