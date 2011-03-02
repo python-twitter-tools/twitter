@@ -5,14 +5,14 @@ version = '1.5'
 
 install_requires = [
     # -*- Extra requirements: -*-
-    "python-dateutil>=1.1",
     ]
 
-def _py26OrGreater():
-    return sys.hexversion > 0x20600f0
-
-if not _py26OrGreater():
+if sys.version_info < (2,6,):
     install_requires.append("simplejson>=1.7.1")
+
+if sys.version_info < (3,):
+    # There is no dateutil for Python 3. :(
+    install_requires.append("python-dateutil>=1.1")
 
 
 setup(name='twitter',
