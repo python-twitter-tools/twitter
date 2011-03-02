@@ -149,11 +149,12 @@ class TwitterCall(object):
         try:
             handle = urllib2.urlopen(req)
             if "json" == self.format:
-                res = json.loads(handle.read())
+                res = json.loads(handle.read().decode('utf8'))
                 return wrap_response(res, handle.headers)
             else:
-                return wrap_response(str(handle.read()), handle.headers)
-        except urllib2.HTTPError, e:
+                return wrap_response(
+                    handle.read().decode('utf8'), handle.headers)
+        except urllib.HTTPError as e:
             if (e.code == 304):
                 return []
             else:
