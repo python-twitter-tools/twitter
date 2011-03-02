@@ -1,7 +1,5 @@
 import urllib2
 
-from exceptions import Exception
-
 from twitter.twitter_globals import POST_ACTIONS
 from twitter.auth import NoAuth
 
