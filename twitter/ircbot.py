@@ -18,6 +18,7 @@ server: <irc_server>
 port: <irc_port>
 nick: <irc_nickname>
 channel: <irc_channels_to_join>
+prefixes: <prefix_type>
 
 [twitter]
 oauth_token_file: <oauth_token_filename>
@@ -28,6 +29,8 @@ oauth_token_file: <oauth_token_filename>
   The channel argument can accept multiple channels separated by commas.
 
   The default token file is ~/.twitterbot_oauth.
+
+  The default prefix type is 'cats'. You can also use 'none'.
 
 """
 
@@ -54,6 +57,22 @@ from api import Twitter, TwitterError
 from oauth import OAuth, read_token_file
 from oauth_dance import oauth_dance
 from util import htmlentitydecode
+
+PREFIXES = dict(
+    cats=dict(
+        new_tweet="=^_^= ",
+        error="=O_o= ",
+        inform="=o_o= "
+        )
+    none=dict(
+        new_tweet=""
+        )
+    )
+ACTIVE_PREFIXES=dict()
+
+def get_prefix(prefix_typ=None):
+    return ACTIVE_PREFIXES.get(prefix_typ, ACTIVE_PREFIXES.get('new_tweet', ''))
+
 
 try:
     import irclib
@@ -155,7 +174,8 @@ class TwitterBot(object):
                 #   to people who are not on our following list.
                 if not text.startswith("@"):
                     self.privmsg_channels(
-                        u"=^_^=  %s%s%s %s" %(
+                        u"%s  %s%s%s %s" %(
+                            get_prefix(),
                             IRC_BOLD, update['user']['screen_name'],
                             IRC_BOLD, text.decode('utf-8')))
 
@@ -181,9 +201,10 @@ class TwitterBot(object):
             else:
                 conn.privmsg(
                     evt.source().split('!')[0],
-                    "=^_^= Hi! I'm Twitterbot! you can (follow "
+                    "%sHi! I'm Twitterbot! you can (follow "
                     + "<twitter_name>) to make me follow a user or "
-                    + "(unfollow <twitter_name>) to make me stop.")
+                    + "(unfollow <twitter_name>) to make me stop." %
+                    get_prefix())
         except Exception:
             traceback.print_exc(file=sys.stderr)
 
@@ -214,21 +235,23 @@ class TwitterBot(object):
         if (name in friends):
             conn.privmsg(
                 userNick,
-                "=O_o= I'm already following %s." %(name))
+                "%sI'm already following %s." %(get_prefix('error'), name))
         else:
             try:
                 self.twitter.friendships.create(id=name)
             except TwitterError:
                 conn.privmsg(
                     userNick,
-                    "=O_o= I can't follow that user. Are you sure the name is correct?")
+                    "%sI can't follow that user. Are you sure the name is correct?" %(
+                        get_prefix('error')
+                        ))
                 return
             conn.privmsg(
                 userNick,
-                "=^_^= Okay! I'm now following %s." %(name))
+                "%sOkay! I'm now following %s." %(get_prefix('followed'), name))
             self.privmsg_channels(
-                "=o_o= %s has asked me to start following %s" %(
-                    userNick, name))
+                "%s%s has asked me to start following %s" %(
+                    get_prefix('inform'), userNick, name))
 
     def unfollow(self, conn, evt, name):
         userNick = evt.source().split('!')[0]
@@ -237,15 +260,16 @@ class TwitterBot(object):
         if (name not in friends):
             conn.privmsg(
                 userNick,
-                "=O_o= I'm not following %s." %(name))
+                "%sI'm not following %s." %(get_prefix('error'), name))
         else:
             self.twitter.friendships.destroy(id=name)
             conn.privmsg(
                 userNick,
-                "=^_^= Okay! I've stopped following %s." %(name))
+                "%sOkay! I've stopped following %s." %(
+                    get_prefix('stop_follow'), name))
             self.privmsg_channels(
-                "=o_o= %s has asked me to stop following %s" %(
-                    userNick, name))
+                "%s%s has asked me to stop following %s" %(
+                    get_prefix('inform'), userNick, name))
 
     def run(self):
         self.ircServer.connect(
@@ -262,7 +286,8 @@ class TwitterBot(object):
             except KeyboardInterrupt:
                 break
             except TwitterError:
-                # twitter.com is probably down because it sucks. ignore the fault and keep going
+                # twitter.com is probably down because it
+                # sucks. ignore the fault and keep going
                 pass
 
 def load_config(filename):
@@ -272,8 +297,10 @@ def load_config(filename):
     cp.add_section('irc')
     cp.set('irc', 'port', '6667')
     cp.set('irc', 'nick', 'twitterbot')
+    cp.set('irc', 'prefixes', 'cats')
     cp.add_section('twitter')
     cp.set('twitter', 'oauth_token_file', OAUTH_FILE)
+
     cp.read((filename,))
 
     # attempt to read these properties-- they are required
@@ -311,5 +338,7 @@ def main():
         print >> sys.stderr, __doc__
         sys.exit(1)
 
+    global ACTIVE_PREFIXES
+    ACTIVE_PREFIXES = PREFIXES[cp.get('irc', 'prefixes')]
     bot = TwitterBot(configFilename)
     return bot.run()
