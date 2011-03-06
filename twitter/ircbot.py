@@ -18,6 +18,7 @@ server: <irc_server>
 port: <irc_port>
 nick: <irc_nickname>
 channel: <irc_channels_to_join>
+prefixes: <prefix_type>
 
 [twitter]
 oauth_token_file: <oauth_token_filename>
@@ -28,6 +29,8 @@ oauth_token_file: <oauth_token_filename>
   The channel argument can accept multiple channels separated by commas.
 
   The default token file is ~/.twitterbot_oauth.
+
+  The default prefix type is 'cats'. You can also use 'none'.
 
 """
 
@@ -43,8 +46,9 @@ IRC_REGULAR = chr(0x0f)
 
 import sys
 import time
-from dateutil.parser import parse
-from configparser import SafeConfigParser
+from datetime import datetime, timedelta
+from email.utils import parsedate
+from ConfigParser import SafeConfigParser
 from heapq import heappop, heappush
 import traceback
 import os
@@ -54,6 +58,22 @@ from .api import Twitter, TwitterError
 from .oauth import OAuth, read_token_file
 from .oauth_dance import oauth_dance
 from .util import htmlentitydecode
+
+PREFIXES = dict(
+    cats=dict(
+        new_tweet="=^_^= ",
+        error="=O_o= ",
+        inform="=o_o= "
+        ),
+    none=dict(
+        new_tweet=""
+        ),
+    )
+ACTIVE_PREFIXES=dict()
+
+def get_prefix(prefix_typ=None):
+    return ACTIVE_PREFIXES.get(prefix_typ, ACTIVE_PREFIXES.get('new_tweet', ''))
+
 
 try:
     import irclib
@@ -100,7 +120,7 @@ class Scheduler(object):
         if (wait > 0):
             time.sleep(wait)
         task()
-        debug("tasks: " + str(self.task_heap))
+        #debug("tasks: " + str(self.task_heap))
 
     def run_forever(self):
         while True:
@@ -111,6 +131,9 @@ class TwitterBot(object):
     def __init__(self, configFilename):
         self.configFilename = configFilename
         self.config = load_config(self.configFilename)
+
+        global ACTIVE_PREFIXES
+        ACTIVE_PREFIXES = PREFIXES[self.config.get('irc', 'prefixes')]
 
         oauth_file = self.config.get('twitter', 'oauth_token_file')
         if not os.path.exists(oauth_file):
@@ -131,21 +154,22 @@ class TwitterBot(object):
         self.sched = Scheduler(
             (SchedTask(self.process_events, 1),
              SchedTask(self.check_statuses, 120)))
-        self.lastUpdate = time.gmtime()
+        self.lastUpdate = (datetime.now() - timedelta(minutes=10)).utctimetuple()
 
     def check_statuses(self):
         debug("In check_statuses")
         try:
-            updates = self.twitter.statuses.friends_timeline()
+            updates = reversed(self.twitter.statuses.friends_timeline())
         except Exception as e:
             print("Exception while querying twitter:", file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
             return
 
         nextLastUpdate = self.lastUpdate
+        debug("self.lastUpdate is %s" % self.lastUpdate)
         for update in updates:
-            crt = parse(update['created_at']).utctimetuple()
-            if (crt > self.lastUpdate):
+            crt = parsedate(update['created_at'])
+            if (crt > nextLastUpdate):
                 text = (htmlentitydecode(
                     update['text'].replace('\n', ' '))
                     .encode('utf-8', 'replace'))
@@ -155,17 +179,20 @@ class TwitterBot(object):
                 #   to people who are not on our following list.
                 if not text.startswith("@"):
                     self.privmsg_channels(
-                        "=^_^=  %s%s%s %s" %(
+                        "%s %s%s%s %s" %(
+                            get_prefix(),
                             IRC_BOLD, update['user']['screen_name'],
                             IRC_BOLD, text.decode('utf-8')))
 
+                debug("tweet has crt %s, updating nextLastUpdate (was %s)" %(
+                        crt, nextLastUpdate,
+                        ))
                 nextLastUpdate = crt
-            else:
-                break
+
+        debug("setting self.lastUpdate to %s" % nextLastUpdate)
         self.lastUpdate = nextLastUpdate
 
     def process_events(self):
-        debug("In process_events")
         self.irc.process_once()
 
     def handle_privmsg(self, conn, evt):
@@ -181,9 +208,10 @@ class TwitterBot(object):
             else:
                 conn.privmsg(
                     evt.source().split('!')[0],
-                    "=^_^= Hi! I'm Twitterbot! you can (follow "
+                    "%sHi! I'm Twitterbot! you can (follow "
                     + "<twitter_name>) to make me follow a user or "
-                    + "(unfollow <twitter_name>) to make me stop.")
+                    + "(unfollow <twitter_name>) to make me stop." %
+                    get_prefix())
         except Exception:
             traceback.print_exc(file=sys.stderr)
 
@@ -214,21 +242,23 @@ class TwitterBot(object):
         if (name in friends):
             conn.privmsg(
                 userNick,
-                "=O_o= I'm already following %s." %(name))
+                "%sI'm already following %s." %(get_prefix('error'), name))
         else:
             try:
                 self.twitter.friendships.create(id=name)
             except TwitterError:
                 conn.privmsg(
                     userNick,
-                    "=O_o= I can't follow that user. Are you sure the name is correct?")
+                    "%sI can't follow that user. Are you sure the name is correct?" %(
+                        get_prefix('error')
+                        ))
                 return
             conn.privmsg(
                 userNick,
-                "=^_^= Okay! I'm now following %s." %(name))
+                "%sOkay! I'm now following %s." %(get_prefix('followed'), name))
             self.privmsg_channels(
-                "=o_o= %s has asked me to start following %s" %(
-                    userNick, name))
+                "%s%s has asked me to start following %s" %(
+                    get_prefix('inform'), userNick, name))
 
     def unfollow(self, conn, evt, name):
         userNick = evt.source().split('!')[0]
@@ -237,15 +267,16 @@ class TwitterBot(object):
         if (name not in friends):
             conn.privmsg(
                 userNick,
-                "=O_o= I'm not following %s." %(name))
+                "%sI'm not following %s." %(get_prefix('error'), name))
         else:
             self.twitter.friendships.destroy(id=name)
             conn.privmsg(
                 userNick,
-                "=^_^= Okay! I've stopped following %s." %(name))
+                "%sOkay! I've stopped following %s." %(
+                    get_prefix('stop_follow'), name))
             self.privmsg_channels(
-                "=o_o= %s has asked me to stop following %s" %(
-                    userNick, name))
+                "%s%s has asked me to stop following %s" %(
+                    get_prefix('inform'), userNick, name))
 
     def run(self):
         self.ircServer.connect(
@@ -262,7 +293,8 @@ class TwitterBot(object):
             except KeyboardInterrupt:
                 break
             except TwitterError:
-                # twitter.com is probably down because it sucks. ignore the fault and keep going
+                # twitter.com is probably down because it
+                # sucks. ignore the fault and keep going
                 pass
 
 def load_config(filename):
@@ -272,8 +304,10 @@ def load_config(filename):
     cp.add_section('irc')
     cp.set('irc', 'port', '6667')
     cp.set('irc', 'nick', 'twitterbot')
+    cp.set('irc', 'prefixes', 'cats')
     cp.add_section('twitter')
     cp.set('twitter', 'oauth_token_file', OAUTH_FILE)
+
     cp.read((filename,))
 
     # attempt to read these properties-- they are required

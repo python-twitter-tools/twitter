@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '1.5.1'
+version = '1.5.2'
 
 install_requires = [
     # -*- Extra requirements: -*-
@@ -9,11 +9,6 @@ install_requires = [
 
 if sys.version_info < (2,6,):
     install_requires.append("simplejson>=1.7.1")
-
-if sys.version_info < (3,):
-    # There is no dateutil for Python 3. :(
-    install_requires.append("python-dateutil>=1.1")
-
 
 setup(name='twitter3',
       version=version,
