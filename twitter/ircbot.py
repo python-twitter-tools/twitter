@@ -63,10 +63,10 @@ PREFIXES = dict(
         new_tweet="=^_^= ",
         error="=O_o= ",
         inform="=o_o= "
-        )
+        ),
     none=dict(
         new_tweet=""
-        )
+        ),
     )
 ACTIVE_PREFIXES=dict()
 
@@ -119,7 +119,7 @@ class Scheduler(object):
         if (wait > 0):
             time.sleep(wait)
         task()
-        debug("tasks: " + str(self.task_heap))
+        #debug("tasks: " + str(self.task_heap))
 
     def run_forever(self):
         while True:
@@ -130,6 +130,9 @@ class TwitterBot(object):
     def __init__(self, configFilename):
         self.configFilename = configFilename
         self.config = load_config(self.configFilename)
+
+        global ACTIVE_PREFIXES
+        ACTIVE_PREFIXES = PREFIXES[self.config.get('irc', 'prefixes')]
 
         oauth_file = self.config.get('twitter', 'oauth_token_file')
         if not os.path.exists(oauth_file):
@@ -162,9 +165,10 @@ class TwitterBot(object):
             return
 
         nextLastUpdate = self.lastUpdate
+        debug("self.lastUpdate is %s" % self.lastUpdate)
         for update in updates:
             crt = parse(update['created_at']).utctimetuple()
-            if (crt > self.lastUpdate):
+            if (crt > nextLastUpdate):
                 text = (htmlentitydecode(
                     update['text'].replace('\n', ' '))
                     .encode('utf-8', 'replace'))
@@ -174,18 +178,21 @@ class TwitterBot(object):
                 #   to people who are not on our following list.
                 if not text.startswith("@"):
                     self.privmsg_channels(
-                        u"%s  %s%s%s %s" %(
+                        u"%s %s%s%s %s" %(
                             get_prefix(),
                             IRC_BOLD, update['user']['screen_name'],
                             IRC_BOLD, text.decode('utf-8')))
 
+                debug("tweet has crt %s, updating nextLastUpdate (was %s)" %(
+                        crt, nextLastUpdate,
+                        ))
                 nextLastUpdate = crt
             else:
                 break
+        debug("setting self.lastUpdate to %s" % nextLastUpdate)
         self.lastUpdate = nextLastUpdate
 
     def process_events(self):
-        debug("In process_events")
         self.irc.process_once()
 
     def handle_privmsg(self, conn, evt):
@@ -338,7 +345,5 @@ def main():
         print >> sys.stderr, __doc__
         sys.exit(1)
 
-    global ACTIVE_PREFIXES
-    ACTIVE_PREFIXES = PREFIXES[cp.get('irc', 'prefixes')]
     bot = TwitterBot(configFilename)
     return bot.run()
