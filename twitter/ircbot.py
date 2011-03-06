@@ -47,7 +47,7 @@ IRC_REGULAR = chr(0x0f)
 import sys
 import time
 from datetime import datetime, timedelta
-from dateutil.parser import parse
+from email.utils import parsedate
 from ConfigParser import SafeConfigParser
 from heapq import heappop, heappush
 import traceback
@@ -168,7 +168,7 @@ class TwitterBot(object):
         nextLastUpdate = self.lastUpdate
         debug("self.lastUpdate is %s" % self.lastUpdate)
         for update in updates:
-            crt = parse(update['created_at']).utctimetuple()
+            crt = parsedate(update['created_at'])
             if (crt > nextLastUpdate):
                 text = (htmlentitydecode(
                     update['text'].replace('\n', ' '))
