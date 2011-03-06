@@ -48,7 +48,7 @@ import sys
 import time
 from datetime import datetime, timedelta
 from email.utils import parsedate
-from ConfigParser import SafeConfigParser
+from configparser import ConfigParser
 from heapq import heappop, heappush
 import traceback
 import os
@@ -99,8 +99,8 @@ class SchedTask(object):
         return "<SchedTask %s next:%i delta:%i>" %(
             self.task.__name__, self.__next__, self.delta)
 
-    def __cmp__(self, other):
-        return cmp(self.__next__, other.__next__)
+    def __lt__(self, other):
+        return self.next < other.next
 
     def __call__(self):
         return self.task()
@@ -114,7 +114,7 @@ class Scheduler(object):
     def next_task(self):
         now = time.time()
         task = heappop(self.task_heap)
-        wait = task.__next__ - now
+        wait = task.next - now
         task.next = now + task.delta
         heappush(self.task_heap, task)
         if (wait > 0):
@@ -166,7 +166,6 @@ class TwitterBot(object):
             return
 
         nextLastUpdate = self.lastUpdate
-        debug("self.lastUpdate is %s" % self.lastUpdate)
         for update in updates:
             crt = parsedate(update['created_at'])
             if (crt > nextLastUpdate):
@@ -189,7 +188,6 @@ class TwitterBot(object):
                         ))
                 nextLastUpdate = crt
 
-        debug("setting self.lastUpdate to %s" % nextLastUpdate)
         self.lastUpdate = nextLastUpdate
 
     def process_events(self):
@@ -300,7 +298,7 @@ class TwitterBot(object):
 def load_config(filename):
     # Note: Python ConfigParser module has the worst interface in the
     # world. Mega gross.
-    cp = SafeConfigParser()
+    cp = ConfigParser()
     cp.add_section('irc')
     cp.set('irc', 'port', '6667')
     cp.set('irc', 'nick', 'twitterbot')
