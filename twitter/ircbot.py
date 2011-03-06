@@ -46,6 +46,7 @@ IRC_REGULAR = chr(0x0f)
 
 import sys
 import time
+from datetime import datetime, timedelta
 from dateutil.parser import parse
 from ConfigParser import SafeConfigParser
 from heapq import heappop, heappush
@@ -153,12 +154,12 @@ class TwitterBot(object):
         self.sched = Scheduler(
             (SchedTask(self.process_events, 1),
              SchedTask(self.check_statuses, 120)))
-        self.lastUpdate = time.gmtime()
+        self.lastUpdate = (datetime.now() - timedelta(minutes=10)).utctimetuple()
 
     def check_statuses(self):
         debug("In check_statuses")
         try:
-            updates = self.twitter.statuses.friends_timeline()
+            updates = reversed(self.twitter.statuses.friends_timeline())
         except Exception, e:
             print >> sys.stderr, "Exception while querying twitter:"
             traceback.print_exc(file=sys.stderr)
@@ -187,8 +188,7 @@ class TwitterBot(object):
                         crt, nextLastUpdate,
                         ))
                 nextLastUpdate = crt
-            else:
-                break
+
         debug("setting self.lastUpdate to %s" % nextLastUpdate)
         self.lastUpdate = nextLastUpdate
 
