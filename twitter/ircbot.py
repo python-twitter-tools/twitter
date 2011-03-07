@@ -154,7 +154,7 @@ class TwitterBot(object):
         self.sched = Scheduler(
             (SchedTask(self.process_events, 1),
              SchedTask(self.check_statuses, 120)))
-        self.lastUpdate = (datetime.now() - timedelta(minutes=10)).utctimetuple()
+        self.lastUpdate = (datetime.utcnow() - timedelta(minutes=10)).utctimetuple()
 
     def check_statuses(self):
         debug("In check_statuses")
@@ -204,8 +204,8 @@ class TwitterBot(object):
                 conn.privmsg(
                     evt.source().split('!')[0],
                     "%sHi! I'm Twitterbot! you can (follow "
-                    + "<twitter_name>) to make me follow a user or "
-                    + "(unfollow <twitter_name>) to make me stop." %
+                    "<twitter_name>) to make me follow a user or "
+                    "(unfollow <twitter_name>) to make me stop." %
                     get_prefix())
         except Exception:
             traceback.print_exc(file=sys.stderr)
