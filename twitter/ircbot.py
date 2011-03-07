@@ -176,7 +176,7 @@ class TwitterBot(object):
                 # Skip updates beginning with @
                 # TODO This would be better if we only ignored messages
                 #   to people who are not on our following list.
-                if not text.startswith("@"):
+                if not text.startswith(b"@"):
                     self.privmsg_channels(
                         "%s %s%s%s %s" %(
                             get_prefix(),
@@ -223,12 +223,12 @@ class TwitterBot(object):
 
     def privmsg_channel(self, msg):
         return self.ircServer.privmsg(
-            self.config.get('irc', 'channel'), msg.encode('utf-8'))
+            self.config.get('irc', 'channel'), msg)
 
     def privmsg_channels(self, msg):
         return_response=True
         channels=self.config.get('irc','channel').split(',')
-        return self.ircServer.privmsg_many(channels, msg.encode('utf-8'))
+        return self.ircServer.privmsg_many(channels, msg)
 
     def follow(self, conn, evt, name):
         userNick = evt.source().split('!')[0]
