@@ -80,7 +80,7 @@ try:
 except:
     raise ImportError(
         "This module requires python irclib available from "
-        + "http://python-irclib.sourceforge.net/")
+        + "https://github.com/sixohsix/python-irclib/zipball/python-irclib3-0.4.8")
 
 OAUTH_FILE = os.environ.get('HOME', '') + os.sep + '.twitterbot_oauth'
 
