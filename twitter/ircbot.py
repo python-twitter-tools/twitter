@@ -183,9 +183,6 @@ class TwitterBot(object):
                             IRC_BOLD, update['user']['screen_name'],
                             IRC_BOLD, text.decode('utf-8')))
 
-                debug("tweet has crt %s, updating nextLastUpdate (was %s)" %(
-                        crt, nextLastUpdate,
-                        ))
                 nextLastUpdate = crt
 
         self.lastUpdate = nextLastUpdate
