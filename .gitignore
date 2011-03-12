@@ -1,6 +1,10 @@
 ## Python
 twitter.egg-info
+twitter3.egg-info
 *.pyc
+*.bak
+*.orig
+*.rej
 *~
 dist
 build
