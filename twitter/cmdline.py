@@ -16,6 +16,8 @@ ACTIONS:
  mylist         get list of your lists; give a list name to get tweets
                     from that list
  public         get latest public tweets
+ pyprompt       start a Python prompt for interacting with the twitter
+                    object directly
  replies        get latest replies to you
  search         search twitter (Beware: octothorpe, escape it)
  set            set your twitter status
@@ -77,6 +79,7 @@ from .api import Twitter, TwitterError
 from .oauth import OAuth, write_token_file, read_token_file
 from .oauth_dance import oauth_dance
 from . import ansi
+from .util import smrt_input
 
 OPTIONS = {
     'action': 'friends',
@@ -500,6 +503,14 @@ class TwitterShell(Action):
                 else:
                     raise SystemExit(0)
 
+class PythonPromptAction(Action):
+    def __call__(self, twitter, options):
+        try:
+            while True:
+                smrt_input(globals(), locals())
+        except EOFError:
+            pass
+
 class HelpAction(Action):
     def __call__(self, twitter, options):
         print(__doc__)
@@ -517,6 +528,7 @@ actions = {
     'help'      : HelpAction,
     'leave'     : LeaveAction,
     'public'    : PublicAction,
+    'pyprompt'  : PythonPromptAction,
     'replies'   : RepliesAction,
     'search'    : SearchAction,
     'set'       : SetStatusAction,
