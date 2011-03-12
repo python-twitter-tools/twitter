@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '1.5.2'
+version = '1.5.3'
 
 install_requires = [
     # -*- Extra requirements: -*-
@@ -41,5 +41,6 @@ setup(name='twitter',
       [console_scripts]
       twitter=twitter.cmdline:main
       twitterbot=twitter.ircbot:main
+      twitter-log=twitter.logger:main
       """,
       )
