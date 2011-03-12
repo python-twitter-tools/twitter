@@ -16,6 +16,8 @@ ACTIONS:
  mylist         get list of your lists; give a list name to get tweets
                     from that list
  public         get latest public tweets
+ pyprompt       start a Python prompt for interacting with the twitter
+                    object directly
  replies        get latest replies to you
  search         search twitter (Beware: octothorpe, escape it)
  set            set your twitter status
