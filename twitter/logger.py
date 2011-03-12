@@ -1,9 +1,9 @@
 """
-tw-archiver - Twitter Archiver
+twitter-log - Twitter Logger/Archiver
 
 USAGE:
 
-    tw-archiver [OPTIONS]
+    twitter-log <screen_name> [max_id]
 
 DESCRIPTION:
 
@@ -12,7 +12,7 @@ DESCRIPTION:
 
         screen_name tweet_id tweet_time
 
-            Tweet text spanning multiple lines with
+            Tweet text possibly spanning multiple lines with
             each line indented by four spaces.
 
     Each tweet is separated by a blank line.
@@ -23,20 +23,15 @@ import sys
 import os
 from time import sleep
 
-
-OPTIONS = {
-    'oauth_filename': os.environ.get('HOME', '') + os.sep + '.twitter_oauth',
-}
-
 from api import Twitter, TwitterError
 from cmdline import CONSUMER_KEY, CONSUMER_SECRET
-from oauth import read_token_file, OAuth
+from auth import NoAuth
 
 def log_debug(msg):
     print >> sys.stderr, msg
 
-def get_tweets(twitter, max_id=None):
-    kwargs = dict(count=3200)
+def get_tweets(twitter, screen_name, max_id=None):
+    kwargs = dict(count=3200, screen_name=screen_name)
     if max_id:
         kwargs['max_id'] = max_id
 
@@ -48,6 +43,7 @@ def get_tweets(twitter, max_id=None):
         print "%s %s %s" % (tweet['user']['screen_name'],
                             tweet['id'],
                             tweet['created_at'])
+        print
         for line in tweet['text'].splitlines():
             print '    ' + line.encode('utf-8')
         print
@@ -56,24 +52,26 @@ def get_tweets(twitter, max_id=None):
     return n_tweets, max_id
 
 def main(args=sys.argv[1:]):
-    oauth_filename = OPTIONS['oauth_filename']
-    oauth_token, oauth_token_secret = read_token_file(oauth_filename)
-
     twitter = Twitter(
-        auth=OAuth(
-            oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET),
+        auth=NoAuth(),
         api_version='1',
         domain='api.twitter.com')
 
-    if args:
-        max_id = args[0]
+    if not args:
+        print __doc__
+        return 1
+
+    screen_name = args[0]
+
+    if args[1:]:
+        max_id = args[1]
     else:
         max_id = None
 
     n_tweets = 0
     while True:
         try:
-            tweets_processed, max_id = get_tweets(twitter, max_id)
+            tweets_processed, max_id = get_tweets(twitter, screen_name, max_id)
             n_tweets += tweets_processed
             log_debug("Processed %i tweets (max_id %s)" %(n_tweets, max_id))
             if tweets_processed == 0:
@@ -82,3 +80,5 @@ def main(args=sys.argv[1:]):
         except TwitterError, e:
             log_debug("Twitter bailed out. I'm going to sleep a bit then try again")
             sleep(3)
+
+    return 0
