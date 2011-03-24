@@ -2,8 +2,8 @@
 import webbrowser
 import time
 
-from api import Twitter
-from oauth import OAuth, write_token_file
+from .api import Twitter
+from .oauth import OAuth, write_token_file
 
 def oauth_dance(app_name, consumer_key, consumer_secret, token_filename=None):
     """
@@ -18,20 +18,20 @@ def oauth_dance(app_name, consumer_key, consumer_secret, token_filename=None):
     If a token_filename is given, the oauth tokens will be written to
     the file.
     """
-    print ("Hi there! We're gonna get you all set up to use %s." % app_name)
+    print(("Hi there! We're gonna get you all set up to use %s." % app_name))
     twitter = Twitter(
         auth=OAuth('', '', consumer_key, consumer_secret),
         format='')
     oauth_token, oauth_token_secret = parse_oauth_tokens(
         twitter.oauth.request_token())
-    print """
+    print("""
 In the web browser window that opens please choose to Allow
 access. Copy the PIN number that appears on the next page and paste or
 type it here:
-"""
+""")
     oauth_url = ('http://api.twitter.com/oauth/authorize?oauth_token=' +
                  oauth_token)
-    print "Opening: %s\n" % oauth_url
+    print("Opening: %s\n" % oauth_url)
 
     try:
         r = webbrowser.open(oauth_url)
@@ -41,12 +41,12 @@ type it here:
         if not r:
             raise Exception()
     except:
-        print """
+        print("""
 Uh, I couldn't open a browser on your computer. Please go here to get
 your PIN:
 
-""" + oauth_url
-    oauth_verifier = raw_input("Please enter the PIN: ").strip()
+""" + oauth_url)
+    oauth_verifier = input("Please enter the PIN: ").strip()
     twitter = Twitter(
         auth=OAuth(
             oauth_token, oauth_token_secret, consumer_key, consumer_secret),
@@ -56,9 +56,9 @@ your PIN:
     if token_filename:
         write_token_file(
             token_filename, oauth_token, oauth_token_secret)
-        print
-        print "That's it! Your authorization keys have been written to %s." % (
-            token_filename)
+        print()
+        print("That's it! Your authorization keys have been written to %s." % (
+            token_filename))
     return oauth_token, oauth_token_secret
 
 def parse_oauth_tokens(result):

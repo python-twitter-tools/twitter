@@ -7,10 +7,7 @@ install_requires = [
     # -*- Extra requirements: -*-
     ]
 
-if sys.version_info < (2,6,):
-    install_requires.append("simplejson>=1.7.1")
-
-setup(name='twitter',
+setup(name='twitter3',
       version=version,
       description="An API and command-line toolset for Twitter (twitter.com)",
       long_description=open("./README", "r").read(),
@@ -21,7 +18,7 @@ setup(name='twitter',
           "Intended Audience :: End Users/Desktop",
           "Natural Language :: English",
           "Operating System :: OS Independent",
-          "Programming Language :: Python :: 2",
+          "Programming Language :: Python :: 3",
           "Topic :: Communications :: Chat :: Internet Relay Chat",
           "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: CGI Tools/Libraries",
           "Topic :: Utilities",

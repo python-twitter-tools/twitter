@@ -1,4 +1,4 @@
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from base64 import encodestring
 
 class Auth(object):
@@ -26,7 +26,7 @@ class NoAuth(Auth):
         pass
 
     def encode_params(self, base_url, method, params):
-        return urllib.urlencode(params)
+        return urllib.parse.urlencode(params)
 
     def generate_headers(self):
         return {}
