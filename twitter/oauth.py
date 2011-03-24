@@ -1,12 +1,20 @@
+from __future__ import print_function
+
 from twitter.auth import Auth
 
 from time import time
 from random import getrandbits
-from time import time
-import urllib.request, urllib.parse, urllib.error
+
+try:
+    import urllib.parse as urllib_parse
+except ImportError:
+    import urllib2 as urllib_parse
+
 import hashlib
 import hmac
 import base64
+
+
 
 def write_token_file(filename, oauth_token, oauth_token_secret):
     """
@@ -54,15 +62,15 @@ class OAuth(Auth):
 
         enc_params = urlencode_noplus(sorted(params.items()))
 
-        key = self.consumer_secret + "&" + urllib.parse.quote(self.token_secret, '')
+        key = self.consumer_secret + "&" + urllib_parse.quote(self.token_secret, '')
 
         message = '&'.join(
-            urllib.parse.quote(i, '') for i in [method.upper(), base_url, enc_params])
+            urllib_parse.quote(i, '') for i in [method.upper(), base_url, enc_params])
 
         signature = (base64.b64encode(hmac.new(
                     key.encode('ascii'), message.encode('ascii'), hashlib.sha1)
                                       .digest()))
-        return enc_params + "&" + "oauth_signature=" + urllib.parse.quote(signature, '')
+        return enc_params + "&" + "oauth_signature=" + urllib_parse.quote(signature, '')
 
     def generate_headers(self):
         return {}
@@ -87,5 +95,5 @@ def urlencode_noplus(query):
             v = v.encode('utf-8')
         else:
             v = str(v)
-        encoded_bits.append("%s=%s" % (urllib.parse.quote(n, ""), urllib.parse.quote(v, "")))
+        encoded_bits.append("%s=%s" % (urllib_parse.quote(n, ""), urllib_parse.quote(v, "")))
     return "&".join(encoded_bits)

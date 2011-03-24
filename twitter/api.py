@@ -1,4 +1,9 @@
-import urllib.request, urllib.error, urllib.parse
+try:
+    import urllib.request as urllib_request
+    import urllib.error as urllib_error
+except ImportError:
+    import urllib2 as urllib_request
+    import urllib2 as urllib_error
 
 from twitter.twitter_globals import POST_ACTIONS
 from twitter.auth import NoAuth
@@ -144,17 +149,17 @@ class TwitterCall(object):
             else:
                 body = arg_data.encode('utf8')
 
-        req = urllib.request.Request(uriBase, body, headers)
+        req = urllib_request.Request(uriBase, body, headers)
 
         try:
-            handle = urllib.request.urlopen(req)
+            handle = urllib_request.urlopen(req)
             if "json" == self.format:
                 res = json.loads(handle.read().decode('utf8'))
                 return wrap_response(res, handle.headers)
             else:
                 return wrap_response(
                     handle.read().decode('utf8'), handle.headers)
-        except urllib.error.HTTPError as e:
+        except urllib_error.HTTPError as e:
             if (e.code == 304):
                 return []
             else:

@@ -7,7 +7,10 @@ Internal utility functions.
 
 
 import re
-from html.entities import name2codepoint
+try:
+    from html.entities import name2codepoint
+except ImportError:
+    from htmlentitydefs import name2codepoint
 
 def htmlentitydecode(s):
     return re.sub(

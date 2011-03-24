@@ -61,6 +61,8 @@ prompt: <twitter_shell_prompt e.g. '[cyan]twitter[R]> '>
  home directory.
 """
 
+from __future__ import print_function
+
 CONSUMER_KEY='uS6hO2sV6tDKIOeVjhnFnQ'
 CONSUMER_SECRET='MEYTOS97VvlHX7K1rwHPEqVpTSqZ71HtvoK4sVuYk'
 
@@ -70,9 +72,15 @@ from getopt import gnu_getopt as getopt, GetoptError
 from getpass import getpass
 import re
 import os.path
-from configparser import SafeConfigParser
+try:
+    from ConfigParser import SafeConfigParser
+except ImportError:
+    from configparser import ConfigParser as SafeConfigParser
 import datetime
-from urllib.parse import quote
+try:
+    from urllib.parse import quote
+except ImportError:
+    from urllib2 import quote
 import webbrowser
 
 from .api import Twitter, TwitterError
@@ -353,8 +361,11 @@ class NoSuchAction(Action):
         raise NoSuchActionError("No such action: %s" %(options['action']))
 
 def printNicely(string):
-    sys.stdout.buffer.write(string.encode('utf8'))
-    print()
+    if hasattr(sys.stdout, 'buffer'):
+        sys.stdout.buffer.write(string.encode('utf8'))
+        print()
+    else:
+        print(string.encode('utf8'))
 
 class StatusAction(Action):
     def __call__(self, twitter, options):
