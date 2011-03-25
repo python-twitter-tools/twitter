@@ -34,6 +34,8 @@ oauth_token_file: <oauth_token_filename>
 
 """
 
+from __future__ import print_function
+
 BOT_VERSION = "TwitterBot 1.4 (http://mike.verdone.ca/twitter)"
 
 CONSUMER_KEY = "XryIxN3J2ACaJs50EizfLQ"
@@ -48,7 +50,10 @@ import sys
 import time
 from datetime import datetime, timedelta
 from email.utils import parsedate
-from configparser import ConfigParser
+try:
+    from configparser import ConfigParser
+except ImportError:
+    from ConfigParser import ConfigParser
 from heapq import heappop, heappush
 import traceback
 import os
@@ -77,7 +82,7 @@ def get_prefix(prefix_typ=None):
 
 try:
     import irclib
-except:
+except ImportError:
     raise ImportError(
         "This module requires python irclib available from "
         + "https://github.com/sixohsix/python-irclib/zipball/python-irclib3-0.4.8")
@@ -86,7 +91,7 @@ OAUTH_FILE = os.environ.get('HOME', '') + os.sep + '.twitterbot_oauth'
 
 def debug(msg):
     # uncomment this for debug text stuff
-    # print >> sys.stderr, msg
+    # print(msg, file=sys.stdout)
     pass
 
 class SchedTask(object):
