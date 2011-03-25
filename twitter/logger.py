@@ -10,14 +10,19 @@ DESCRIPTION:
     Produce a complete archive in text form of a user's tweets. The
     archive format is:
 
-        screen_name tweet_id tweet_time
+        screen_name <tweet_id>
+        Date: <tweet_time>
+        [In-Reply-To: a_tweet_id]
 
             Tweet text possibly spanning multiple lines with
             each line indented by four spaces.
 
-    Each tweet is separated by a blank line.
+
+    Each tweet is separated by two blank lines.
 
 """
+
+from __future__ import print_function
 
 import sys
 import os
@@ -28,7 +33,7 @@ from cmdline import CONSUMER_KEY, CONSUMER_SECRET
 from auth import NoAuth
 
 def log_debug(msg):
-    print >> sys.stderr, msg
+    print(msg, file=sys.stderr)
 
 def get_tweets(twitter, screen_name, max_id=None):
     kwargs = dict(count=3200, screen_name=screen_name)
@@ -40,13 +45,16 @@ def get_tweets(twitter, screen_name, max_id=None):
     for tweet in tweets:
         if tweet['id'] == max_id:
             continue
-        print "%s %s %s" % (tweet['user']['screen_name'],
-                            tweet['id'],
-                            tweet['created_at'])
-        print
+        print("%s %s\nDate: %s" % (tweet['user']['screen_name'],
+                                   tweet['id'],
+                                   tweet['created_at']))
+        if tweet.get('in_reply_to_status_id'):
+            print("In-Reply-To: %s" % tweet['in_reply_to_status_id'])
+        print()
         for line in tweet['text'].splitlines():
-            print '    ' + line.encode('utf-8')
-        print
+            print('    ' + line.encode('utf-8'))
+        print()
+        print()
         max_id = tweet['id']
         n_tweets += 1
     return n_tweets, max_id
@@ -58,7 +66,7 @@ def main(args=sys.argv[1:]):
         domain='api.twitter.com')
 
     if not args:
-        print __doc__
+        print(__doc__)
         return 1
 
     screen_name = args[0]
