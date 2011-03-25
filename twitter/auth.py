@@ -1,7 +1,7 @@
 try:
     import urllib.parse as urllib_parse
 except ImportError:
-    import urllib2 as urllib_parse
+    import urllib as urllib_parse
 
 from base64 import encodestring
 
