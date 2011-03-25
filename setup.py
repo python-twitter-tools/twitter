@@ -1,13 +1,13 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '1.5.3'
+version = '1.6'
 
 install_requires = [
     # -*- Extra requirements: -*-
     ]
 
-setup(name='twitter3',
+setup(name='twitter',
       version=version,
       description="An API and command-line toolset for Twitter (twitter.com)",
       long_description=open("./README", "r").read(),
@@ -19,6 +19,8 @@ setup(name='twitter3',
           "Natural Language :: English",
           "Operating System :: OS Independent",
           "Programming Language :: Python :: 3",
+          "Programming Language :: Python :: 2.6",
+          "Programming Language :: Python :: 2.7",
           "Topic :: Communications :: Chat :: Internet Relay Chat",
           "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: CGI Tools/Libraries",
           "Topic :: Utilities",
