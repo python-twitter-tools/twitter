@@ -28,9 +28,11 @@ import sys
 import os
 from time import sleep
 
-from api import Twitter, TwitterError
-from cmdline import CONSUMER_KEY, CONSUMER_SECRET
-from auth import NoAuth
+from .api import Twitter, TwitterError
+from .cmdline import CONSUMER_KEY, CONSUMER_SECRET
+from .auth import NoAuth
+from .util import printNicely
+
 
 def log_debug(msg):
     print(msg, file=sys.stderr)
@@ -52,7 +54,7 @@ def get_tweets(twitter, screen_name, max_id=None):
             print("In-Reply-To: %s" % tweet['in_reply_to_status_id'])
         print()
         for line in tweet['text'].splitlines():
-            print('    ' + line.encode('utf-8'))
+            printNicely('    ' + line + '\n')
         print()
         print()
         max_id = tweet['id']
@@ -85,7 +87,7 @@ def main(args=sys.argv[1:]):
             if tweets_processed == 0:
                 log_debug("That's it, we got all the tweets. Done.")
                 break
-        except TwitterError, e:
+        except TwitterError as e:
             log_debug("Twitter bailed out. I'm going to sleep a bit then try again")
             sleep(3)
 

@@ -87,7 +87,7 @@ from .api import Twitter, TwitterError
 from .oauth import OAuth, write_token_file, read_token_file
 from .oauth_dance import oauth_dance
 from . import ansi
-from .util import smrt_input
+from .util import smrt_input, printNicely
 
 OPTIONS = {
     'action': 'friends',
@@ -359,13 +359,6 @@ class NoSuchActionError(Exception):
 class NoSuchAction(Action):
     def __call__(self, twitter, options):
         raise NoSuchActionError("No such action: %s" %(options['action']))
-
-def printNicely(string):
-    if hasattr(sys.stdout, 'buffer'):
-        sys.stdout.buffer.write(string.encode('utf8'))
-        print()
-    else:
-        print(string.encode('utf8'))
 
 class StatusAction(Action):
     def __call__(self, twitter, options):

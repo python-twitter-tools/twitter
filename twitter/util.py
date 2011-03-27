@@ -7,6 +7,7 @@ Internal utility functions.
 
 
 import re
+import sys
 try:
     from html.entities import name2codepoint
 except ImportError:
@@ -32,5 +33,12 @@ def smrt_input(globals_, locals_, ps1=">>> ", ps2="... "):
             return
         except SyntaxError:
             pass
+
+def printNicely(string):
+    if hasattr(sys.stdout, 'buffer'):
+        sys.stdout.buffer.write(string.encode('utf8'))
+        print()
+    else:
+        print(string.encode('utf8'))
 
 __all__ = ["htmlentitydecode", "smrt_input"]
