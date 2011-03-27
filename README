@@ -10,7 +10,7 @@ tweets and setting your own tweet from the safety and security of your
 favorite shell and an IRC bot that can announce Twitter updates to an
 IRC channel.
 
-For more information, after installing the `twitter` egg:
+For more information, after installing the `twitter` package:
 
  * import the `twitter` package and run help() on it
  * run `twitter -h` for command-line tool help
@@ -28,6 +28,7 @@ The command-line tool currently supports the following things:
  * view your recent replies
  * view the public timeline
  * follow and unfollow (leave) friends
+ * view tweets from lists
  * various output formats for tweet information
  * read your username and password from a config file
  
@@ -42,5 +43,16 @@ The IRC bot is associated with a twitter account (either your own account or an
 account you create for the bot). The bot announces all tweets from friends
 it is following. It can be made to follow or leave friends through IRC /msg
 commands.
+
+
+
+twitter-log
+===========
+
+`twitter-log` is a simple command-line tool that dumps all public
+tweets from a given user in a simple text format. It is useful to get
+a complete offsite backup of all your tweets. Run `twitter-log` and
+read the instructions.
+
 
 Python Twitter Tools are released under an MIT License.

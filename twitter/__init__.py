@@ -1,7 +1,12 @@
 """
 The minimalist yet fully featured Twitter API and Python toolset.
 
-For building your own applications, look at the `Twitter` class.
+The Twitter class is the key to building your own Twitter-enabled
+applications. Get help on it like this::
+
+    help(twitter.Twitter)
+
+
 """
 
 from .api import Twitter, TwitterError, TwitterHTTPError, TwitterResponse
