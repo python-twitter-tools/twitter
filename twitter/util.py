@@ -29,7 +29,7 @@ def smrt_input(globals_, locals_, ps1=">>> ", ps2="... "):
         try:
             ret = eval('\n'.join(inputs), globals_, locals_)
             if ret:
-                print(ret)
+                print(str(ret))
             return
         except SyntaxError:
             pass
