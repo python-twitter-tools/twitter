@@ -90,13 +90,12 @@ def wrap_response(response, headers):
 
 class TwitterCall(object):
     def __init__(
-        self, auth, format, domain, uri="", agent=None,
+        self, auth, format, domain, uri="",
         uriparts=None, secure=True):
         self.auth = auth
         self.format = format
         self.domain = domain
         self.uri = uri
-        self.agent = agent
         self.uriparts = uriparts
         self.secure = secure
 
@@ -106,7 +105,7 @@ class TwitterCall(object):
         except AttributeError:
             return TwitterCall(
                 auth=self.auth, format=self.format, domain=self.domain,
-                agent=self.agent, uriparts=self.uriparts + (k,),
+                uriparts=self.uriparts + (k,),
                 secure=self.secure)
 
     def __call__(self, **kwargs):
@@ -240,8 +239,8 @@ class Twitter(TwitterCall):
     """
     def __init__(
         self, format="json",
-        domain="twitter.com", secure=True, auth=None,
-        api_version=''):
+        domain="api.twitter.com", secure=True, auth=None,
+        api_version='1'):
         """
         Create a new twitter API connector.
 
@@ -254,20 +253,14 @@ class Twitter(TwitterCall):
 
 
         `domain` lets you change the domain you are connecting. By
-        default it's twitter.com but `search.twitter.com` may be
+        default it's `api.twitter.com` but `search.twitter.com` may be
         useful too.
 
         If `secure` is False you will connect with HTTP instead of
         HTTPS.
 
-        The value of `agent` is sent in the `X-Twitter-Client`
-        header. This is deprecated. Instead Twitter determines the
-        application using the OAuth Client Key and Client Key Secret
-        parameters.
-
         `api_version` is used to set the base uri. By default it's
-        nothing, but if you set it to '1' your URI will start with
-        '1/'.
+        '1'.
         """
         if not auth:
             auth = NoAuth()
