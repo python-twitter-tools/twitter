@@ -8,13 +8,9 @@ except ImportError:
 from twitter.twitter_globals import POST_ACTIONS
 from twitter.auth import NoAuth
 
-def _py26OrGreater():
-    import sys
-    return sys.hexversion > 0x20600f0
-
-if _py26OrGreater():
+try:
     import json
-else:
+except ImportError:
     import simplejson as json
 
 class TwitterError(Exception):
@@ -30,10 +26,10 @@ class TwitterHTTPError(TwitterError):
     HTTP error interacting with twitter.com.
     """
     def __init__(self, e, uri, format, uriparts):
-      self.e = e
-      self.uri = uri
-      self.format = format
-      self.uriparts = uriparts
+        self.e = e
+        self.uri = uri
+        self.format = format
+        self.uriparts = uriparts
 
     def __str__(self):
         return (
