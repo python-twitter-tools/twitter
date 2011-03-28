@@ -85,12 +85,14 @@ def wrap_response(response, headers):
 
 
 class TwitterCall(object):
+
     def __init__(
-        self, auth, format, domain, uri="",
+        self, auth, format, domain, callable_cls, uri="",
         uriparts=None, secure=True):
         self.auth = auth
         self.format = format
         self.domain = domain
+        self.callable_cls = callable_cls
         self.uri = uri
         self.uriparts = uriparts
         self.secure = secure
@@ -99,9 +101,9 @@ class TwitterCall(object):
         try:
             return object.__getattr__(self, k)
         except AttributeError:
-            return TwitterCall(
+            return self.callable_cls(
                 auth=self.auth, format=self.format, domain=self.domain,
-                uriparts=self.uriparts + (k,),
+                callable_cls=self.callable_cls, uriparts=self.uriparts + (k,),
                 secure=self.secure)
 
     def __call__(self, **kwargs):
@@ -145,7 +147,9 @@ class TwitterCall(object):
                 body = arg_data.encode('utf8')
 
         req = urllib_request.Request(uriBase, body, headers)
+        return self._handle_response(req, uri, arg_data)
 
+    def _handle_response(self, req, uri, arg_data):
         try:
             handle = urllib_request.urlopen(req)
             if "json" == self.format:
@@ -270,6 +274,7 @@ class Twitter(TwitterCall):
 
         TwitterCall.__init__(
             self, auth=auth, format=format, domain=domain,
+            callable_cls=TwitterCall,
             secure=secure, uriparts=uriparts)
 
 

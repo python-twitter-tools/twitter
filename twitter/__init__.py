@@ -12,3 +12,4 @@ applications. Get help on it like this::
 from .api import Twitter, TwitterError, TwitterHTTPError, TwitterResponse
 from .auth import NoAuth
 from .oauth import OAuth, read_token_file, write_token_file
+from .stream import TwitterStream

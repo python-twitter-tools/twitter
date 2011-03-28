@@ -1,9 +1,9 @@
 try:
     import urllib.parse as urllib_parse
+    from base64 import encodebytes
 except ImportError:
     import urllib as urllib_parse
-
-from base64 import encodestring
+    from base64 import encodestring as encodebytes
 
 class Auth(object):
     """
@@ -21,6 +21,25 @@ class Auth(object):
         by the authentication scheme in use."""
         raise NotImplementedError()
 
+class UserPassAuth(Auth):
+    """
+    Basic auth authentication using email/username and
+    password. Deprecated.
+    """
+    def __init__(self, username, password):
+        self.username = username
+        self.password = password
+
+    def encode_params(self, base_url, method, params):
+        # We could consider automatically converting unicode to utf8 strings
+        # before encoding...
+        return urllib_parse.urlencode(params)
+
+    def generate_headers(self):
+        return {b"Authorization": b"Basic " + encodebytes(
+                ("%s:%s" %(self.username, self.password))
+                .encode('utf8')).strip(b'\n')
+                }
 
 class NoAuth(Auth):
     """
