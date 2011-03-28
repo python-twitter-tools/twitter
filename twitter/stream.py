@@ -18,7 +18,7 @@ class TwitterJSONIter(object):
     def __iter__(self):
         while True:
             # This might need better py3 IO
-            self.buf += self.handle.read(1024).decode('utf8')
+            self.buf += self.handle.read(1024)
             try:
                 res, ptr = self.decoder.raw_decode(self.buf)
                 self.buf = self.buf[ptr + 2:] # +2 is for \r\n
