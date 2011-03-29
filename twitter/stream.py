@@ -1,6 +1,7 @@
 try:
     import urllib.request as urllib_request
     import urllib.error as urllib_error
+    import io
 except ImportError:
     import urllib2 as urllib_request
     import urllib2 as urllib_error
@@ -13,15 +14,15 @@ class TwitterJSONIter(object):
     def __init__(self, handle, uri, arg_data):
         self.decoder = json.JSONDecoder()
         self.handle = handle
-        self.buf = ""
+        self.buf = b""
 
     def __iter__(self):
         while True:
-            # This might need better py3 IO
             self.buf += self.handle.read(1024)
             try:
-                res, ptr = self.decoder.raw_decode(self.buf)
-                self.buf = self.buf[ptr + 2:] # +2 is for \r\n
+                utf8_buf = self.buf.decode('utf8').lstrip()
+                res, ptr = self.decoder.raw_decode(utf8_buf)
+                self.buf = utf8_buf[ptr:].encode('utf8')
                 yield wrap_response(res, self.handle.headers)
             except ValueError as e:
                 continue
