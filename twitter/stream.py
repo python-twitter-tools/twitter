@@ -35,6 +35,21 @@ class TwitterStreamCall(TwitterCall):
         return iter(TwitterJSONIter(handle, uri, arg_data))
 
 class TwitterStream(TwitterStreamCall):
+    """
+    Interface to the Twitter Stream API (stream.twitter.com). This can
+    be used pretty much the same as the Twitter class except the
+    result of calling a method will be an iterator that yields objects
+    decoded from the stream. For example::
+
+        twitter_stream = TwitterStream(auth=UserPassAuth('joe', 'joespassword'))
+        iterator = twitter_stream.statuses.sample()
+
+        for tweet in iterator:
+            ...do something with this tweet...
+
+    The iterator will yield tweets forever and ever (until the stream
+    breaks at which point it raises a TwitterHTTPError.)
+    """
     def __init__(
         self, domain="stream.twitter.com", secure=False, auth=None,
         api_version='1'):
