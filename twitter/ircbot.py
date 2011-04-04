@@ -274,7 +274,7 @@ class TwitterBot(object):
                 "%s%s has asked me to stop following %s" %(
                     get_prefix('inform'), userNick, name))
 
-    def run(self):
+    def _irc_connect(self):
         self.ircServer.connect(
             self.config.get('irc', 'server'),
             self.config.getint('irc', 'port'),
@@ -282,6 +282,9 @@ class TwitterBot(object):
         channels=self.config.get('irc', 'channel').split(',')
         for channel in channels:
             self.ircServer.join(channel)
+
+    def run(self):
+        self._irc_connect()
 
         while True:
             try:
@@ -292,6 +295,10 @@ class TwitterBot(object):
                 # twitter.com is probably down because it
                 # sucks. ignore the fault and keep going
                 pass
+            except irclib.ServerNotConnectedError:
+                # Try and reconnect to IRC.
+                self._irc_connect()
+
 
 def load_config(filename):
     # Note: Python ConfigParser module has the worst interface in the
