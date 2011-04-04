@@ -1,9 +1,18 @@
 
+from __future__ import print_function
+
 import webbrowser
 import time
 
 from .api import Twitter
 from .oauth import OAuth, write_token_file
+
+try:
+    _input = raw_input
+except NameError:
+    _input = input
+
+
 
 def oauth_dance(app_name, consumer_key, consumer_secret, token_filename=None):
     """
@@ -21,7 +30,7 @@ def oauth_dance(app_name, consumer_key, consumer_secret, token_filename=None):
     print(("Hi there! We're gonna get you all set up to use %s." % app_name))
     twitter = Twitter(
         auth=OAuth('', '', consumer_key, consumer_secret),
-        format='')
+        format='', api_version=None)
     oauth_token, oauth_token_secret = parse_oauth_tokens(
         twitter.oauth.request_token())
     print("""
@@ -46,11 +55,11 @@ Uh, I couldn't open a browser on your computer. Please go here to get
 your PIN:
 
 """ + oauth_url)
-    oauth_verifier = input("Please enter the PIN: ").strip()
+    oauth_verifier = _input("Please enter the PIN: ").strip()
     twitter = Twitter(
         auth=OAuth(
             oauth_token, oauth_token_secret, consumer_key, consumer_secret),
-        format='')
+        format='', api_version=None)
     oauth_token, oauth_token_secret = parse_oauth_tokens(
         twitter.oauth.access_token(oauth_verifier=oauth_verifier))
     if token_filename:
