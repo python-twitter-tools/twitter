@@ -36,7 +36,7 @@ oauth_token_file: <oauth_token_filename>
 
 from __future__ import print_function
 
-BOT_VERSION = "TwitterBot 1.4 (http://mike.verdone.ca/twitter)"
+BOT_VERSION = "TwitterBot 1.6.1 (http://mike.verdone.ca/twitter)"
 
 CONSUMER_KEY = "XryIxN3J2ACaJs50EizfLQ"
 CONSUMER_SECRET = "j7IuDCNjftVY8DBauRdqXs4jDl5Fgk1IJRag8iE"
@@ -176,17 +176,17 @@ class TwitterBot(object):
             if (crt > nextLastUpdate):
                 text = (htmlentitydecode(
                     update['text'].replace('\n', ' '))
-                    .encode('utf-8', 'replace'))
+                    .encode('utf8', 'replace'))
 
                 # Skip updates beginning with @
                 # TODO This would be better if we only ignored messages
                 #   to people who are not on our following list.
                 if not text.startswith(b"@"):
-                    self.privmsg_channels(
-                        "%s %s%s%s %s" %(
-                            get_prefix(),
-                            IRC_BOLD, update['user']['screen_name'],
-                            IRC_BOLD, text.decode('utf-8')))
+                    msg = "%s %s%s%s %s" %(
+                        get_prefix(),
+                        IRC_BOLD, update['user']['screen_name'],
+                        IRC_BOLD, text.decode('utf8'))
+                    self.privmsg_channels(msg)
 
                 nextLastUpdate = crt
 
@@ -226,14 +226,10 @@ class TwitterBot(object):
             elif args[0] == 'CLIENTINFO':
                 conn.ctcp_reply(source, "CLIENTINFO PING VERSION CLIENTINFO")
 
-    def privmsg_channel(self, msg):
-        return self.ircServer.privmsg(
-            self.config.get('irc', 'channel'), msg)
-
     def privmsg_channels(self, msg):
         return_response=True
         channels=self.config.get('irc','channel').split(',')
-        return self.ircServer.privmsg_many(channels, msg)
+        return self.ircServer.privmsg_many(channels, msg.encode('utf8'))
 
     def follow(self, conn, evt, name):
         userNick = evt.source().split('!')[0]
