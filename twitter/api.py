@@ -13,6 +13,9 @@ try:
 except ImportError:
     import simplejson as json
 
+class _DEFAULT(object):
+    pass
+
 class TwitterError(Exception):
     """
     Base Exception thrown by the Twitter object when there is a
@@ -240,7 +243,7 @@ class Twitter(TwitterCall):
     def __init__(
         self, format="json",
         domain="api.twitter.com", secure=True, auth=None,
-        api_version='1'):
+        api_version=_DEFAULT):
         """
         Create a new twitter API connector.
 
@@ -260,13 +263,19 @@ class Twitter(TwitterCall):
         HTTPS.
 
         `api_version` is used to set the base uri. By default it's
-        '1'.
+        '1'. If you are using "search.twitter.com" set this to None.
         """
         if not auth:
             auth = NoAuth()
 
         if (format not in ("json", "xml", "")):
             raise ValueError("Unknown data format '%s'" %(format))
+
+        if api_version is _DEFAULT:
+            if domain == 'api.twitter.com':
+                api_version = '1'
+            else:
+                api_version = None
 
         uriparts = ()
         if api_version:

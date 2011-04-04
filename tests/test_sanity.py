@@ -40,3 +40,9 @@ def test_API_friendship_exists():
         user_a='ptttest0001', user_b='sixohsix')
     assert False == twitter.friendships.exists(
         user_a='gruber', user_b='ptttest0001')
+
+
+def test_search():
+    t_search = Twitter(domain='search.twitter.com')
+    results = t_search.search(q='foo')
+    assert results

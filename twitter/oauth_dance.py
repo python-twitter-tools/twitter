@@ -27,7 +27,7 @@ def oauth_dance(app_name, consumer_key, consumer_secret, token_filename=None):
     If a token_filename is given, the oauth tokens will be written to
     the file.
     """
-    print(("Hi there! We're gonna get you all set up to use %s." % app_name))
+    print("Hi there! We're gonna get you all set up to use %s." % app_name)
     twitter = Twitter(
         auth=OAuth('', '', consumer_key, consumer_secret),
         format='', api_version=None)
