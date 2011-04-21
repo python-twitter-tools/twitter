@@ -80,5 +80,20 @@ class OAuth(Auth):
 # also in the request itself.)
 # So here is a specialized version which does exactly that.
 def urlencode_noplus(query):
-    basic = urllib_parse.urlencode(query)
-    return basic.replace('+', '%20')
+    if hasattr(query,"items"):
+        # mapping objects
+        query = list(query.items())
+
+    encoded_bits = []
+    for n, v in query:
+        # and do unicode here while we are at it...
+        if isinstance(n, unicode):
+            n = n.encode('utf-8')
+        else:
+            n = str(n)
+        if isinstance(v, unicode):
+            v = v.encode('utf-8')
+        else:
+            v = str(v)
+        encoded_bits.append("%s=%s" % (urllib_parse.quote(n, ""), urllib_parse.quote(v, "")))
+    return "&".join(encoded_bits)
