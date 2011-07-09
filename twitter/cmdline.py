@@ -22,6 +22,7 @@ ACTIONS:
  search         search twitter (Beware: octothorpe, escape it)
  set            set your twitter status
  shell          login to the twitter shell
+ rate           get your current rate limit status (remaining API reqs)
 
 
 OPTIONS:
@@ -523,6 +524,13 @@ class DoNothingAction(Action):
     def __call__(self, twitter, options):
         pass
 
+class RateLimitStatus(Action):
+    def __call__(self, twitter, options):
+        rate = twitter.account.rate_limit_status()
+        print("Remaining API requests: %s / %s (hourly limit)" % (rate['remaining_hits'], rate['hourly_limit']))
+        print("Next reset in %ss (%s)" % (int(rate['reset_time_in_seconds']-time.time()),
+                                          time.asctime(time.localtime(rate['reset_time_in_seconds']))))
+
 actions = {
     'authorize' : DoNothingAction,
     'follow'    : FollowAction,
@@ -537,6 +545,7 @@ actions = {
     'search'    : SearchAction,
     'set'       : SetStatusAction,
     'shell'     : TwitterShell,
+    'rate'      : RateLimitStatus,
 }
 
 def loadConfig(filename):
