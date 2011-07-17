@@ -16,7 +16,7 @@ except ImportError:
 def htmlentitydecode(s):
     return re.sub(
         '&(%s);' % '|'.join(name2codepoint),
-        lambda m: chr(name2codepoint[m.group(1)]), s)
+        lambda m: unichr(name2codepoint[m.group(1)]), s)
 
 def smrt_input(globals_, locals_, ps1=">>> ", ps2="... "):
     inputs = []
