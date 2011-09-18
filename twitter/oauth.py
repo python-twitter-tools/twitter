@@ -87,11 +87,11 @@ def urlencode_noplus(query):
     encoded_bits = []
     for n, v in query:
         # and do unicode here while we are at it...
-        if isinstance(n, str):
+        if isinstance(n, basestring):
             n = n.encode('utf-8')
         else:
             n = str(n)
-        if isinstance(v, str):
+        if isinstance(v, basestring):
             v = v.encode('utf-8')
         else:
             v = str(v)
