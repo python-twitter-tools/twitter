@@ -73,6 +73,8 @@ from getopt import gnu_getopt as getopt, GetoptError
 from getpass import getpass
 import re
 import os.path
+import locale
+
 try:
     from ConfigParser import SafeConfigParser
 except ImportError:
@@ -111,6 +113,8 @@ def parse_args(args, options):
                  'datestamp', 'no-ssl']
     short_opts = "e:p:f:h?rR:c:l:td"
     opts, extra_args = getopt(args, short_opts, long_opts)
+    extra_args = [arg.decode(locale.getpreferredencoding())
+                  for arg in extra_args]
 
     for opt, arg in opts:
         if opt in ('-f', '--format'):
@@ -256,6 +260,7 @@ class AnsiSearchFormatter(object):
 
 _term_encoding = None
 def get_term_encoding():
+    import pdb;pdb.set_trace()
     global _term_encoding
     if not _term_encoding:
         lang = os.getenv('LANG', 'unknown.UTF-8').split('.')
