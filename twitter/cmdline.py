@@ -74,6 +74,7 @@ from getpass import getpass
 import re
 import os.path
 import locale
+import string
 
 try:
     from ConfigParser import SafeConfigParser
@@ -260,7 +261,6 @@ class AnsiSearchFormatter(object):
 
 _term_encoding = None
 def get_term_encoding():
-    import pdb;pdb.set_trace()
     global _term_encoding
     if not _term_encoding:
         lang = os.getenv('LANG', 'unknown.UTF-8').split('.')
@@ -464,7 +464,17 @@ class SetStatusAction(Action):
         statusTxt = (" ".join(options['extra_args'])
                      if options['extra_args']
                      else str(input("message: ")))
-        twitter.statuses.update(status=statusTxt)
+        splitted = []
+        while statusTxt:
+            if len(statusTxt) > 140:
+                end = string.rfind(statusTxt, ' ', 0, 140)
+            else:
+                end = 140
+            splitted.append(statusTxt[:end])
+            statusTxt = statusTxt[end:]
+
+        for status in splitted:
+            twitter.statuses.update(status=status)
 
 class TwitterShell(Action):
 
