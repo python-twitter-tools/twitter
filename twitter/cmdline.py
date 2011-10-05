@@ -73,6 +73,9 @@ from getopt import gnu_getopt as getopt, GetoptError
 from getpass import getpass
 import re
 import os.path
+import locale
+import string
+
 try:
     from ConfigParser import SafeConfigParser
 except ImportError:
@@ -111,6 +114,8 @@ def parse_args(args, options):
                  'datestamp', 'no-ssl']
     short_opts = "e:p:f:h?rR:c:l:td"
     opts, extra_args = getopt(args, short_opts, long_opts)
+    extra_args = [arg.decode(locale.getpreferredencoding())
+                  for arg in extra_args]
 
     for opt, arg in opts:
         if opt in ('-f', '--format'):
@@ -459,7 +464,33 @@ class SetStatusAction(Action):
         statusTxt = (" ".join(options['extra_args'])
                      if options['extra_args']
                      else str(input("message: ")))
-        twitter.statuses.update(status=statusTxt)
+        replies = []
+        ptr = re.compile("@[\w_]+")
+        while statusTxt:
+            s = ptr.match(statusTxt)
+            if s and s.start() == 0:
+                replies.append(statusTxt[s.start():s.end()])
+                statusTxt = statusTxt[s.end()+1:]
+            else:
+                break
+        replies = " ".join(replies)
+        if len(replies) >= 140:
+            # just go back
+            statusTxt = replies
+            replies = ""
+
+        splitted = []
+        while statusTxt:
+            limit = 140 - len(replies)
+            if len(statusTxt) > limit:
+                end = string.rfind(statusTxt, ' ', 0, limit)
+            else:
+                end = limit
+            splitted.append(" ".join((replies,statusTxt[:end])))
+            statusTxt = statusTxt[end:]
+
+        for status in splitted:
+            twitter.statuses.update(status=status)
 
 class TwitterShell(Action):
 
