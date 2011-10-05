@@ -10,6 +10,7 @@ import re
 import sys
 try:
     from html.entities import name2codepoint
+    unichr = chr
 except ImportError:
     from htmlentitydefs import name2codepoint
 
