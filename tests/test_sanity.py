@@ -56,3 +56,16 @@ def test_search():
     t_search = Twitter(domain='search.twitter.com')
     results = t_search.search(q='foo')
     assert results
+
+
+def test_get_trends():
+    # This is one method of inserting parameters, using named
+    # underscore params.
+    world_trends = twitter.trends._woeid(_woeid=1)
+    assert world_trends
+
+
+def test_get_trends_2():
+    # This is a nicer variation of the same call as above.
+    world_trends = twitter.trends._(1)
+    assert world_trends

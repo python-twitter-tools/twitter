@@ -104,10 +104,16 @@ class TwitterCall(object):
         try:
             return object.__getattr__(self, k)
         except AttributeError:
-            return self.callable_cls(
-                auth=self.auth, format=self.format, domain=self.domain,
-                callable_cls=self.callable_cls, uriparts=self.uriparts + (k,),
-                secure=self.secure)
+            def extend_call(arg):
+                return self.callable_cls(
+                    auth=self.auth, format=self.format, domain=self.domain,
+                    callable_cls=self.callable_cls, uriparts=self.uriparts \
+                        + (arg,),
+                    secure=self.secure)
+            if k == "_":
+                return extend_call
+            else:
+                return extend_call(k)
 
     def __call__(self, **kwargs):
         # Build the uri.
