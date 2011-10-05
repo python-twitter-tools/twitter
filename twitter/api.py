@@ -33,13 +33,14 @@ class TwitterHTTPError(TwitterError):
         self.uri = uri
         self.format = format
         self.uriparts = uriparts
+        self.response_data = self.e.fp.read()
 
     def __str__(self):
         return (
             "Twitter sent status %i for URL: %s.%s using parameters: "
             "(%s)\ndetails: %s" %(
                 self.e.code, self.uri, self.format, self.uriparts,
-                self.e.fp.read()))
+                self.response_data))
 
 class TwitterResponse(object):
     """
