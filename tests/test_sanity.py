@@ -1,3 +1,4 @@
+# encoding: utf8
 
 from random import choice
 
@@ -28,6 +29,15 @@ def test_API_get_some_public_tweets():
 
 def test_API_set_tweet():
     random_tweet = "A random tweet " + get_random_str()
+    twitter.statuses.update(status=random_tweet)
+
+    recent = twitter.statuses.user_timeline()
+    assert recent
+    assert random_tweet == recent[0]['text']
+
+
+def test_API_set_unicode_tweet():
+    random_tweet = u"A random tweet with unicode ⇰ÐÀ " + get_random_str()
     twitter.statuses.update(status=random_tweet)
 
     recent = twitter.statuses.user_timeline()
