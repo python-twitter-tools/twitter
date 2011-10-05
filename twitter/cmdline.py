@@ -464,13 +464,29 @@ class SetStatusAction(Action):
         statusTxt = (" ".join(options['extra_args'])
                      if options['extra_args']
                      else str(input("message: ")))
+        replies = []
+        ptr = re.compile("@[\w_]+")
+        while statusTxt:
+            s = ptr.match(statusTxt)
+            if s and s.start() == 0:
+                replies.append(statusTxt[s.start():s.end()])
+                statusTxt = statusTxt[s.end()+1:]
+            else:
+                break
+        replies = " ".join(replies)
+        if len(replies) >= 140:
+            # just go back
+            statusTxt = replies
+            replies = ""
+
         splitted = []
         while statusTxt:
-            if len(statusTxt) > 140:
-                end = string.rfind(statusTxt, ' ', 0, 140)
+            limit = 140 - len(replies)
+            if len(statusTxt) > limit:
+                end = string.rfind(statusTxt, ' ', 0, limit)
             else:
-                end = 140
-            splitted.append(statusTxt[:end])
+                end = limit
+            splitted.append(" ".join((replies,statusTxt[:end])))
             statusTxt = statusTxt[end:]
 
         for status in splitted:
