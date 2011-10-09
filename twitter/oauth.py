@@ -7,8 +7,12 @@ from random import getrandbits
 
 try:
     import urllib.parse as urllib_parse
+    from urllib.parse import urlencode
+    PY3 = True
 except ImportError:
     import urllib2 as urllib_parse
+    from urllib import urlencode
+    PY3 = False
 
 import hashlib
 import hmac
@@ -80,20 +84,11 @@ class OAuth(Auth):
 # also in the request itself.)
 # So here is a specialized version which does exactly that.
 def urlencode_noplus(query):
-    if hasattr(query,"items"):
-        # mapping objects
-        query = list(query.items())
-
-    encoded_bits = []
-    for n, v in query:
-        # and do unicode here while we are at it...
-        if isinstance(n, basestring):
-            n = n.encode('utf-8')
-        else:
-            n = str(n)
-        if isinstance(v, basestring):
-            v = v.encode('utf-8')
-        else:
-            v = str(v)
-        encoded_bits.append("%s=%s" % (urllib_parse.quote(n, ""), urllib_parse.quote(v, "")))
-    return "&".join(encoded_bits)
+    if not PY3:
+        new_query = []
+        for k,v in query:
+            if type(k) is unicode: k = k.encode('utf-8')
+            if type(v) is unicode: v = v.encode('utf-8')
+            new_query.append((k, v))
+        query = new_query
+    return urlencode(query).replace("+", "%20")
