@@ -489,6 +489,7 @@ class SetStatusAction(Action):
             splitted.append(" ".join((replies,statusTxt[:end])))
             statusTxt = statusTxt[end:]
 
+        splitted.reverse()
         for status in splitted:
             twitter.statuses.update(status=status)
 
