@@ -1,6 +1,7 @@
 # encoding: utf8
 
 from random import choice
+import time
 
 from twitter import Twitter, NoAuth, OAuth, read_token_file
 from twitter.cmdline import CONSUMER_KEY, CONSUMER_SECRET
@@ -30,9 +31,11 @@ def test_API_get_some_public_tweets():
 def test_API_set_tweet():
     random_tweet = "A random tweet " + get_random_str()
     twitter.statuses.update(status=random_tweet)
-
+    time.sleep(2)
     recent = twitter.statuses.user_timeline()
     assert recent
+    assert isinstance(recent.rate_limit_remaining, int)
+    assert isinstance(recent.rate_limit_reset, int)
     assert random_tweet == recent[0]['text']
 
 
