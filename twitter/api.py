@@ -83,6 +83,9 @@ def wrap_response(response, headers):
         def __init__(self, response, headers):
             response_typ.__init__(self, response)
             TwitterResponse.__init__(self, headers)
+        def __new__(cls, response, headers):
+            return response_typ.__new__(cls, response)
+
 
     return WrappedTwitterResponse(response, headers)
 
