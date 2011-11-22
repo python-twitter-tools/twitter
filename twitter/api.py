@@ -36,10 +36,11 @@ class TwitterHTTPError(TwitterError):
         self.response_data = self.e.fp.read()
 
     def __str__(self):
+        fmt = ("." + self.format) if self.format else ""
         return (
-            "Twitter sent status %i for URL: %s.%s using parameters: "
+            "Twitter sent status %i for URL: %s%s using parameters: "
             "(%s)\ndetails: %s" %(
-                self.e.code, self.uri, self.format, self.uriparts,
+                self.e.code, self.uri, fmt, self.uriparts,
                 self.response_data))
 
 class TwitterResponse(object):
@@ -124,11 +125,13 @@ class TwitterCall(object):
             uriparts.append(str(kwargs.pop(uripart, uripart)))
         uri = '/'.join(uriparts)
 
-        method = "GET"
-        for action in POST_ACTIONS:
-            if uri.endswith(action):
-                method = "POST"
-                break
+        method = kwargs.pop('_method', None)
+        if not method:
+            method = "GET"
+            for action in POST_ACTIONS:
+                if uri.endswith(action):
+                    method = "POST"
+                    break
 
         # If an id kwarg is present and there is no id to fill in in
         # the list of uriparts, assume the id goes at the end.
