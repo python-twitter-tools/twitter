@@ -8,6 +8,8 @@ except ImportError:
 from twitter.twitter_globals import POST_ACTIONS
 from twitter.auth import NoAuth
 
+import re
+
 try:
     import json
 except ImportError:
@@ -132,7 +134,7 @@ class TwitterCall(object):
         if not method:
             method = "GET"
             for action in POST_ACTIONS:
-                if uri.endswith(action):
+                if re.search("%s(/\d+)?$" % action, uri):
                     method = "POST"
                     break
 
