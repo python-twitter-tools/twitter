@@ -74,7 +74,9 @@ class TwitterStream(TwitterStreamCall):
     The iterator will yield tweets forever and ever (until the stream
     breaks at which point it raises a TwitterHTTPError.)
 
-    The `bloc` paramater controls if the stream is blocking. 
+    The `block` paramater controls if the stream is blocking. Default
+    is blocking (True). When set to False, the iterator will
+    occasionally yield None when there is no available message.
     """
     def __init__(
         self, domain="stream.twitter.com", secure=True, auth=None,
