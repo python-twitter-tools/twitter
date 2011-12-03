@@ -74,7 +74,7 @@ class TwitterStream(TwitterStreamCall):
     The iterator will yield tweets forever and ever (until the stream
     breaks at which point it raises a TwitterHTTPError.)
 
-    The `block` paramater controls if the stream is blocking. Default
+    The `block` parameter controls if the stream is blocking. Default
     is blocking (True). When set to False, the iterator will
     occasionally yield None when there is no available message.
     """
