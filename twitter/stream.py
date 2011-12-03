@@ -18,17 +18,18 @@ class TwitterJSONIter(object):
 
     def __iter__(self):
         while True:
-            # this is a non-blocking read (ie, it will return if any data is available)
-            self.buf += self.handle.fp._sock.fp._sock.recv(1024)
             try:
                 utf8_buf = self.buf.decode('utf8').lstrip()
                 res, ptr = self.decoder.raw_decode(utf8_buf)
                 self.buf = utf8_buf[ptr:].encode('utf8')
                 yield wrap_response(res, self.handle.headers)
-            except ValueError as e:
                 continue
+            except ValueError as e:
+                pass
             except urllib_error.HTTPError as e:
                 raise TwitterHTTPError(e, uri, self.format, arg_data)
+            # this is a non-blocking read (ie, it will return if any data is available)
+            self.buf += self.handle.fp._sock.fp._sock.recv(1024)
 
 class TwitterStreamCall(TwitterCall):
     def _handle_response(self, req, uri, arg_data):
