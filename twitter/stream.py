@@ -18,7 +18,8 @@ class TwitterJSONIter(object):
 
     def __iter__(self):
         while True:
-            self.buf += self.handle.read(1024)
+            # this is a non-blocking read (ie, it will return if any data is available)
+            self.buf += self.handle.fp._sock.fp._sock.recv(1024)
             try:
                 utf8_buf = self.buf.decode('utf8').lstrip()
                 res, ptr = self.decoder.raw_decode(utf8_buf)
@@ -51,7 +52,7 @@ class TwitterStream(TwitterStreamCall):
     breaks at which point it raises a TwitterHTTPError.)
     """
     def __init__(
-        self, domain="stream.twitter.com", secure=False, auth=None,
+        self, domain="stream.twitter.com", secure=True, auth=None,
         api_version='1'):
         uriparts = ()
         uriparts += (str(api_version),)
