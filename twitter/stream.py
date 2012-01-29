@@ -60,10 +60,11 @@ class TwitterStreamCallNonBlocking(TwitterCall):
 
 class TwitterStream(TwitterStreamCall):
     """
-    Interface to the Twitter Stream API (stream.twitter.com). This can
-    be used pretty much the same as the Twitter class except the
-    result of calling a method will be an iterator that yields objects
-    decoded from the stream. For example::
+    The TwitterStream object is an interface to the Twitter Stream API
+    (stream.twitter.com). This can be used pretty much the same as the
+    Twitter class except the result of calling a method will be an
+    iterator that yields objects decoded from the stream. For
+    example::
 
         twitter_stream = TwitterStream(auth=UserPassAuth('joe', 'joespassword'))
         iterator = twitter_stream.statuses.sample()

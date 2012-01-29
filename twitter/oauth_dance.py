@@ -21,7 +21,7 @@ def oauth_dance(app_name, consumer_key, consumer_secret, token_filename=None):
 
     Provide the name of your app in `app_name`, your consumer_key, and
     consumer_secret. This function will open a web browser to let the
-    user Allow your app to access their Twitter account. PIN
+    user allow your app to access their Twitter account. PIN
     authentication is used.
 
     If a token_filename is given, the oauth tokens will be written to
