@@ -41,6 +41,8 @@ setup(name='twitter',
       twitter=twitter.cmdline:main
       twitterbot=twitter.ircbot:main
       twitter-log=twitter.logger:main
+      twitter-archiver=twitter.archiver:main
+      twitter-follow=twitter.follow:main
       twitter-stream-example=twitter.stream_example:main
       """,
       )
