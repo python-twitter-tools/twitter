@@ -189,6 +189,9 @@ def timeline(twitter, screen_name, tweets):
                                                     reset, delay))
                 fail.wait(delay)
                 continue
+            elif e.e.code == 404:
+                err("Fail: %i This profile does not exist" % e.e.code)
+                break
             elif e.e.code == 502:
                 err("Fail: %i Service currently unavailable, retrying..."
                     % e.e.code)
