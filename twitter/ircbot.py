@@ -154,6 +154,7 @@ class TwitterBot(object):
         self.irc = irclib.IRC()
         self.irc.add_global_handler('privmsg', self.handle_privmsg)
         self.irc.add_global_handler('ctcp', self.handle_ctcp)
+        self.irc.add_global_handler('umode', self.handle_umode)
         self.ircServer = self.irc.server()
 
         self.sched = Scheduler(
@@ -225,6 +226,19 @@ class TwitterBot(object):
                 conn.ctcp_reply(source, "PING")
             elif args[0] == 'CLIENTINFO':
                 conn.ctcp_reply(source, "CLIENTINFO PING VERSION CLIENTINFO")
+
+    def handle_umode(self, conn, evt):
+        """
+        QuakeNet ignores all your commands until after the MOTD. This
+        handler defers joining until after it sees a magic line. It
+        also tries to join right after connect, but this will just
+        make it join again which should be safe.
+        """
+        args = evt.arguments()
+        if (args and args[0] == '+i'):
+            channels = self.config.get('irc', 'channel').split(',')
+            for channel in channels:
+                self.ircServer.join(channel)
 
     def privmsg_channels(self, msg):
         return_response=True
