@@ -104,15 +104,15 @@ class OAuth(Auth):
 
         enc_params = urlencode_noplus(sorted(params.items()))
 
-        key = self.consumer_secret + "&" + urllib_parse.quote(self.token_secret, '')
+        key = self.consumer_secret + "&" + urllib_parse.quote(self.token_secret, safe='~')
 
         message = '&'.join(
-            urllib_parse.quote(i, '') for i in [method.upper(), base_url, enc_params])
+            urllib_parse.quote(i, safe='~') for i in [method.upper(), base_url, enc_params])
 
         signature = (base64.b64encode(hmac.new(
                     key.encode('ascii'), message.encode('ascii'), hashlib.sha1)
                                       .digest()))
-        return enc_params + "&" + "oauth_signature=" + urllib_parse.quote(signature, '')
+        return enc_params + "&" + "oauth_signature=" + urllib_parse.quote(signature, safe='~')
 
     def generate_headers(self):
         return {}
@@ -129,4 +129,4 @@ def urlencode_noplus(query):
             if type(v) is unicode: v = v.encode('utf-8')
             new_query.append((k, v))
         query = new_query
-    return urlencode(query).replace("+", "%20")
+    return urlencode(query, safe='~').replace("+", "%20")
