@@ -129,4 +129,6 @@ def urlencode_noplus(query):
             if type(v) is unicode: v = v.encode('utf-8')
             new_query.append((k, v))
         query = new_query
+        return urlencode(query).replace("+", "%20")
+        
     return urlencode(query, safe='~').replace("+", "%20")
