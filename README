@@ -14,23 +14,17 @@ For more information, after installing the `twitter` package:
 
  * import the `twitter` package and run help() on it
  * run `twitter -h` for command-line tool help
- * run `twitterbot -h` for IRC bot help
- * visit http://mike.verdone.ca/twitter for more info
-
 
 
 twitter - The Command-Line Tool
 -------------------------------
 
-The command-line tool currently supports the following things:
+The command-line tool lets you do some awesome things:
 
- * view your friends' recent tweets
- * view your recent replies
+ * view your tweets, recent replies, and tweets in lists
  * view the public timeline
  * follow and unfollow (leave) friends
- * view tweets from lists
  * various output formats for tweet information
- * read your username and password from a config file
 
 The bottom line: type `twitter`, receive tweets.
 
@@ -52,6 +46,13 @@ twitter-log
 tweets from a given user in a simple text format. It is useful to get
 a complete offsite backup of all your tweets. Run `twitter-log` and
 read the instructions.
+
+twitter-archiver and twitter-follow
+-----------------------------------
+
+twitter-archiver will log all the tweets posted by any user since they
+started posting. twitter-follow will print a list of all of all the
+followers of a user (or all the users that user follows).
 
 
 Programming with the Twitter api classes
