@@ -19,27 +19,27 @@ from .oauth_dance import oauth_dance
 
 __doc__ += """
 The Twitter class
-=================
+-----------------
 """
 __doc__ += dedent(Twitter.__doc__)
 
 __doc__ += """
 The TwitterStream class
-=======================
+-----------------------
 """
 __doc__ += dedent(TwitterStream.__doc__)
 
 
 __doc__ += """
 Twitter Response Objects
-========================
+------------------------
 """
 __doc__ += dedent(TwitterResponse.__doc__)
 
 
 __doc__ += """
 Authentication
-==============
+--------------
 
 You can authenticate with Twitter in three ways: NoAuth, OAuth, or
 UserPassAuth. Get help() on these classes to learn how to use them.
@@ -48,7 +48,7 @@ OAuth is probably the most useful.
 
 
 Working with OAuth
-==================
+------------------
 """
 
 __doc__ += dedent(oauth_doc)
