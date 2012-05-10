@@ -64,6 +64,12 @@ prompt: <twitter_shell_prompt e.g. '[cyan]twitter[R]> '>
 
 from __future__ import print_function
 
+try:
+    input = __builtins__['raw_input']
+except AttributeError:
+    pass
+
+
 CONSUMER_KEY='uS6hO2sV6tDKIOeVjhnFnQ'
 CONSUMER_SECRET='MEYTOS97VvlHX7K1rwHPEqVpTSqZ71HtvoK4sVuYk'
 
