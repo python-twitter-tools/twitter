@@ -77,25 +77,33 @@ The Twitter API is documented at:
 
 Examples::
 
-    twitter = Twitter(
+    t = Twitter(
         auth=OAuth(token, token_key, con_secret, con_secret_key)))
 
     # Get the public timeline
-    twitter.statuses.public_timeline()
+    t.statuses.public_timeline()
 
     # Get a particular friend's timeline
-    twitter.statuses.friends_timeline(id="billybob")
+    t.statuses.friends_timeline(id="billybob")
 
     # Also supported (but totally weird)
-    twitter.statuses.friends_timeline.billybob()
+    t.statuses.friends_timeline.billybob()
+
+    # Update your status
+    t.statuses.update(
+        status="Using @sixohsix's sweet Python Twitter Tools.")
 
     # Send a direct message
-    twitter.direct_messages.new(
+    t.direct_messages.new(
         user="billybob",
         text="I think yer swell!")
 
-    # Get the members of a particular list of a particular friend
-    twitter.user.listname.members(user="billybob", listname="billysbuds")
+    # Get the members of tamtar's list "Things That Are Rad"
+    t._("tamtar")._("things-that-are-rad").members()
+
+    # Note how the magic `_` method can be used to insert data
+    # into the middle of a call. You can also use replacement:
+    t.user.list.members(user="tamtar", list="things-that-are-rad")
 
 
 Searching Twitter::
