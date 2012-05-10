@@ -352,6 +352,7 @@ class Action(object):
             if (options['refresh'] and isinstance(action, StatusAction)):
                 while True:
                     doAction()
+                    sys.stdout.flush()
                     time.sleep(options['refresh_rate'])
             else:
                 doAction()

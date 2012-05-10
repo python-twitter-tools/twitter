@@ -8,6 +8,8 @@ except ImportError:
 from twitter.twitter_globals import POST_ACTIONS
 from twitter.auth import NoAuth
 
+import re
+
 try:
     import json
 except ImportError:
@@ -36,10 +38,11 @@ class TwitterHTTPError(TwitterError):
         self.response_data = self.e.fp.read()
 
     def __str__(self):
+        fmt = ("." + self.format) if self.format else ""
         return (
-            "Twitter sent status %i for URL: %s.%s using parameters: "
+            "Twitter sent status %i for URL: %s%s using parameters: "
             "(%s)\ndetails: %s" %(
-                self.e.code, self.uri, self.format, self.uriparts,
+                self.e.code, self.uri, fmt, self.uriparts,
                 self.response_data))
 
 class TwitterResponse(object):
@@ -79,7 +82,14 @@ def wrap_response(response, headers):
     class WrappedTwitterResponse(response_typ, TwitterResponse):
         __doc__ = TwitterResponse.__doc__
 
-    return WrappedTwitterResponse(response)
+        def __init__(self, response, headers):
+            response_typ.__init__(self, response)
+            TwitterResponse.__init__(self, headers)
+        def __new__(cls, response, headers):
+            return response_typ.__new__(cls, response)
+
+
+    return WrappedTwitterResponse(response, headers)
 
 
 
@@ -120,11 +130,13 @@ class TwitterCall(object):
             uriparts.append(str(kwargs.pop(uripart, uripart)))
         uri = '/'.join(uriparts)
 
-        method = "GET"
-        for action in POST_ACTIONS:
-            if uri.endswith(action):
-                method = "POST"
-                break
+        method = kwargs.pop('_method', None)
+        if not method:
+            method = "GET"
+            for action in POST_ACTIONS:
+                if re.search("%s(/\d+)?$" % action, uri):
+                    method = "POST"
+                    break
 
         # If an id kwarg is present and there is no id to fill in in
         # the list of uriparts, assume the id goes at the end.
