@@ -106,6 +106,7 @@ OPTIONS = {
     'datestamp': False,
     'extra_args': [],
     'secure': True,
+    'invert_split': False,
 }
 
 def parse_args(args, options):
@@ -490,7 +491,8 @@ class SetStatusAction(Action):
             splitted.append(" ".join((replies,statusTxt[:end])))
             statusTxt = statusTxt[end:]
 
-        splitted.reverse()
+        if options['invert_split']:
+            splitted.reverse()
         for status in splitted:
             twitter.statuses.update(status=status)
 
@@ -589,6 +591,10 @@ def loadConfig(filename):
         for option in ('format', 'prompt'):
             if cp.has_option('twitter', option):
                 options[option] = cp.get('twitter', option)
+        # process booleans
+        for option in ('invert_split',):
+            if cp.has_option('twitter', option ):
+                options[option] = cp.getboolean('twitter', option)
     return options
 
 def main(args=sys.argv[1:]):
