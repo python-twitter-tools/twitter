@@ -188,43 +188,51 @@ class Twitter(TwitterCall):
     Get RESTful data by accessing members of this class. The result
     is decoded python objects (lists and dicts).
 
-    The Twitter API is documented here:
+    The Twitter API is documented at:
 
       http://dev.twitter.com/doc
 
 
     Examples::
 
-      twitter = Twitter(
-          auth=OAuth(token, token_key, con_secret, con_secret_key)))
+        t = Twitter(
+            auth=OAuth(token, token_key, con_secret, con_secret_key)))
 
-      # Get the public timeline
-      twitter.statuses.public_timeline()
+        # Get the public timeline
+        t.statuses.public_timeline()
 
-      # Get a particular friend's timeline
-      twitter.statuses.friends_timeline(id="billybob")
+        # Get a particular friend's timeline
+        t.statuses.friends_timeline(id="billybob")
 
-      # Also supported (but totally weird)
-      twitter.statuses.friends_timeline.billybob()
+        # Also supported (but totally weird)
+        t.statuses.friends_timeline.billybob()
 
-      # Send a direct message
-      twitter.direct_messages.new(
-          user="billybob",
-          text="I think yer swell!")
+        # Update your status
+        t.statuses.update(
+            status="Using @sixohsix's sweet Python Twitter Tools.")
 
-      # Get the members of a particular list of a particular friend
-      twitter.user.listname.members(user="billybob", listname="billysbuds")
+        # Send a direct message
+        t.direct_messages.new(
+            user="billybob",
+            text="I think yer swell!")
+
+        # Get the members of tamtar's list "Things That Are Rad"
+        t._("tamtar")._("things-that-are-rad").members()
+
+        # Note how the magic `_` method can be used to insert data
+        # into the middle of a call. You can also use replacement:
+        t.user.list.members(user="tamtar", list="things-that-are-rad")
 
 
     Searching Twitter::
 
-      twitter_search = Twitter(domain="search.twitter.com")
+        twitter_search = Twitter(domain="search.twitter.com")
 
-      # Find the latest search trends
-      twitter_search.trends()
+        # Find the latest search trends
+        twitter_search.trends()
 
-      # Search for the latest News on #gaza
-      twitter_search.search(q="#gaza")
+        # Search for the latest News on #gaza
+        twitter_search.search(q="#gaza")
 
 
     Using the data returned
@@ -233,13 +241,13 @@ class Twitter(TwitterCall):
     Twitter API calls return decoded JSON. This is converted into
     a bunch of Python lists, dicts, ints, and strings. For example::
 
-      x = twitter.statuses.public_timeline()
+        x = twitter.statuses.public_timeline()
 
-      # The first 'tweet' in the timeline
-      x[0]
+        # The first 'tweet' in the timeline
+        x[0]
 
-      # The screen name of the user who wrote the first 'tweet'
-      x[0]['user']['screen_name']
+        # The screen name of the user who wrote the first 'tweet'
+        x[0]['user']['screen_name']
 
 
     Getting raw XML data
@@ -248,10 +256,10 @@ class Twitter(TwitterCall):
     If you prefer to get your Twitter data in XML format, pass
     format="xml" to the Twitter object when you instantiate it::
 
-      twitter = Twitter(format="xml")
+        twitter = Twitter(format="xml")
 
-      The output will not be parsed in any way. It will be a raw string
-      of XML.
+    The output will not be parsed in any way. It will be a raw string
+    of XML.
 
     """
     def __init__(

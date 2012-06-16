@@ -14,30 +14,24 @@ For more information, after installing the `twitter` package:
 
  * import the `twitter` package and run help() on it
  * run `twitter -h` for command-line tool help
- * run `twitterbot -h` for IRC bot help
- * visit http://mike.verdone.ca/twitter for more info
 
 
- 
-The Command-Line Tool
-=====================
+twitter - The Command-Line Tool
+-------------------------------
 
-The command-line tool currently supports the following things:
+The command-line tool lets you do some awesome things:
 
- * view your friends' recent tweets
- * view your recent replies
+ * view your tweets, recent replies, and tweets in lists
  * view the public timeline
  * follow and unfollow (leave) friends
- * view tweets from lists
  * various output formats for tweet information
- * read your username and password from a config file
- 
+
 The bottom line: type `twitter`, receive tweets.
 
 
 
-The IRC Bot
-===========
+twitterbot - The IRC Bot
+------------------------
 
 The IRC bot is associated with a twitter account (either your own account or an
 account you create for the bot). The bot announces all tweets from friends
@@ -45,14 +39,204 @@ it is following. It can be made to follow or leave friends through IRC /msg
 commands.
 
 
-
 twitter-log
-===========
+-----------
 
 `twitter-log` is a simple command-line tool that dumps all public
 tweets from a given user in a simple text format. It is useful to get
 a complete offsite backup of all your tweets. Run `twitter-log` and
 read the instructions.
 
+twitter-archiver and twitter-follow
+-----------------------------------
+
+twitter-archiver will log all the tweets posted by any user since they
+started posting. twitter-follow will print a list of all of all the
+followers of a user (or all the users that user follows).
+
+
+Programming with the Twitter api classes
+========================================
+
+
+The Twitter and TwitterStream classes are the key to building your own
+Twitter-enabled applications.
+
+
+The Twitter class
+-----------------
+
+The minimalist yet fully featured Twitter API class.
+
+Get RESTful data by accessing members of this class. The result
+is decoded python objects (lists and dicts).
+
+The Twitter API is documented at:
+
+  http://dev.twitter.com/doc
+
+
+Examples::
+    
+    from twitter import *
+
+    # see "Authentication" section below for tokens and keys
+    t = Twitter(
+        auth=OAuth(OAUTH_TOKEN, OAUTH_SECRET,
+                   CONSUMER_KEY, CONSUMER_SECRET)))
+
+    # Get the public timeline
+    t.statuses.public_timeline()
+
+    # Get a particular friend's timeline
+    t.statuses.friends_timeline(id="billybob")
+
+    # Also supported (but totally weird)
+    t.statuses.friends_timeline.billybob()
+
+    # Update your status
+    t.statuses.update(
+        status="Using @sixohsix's sweet Python Twitter Tools.")
+
+    # Send a direct message
+    t.direct_messages.new(
+        user="billybob",
+        text="I think yer swell!")
+
+    # Get the members of tamtar's list "Things That Are Rad"
+    t._("tamtar")._("things-that-are-rad").members()
+
+    # Note how the magic `_` method can be used to insert data
+    # into the middle of a call. You can also use replacement:
+    t.user.list.members(user="tamtar", list="things-that-are-rad")
+
+
+Searching Twitter::
+
+    from twitter import *
+
+    twitter_search = Twitter(domain="search.twitter.com")
+
+    # Find the latest search trends
+    twitter_search.trends()
+
+    # Search for the latest News on #gaza
+    twitter_search.search(q="#gaza")
+
+
+Using the data returned
+-----------------------
+
+Twitter API calls return decoded JSON. This is converted into
+a bunch of Python lists, dicts, ints, and strings. For example::
+
+    x = twitter.statuses.public_timeline()
+
+    # The first 'tweet' in the timeline
+    x[0]
+
+    # The screen name of the user who wrote the first 'tweet'
+    x[0]['user']['screen_name']
+
+
+Getting raw XML data
+--------------------
+
+If you prefer to get your Twitter data in XML format, pass
+format="xml" to the Twitter object when you instantiate it::
+
+    twitter = Twitter(format="xml")
+
+The output will not be parsed in any way. It will be a raw string
+of XML.
+
+
+The TwitterStream class
+-----------------------
+
+The TwitterStream object is an interface to the Twitter Stream API
+(stream.twitter.com). This can be used pretty much the same as the
+Twitter class except the result of calling a method will be an
+iterator that yields objects decoded from the stream. For
+example::
+
+    twitter_stream = TwitterStream(auth=UserPassAuth('joe', 'joespassword'))
+    iterator = twitter_stream.statuses.sample()
+
+    for tweet in iterator:
+        ...do something with this tweet...
+
+The iterator will yield tweets forever and ever (until the stream
+breaks at which point it raises a TwitterHTTPError.)
+
+The `block` parameter controls if the stream is blocking. Default
+is blocking (True). When set to False, the iterator will
+occasionally yield None when there is no available message.
+
+Twitter Response Objects
+------------------------
+
+Response from a twitter request. Behaves like a list or a string
+(depending on requested format) but it has a few other interesting
+attributes.
+
+`headers` gives you access to the response headers as an
+httplib.HTTPHeaders instance. You can do
+`response.headers.getheader('h')` to retrieve a header.
+
+Authentication
+--------------
+
+You can authenticate with Twitter in three ways: NoAuth, OAuth, or
+UserPassAuth. Get help() on these classes to learn how to use them.
+
+OAuth is probably the most useful.
+
+
+Working with OAuth
+------------------
+
+Visit the Twitter developer page and create a new application:
+
+    https://dev.twitter.com/apps/new
+
+This will get you a CONSUMER_KEY and CONSUMER_SECRET.
+
+When users run your application they have to authenticate your app
+with their Twitter account. A few HTTP calls to twitter are required
+to do this. Please see the twitter.oauth_dance module to see how this
+is done. If you are making a command-line app, you can use the
+oauth_dance() function directly.
+
+Performing the "oauth dance" gets you an ouath token and oauth secret
+that authenticate the user with Twitter. You should save these for
+later so that the user doesn't have to do the oauth dance again.
+
+read_token_file and write_token_file are utility methods to read and
+write OAuth token and secret key values. The values are stored as
+strings in the file. Not terribly exciting.
+
+Finally, you can use the OAuth authenticator to connect to Twitter. In
+code it all goes like this::
+
+    from twitter import *
+
+    MY_TWITTER_CREDS = os.path.expanduser('~/.my_app_credentials')
+    if not os.path.exists(MY_TWITTER_CREDS):
+        oauth_dance("My App Name", CONSUMER_KEY, CONSUMER_SECRET,
+                    MY_TWITTER_CREDS)
+
+    oauth_token, oauth_secret = read_token_file(MY_TWITTER_CREDS)
+
+    twitter = Twitter(auth=OAuth(
+        oauth_token, oauth_secret, CONSUMER_KEY, CONSUMER_SECRET))
+
+    # Now work with Twitter
+    twitter.statuses.update('Hello, world!')
+
+
+
+License
+=======
 
 Python Twitter Tools are released under an MIT License.
