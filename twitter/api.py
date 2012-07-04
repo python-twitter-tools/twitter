@@ -169,6 +169,8 @@ class TwitterCall(object):
     def _handle_response(self, req, uri, arg_data):
         try:
             handle = urllib_request.urlopen(req)
+            if handle.headers['Content-Type'] in ['image/jpeg', 'image/png']:
+                return handle
             if "json" == self.format:
                 res = json.loads(handle.read().decode('utf8'))
                 return wrap_response(res, handle.headers)
