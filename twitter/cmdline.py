@@ -66,7 +66,7 @@ from __future__ import print_function
 
 try:
     input = __builtins__['raw_input']
-except AttributeError:
+except (AttributeError, KeyError):
     pass
 
 
