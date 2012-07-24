@@ -14,6 +14,8 @@ OPTIONS
  -a --api-rate         see current API rate limit status
  -t --timeline <file>  archive own timeline into given file name (requires
                        OAuth, max 800 statuses).
+ -f --follow-redirects follow redirects of urls
+ -r --redirect-sites   follow redirects for this comma separated list of hosts
 
 AUTHENTICATION
     Authenticate to Twitter using OAuth to archive tweets of private profiles
@@ -23,7 +25,7 @@ AUTHENTICATION
 
 from __future__ import print_function
 
-import os, sys, time, calendar, urllib2, httplib
+import os, sys, time, calendar, urllib2, httplib, functools
 from getopt import gnu_getopt as getopt, GetoptError
 
 # T-Archiver (Twitter-Archiver) application registered by @stalkr_
@@ -34,13 +36,13 @@ from .api import Twitter, TwitterError
 from .oauth import OAuth, read_token_file
 from .oauth_dance import oauth_dance
 from .auth import NoAuth
-from .util import Fail, err
+from .util import Fail, err, expand_line, parse_host_list
 from .follow import lookup
 
 def parse_args(args, options):
     """Parse arguments from command-line to set options."""
-    long_opts = ['help', 'oauth', 'save-dir=', 'api-rate', 'timeline=']
-    short_opts = "hos:at:"
+    long_opts = ['help', 'oauth', 'save-dir=', 'api-rate', 'timeline=', 'follow-redirects',"redirect-sites="]
+    short_opts = "hos:at:fr:"
     opts, extra_args = getopt(args, short_opts, long_opts)
 
     for opt, arg in opts:
@@ -55,6 +57,10 @@ def parse_args(args, options):
             options['api-rate' ] = True
         elif opt in ('-t', '--timeline'):
             options['timeline'] = arg
+        elif opt in ('-f', '--follow-redirects'):
+            options['follow-redirects'] = True
+        elif opt in ('-r', '--redirect-sites'):
+            options['redirect-sites'] = arg
 
     options['extra_args'] = extra_args
 
@@ -108,7 +114,11 @@ def format_date(utc, to_localtime=True):
     else:
         return time.strftime("%Y-%m-%d %H:%M:%S UTC", u)
 
-def format_text(text):
+def expand_format_text(hosts, text):
+    """Following redirects in links."""
+    return direct_format_text(expand_line(text, hosts))
+
+def direct_format_text(text):
     """Transform special chars in text to have only one line."""
     return text.replace('\n','\\n').replace('\r','\\r')
 
@@ -161,7 +171,6 @@ def timeline_portion(twitter, screen_name, max_id=None):
         tweets[t['id']] = "%s <%s> %s" % (format_date(t['created_at']),
                                           t['user']['screen_name'],
                                           format_text(text))
-
     return tweets
 
 def timeline(twitter, screen_name, tweets):
@@ -232,7 +241,9 @@ def main(args=sys.argv[1:]):
         'oauth': False,
         'save-dir': ".",
         'api-rate': False,
-        'timeline': ""
+        'timeline': "",
+        'follow-redirects': False,
+        'redirect-sites': None,
     }
     try:
         parse_args(args, options)
@@ -266,6 +277,16 @@ def main(args=sys.argv[1:]):
         rate_limit_status(twitter)
         return
 
+    global format_text
+    if options['follow-redirects'] or options['redirect-sites'] :
+        if options['redirect-sites']:
+            hosts = parse_host_list(options['redirect-sites'])
+        else:
+            hosts = None
+        format_text = functools.partial(expand_format_text, hosts)
+    else:
+        format_text = direct_format_text
+    
     # save own timeline (the user used in OAuth)
     if options['timeline']:
         if isinstance(auth, NoAuth):
