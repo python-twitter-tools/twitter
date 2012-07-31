@@ -5,6 +5,7 @@ version = '1.8.0'
 
 install_requires = [
     # -*- Extra requirements: -*-
+    "requests >= 0.13"
     ]
 
 setup(name='twitter',
@@ -18,8 +19,7 @@ setup(name='twitter',
           "Intended Audience :: End Users/Desktop",
           "Natural Language :: English",
           "Operating System :: OS Independent",
-          "Programming Language :: Python :: 3",
-          "Programming Language :: Python :: 2.6",
+          "Programming Language :: Python :: 3.3",
           "Programming Language :: Python :: 2.7",
           "Topic :: Communications :: Chat :: Internet Relay Chat",
           "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: CGI Tools/Libraries",
