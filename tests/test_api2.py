@@ -5,6 +5,8 @@ from .test_sanity import oauth, get_random_str
 
 
 api = TwitterAPI(auth=oauth)
+stream_api = TwitterAPI(host="stream.twitter.com", auth=oauth, stream=True)
+
 
 def test_can_get_public_tweet_json():
     updates = get('statuses/public_timeline')
@@ -59,3 +61,13 @@ def test_can_get_raw_response():
     assert res
     assert res.headers
     assert res.json
+
+
+def test_can_stream_some_tweets():
+    itr = stream_api.post("statuses/sample")
+    tweets = 0
+    for tweet in itr:
+        assert tweet
+        tweets += 1
+        if tweets > 2:
+            break

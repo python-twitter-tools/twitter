@@ -12,12 +12,12 @@ class TwitterAPIError(TwitterError):
 
 
 class TwitterAPI(object):
-
     def __init__(self, host='api.twitter.com', api_ver='1', auth=NoAuth(),
-                 return_raw_response=False):
+                 stream=False, return_raw_response=False):
         self.host = host
         self.api_ver = api_ver
         self.auth = auth
+        self.stream = stream
         self.return_raw_response = return_raw_response
 
 
@@ -26,7 +26,7 @@ class TwitterAPI(object):
         data = self.auth.encode_params(url, 'GET', remaining_params)
         headers = self.auth.generate_headers()
         res = requests.get(url + '?' + data, headers=headers)
-        return handle_res(res, self.return_raw_response)
+        return handle_res(res, self.return_raw_response, self.stream)
 
 
     def post(self, path, **kwargs):
@@ -34,7 +34,7 @@ class TwitterAPI(object):
         data = self.auth.encode_params(url, 'POST', remaining_params)
         headers = self.auth.generate_headers()
         res = requests.post(url, data=data, headers=headers)
-        return handle_res(res, self.return_raw_response)
+        return handle_res(res, self.return_raw_response, self.stream)
 
 
 _default_api = TwitterAPI()
@@ -63,7 +63,7 @@ def make_url(host, api_ver, path, params):
     return url, remaining_params
 
 
-def handle_res(res, return_raw_response):
+def handle_res(res, return_raw_response, stream):
     if res.status_code != 200:
         raise TwitterAPIError(
             "Twitter responded with invalid status code: {}"
@@ -71,6 +71,11 @@ def handle_res(res, return_raw_response):
             res)
     if return_raw_response:
         result = res
+    elif stream:
+        def generate_json():
+            for line in res.iter_lines():
+                yield json.loads(line)
+        return generate_json()
     else:
         result = res.json
     return result
