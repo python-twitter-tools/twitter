@@ -4,8 +4,9 @@ from twitter.api2 import get, search, TwitterAPI, TwitterError
 from .test_sanity import oauth, get_random_str
 
 
-api = TwitterAPI(auth=oauth)
-stream_api = TwitterAPI(host="stream.twitter.com", auth=oauth, stream=True)
+api = TwitterAPI(auth=oauth, secure=True)
+stream_api = TwitterAPI(host="stream.twitter.com", auth=oauth, stream=True,
+                        secure=True)
 
 
 def test_can_get_public_tweet_json():
@@ -64,7 +65,7 @@ def test_can_get_raw_response():
 
 
 def test_can_stream_some_tweets():
-    itr = stream_api.post("statuses/sample")
+    itr = stream_api.get("statuses/sample")
     tweets = 0
     for tweet in itr:
         assert tweet

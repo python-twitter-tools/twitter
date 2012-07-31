@@ -13,16 +13,18 @@ class TwitterAPIError(TwitterError):
 
 class TwitterAPI(object):
     def __init__(self, host='api.twitter.com', api_ver='1', auth=NoAuth(),
-                 stream=False, return_raw_response=False):
+                 secure=True, stream=False, return_raw_response=False):
         self.host = host
         self.api_ver = api_ver
         self.auth = auth
+        self.secure = secure
         self.stream = stream
         self.return_raw_response = return_raw_response
 
 
     def get(self, path, **kwargs):
-        url, remaining_params = make_url(self.host, self.api_ver, path, kwargs)
+        url, remaining_params = make_url(self.secure, self.host, self.api_ver,
+                                         path, kwargs)
         data = self.auth.encode_params(url, 'GET', remaining_params)
         headers = self.auth.generate_headers()
         res = requests.get(url + '?' + data, headers=headers)
@@ -30,7 +32,8 @@ class TwitterAPI(object):
 
 
     def post(self, path, **kwargs):
-        url, remaining_params = make_url(self.host, self.api_ver, path, kwargs)
+        url, remaining_params = make_url(self.secure, self.host, self.api_ver,
+                                         path, kwargs)
         data = self.auth.encode_params(url, 'POST', remaining_params)
         headers = self.auth.generate_headers()
         res = requests.post(url, data=data, headers=headers)
@@ -48,7 +51,7 @@ def search(q, **kwargs):
     return _search_api.get("search", q=q, **kwargs)
 
 
-def make_url(host, api_ver, path, params):
+def make_url(secure, host, api_ver, path, params):
     remaining_params = dict(params)
     real_params = []
     for param in path.split('/'):
@@ -59,7 +62,9 @@ def make_url(host, api_ver, path, params):
         real_params.append(param)
     real_path = '/'.join(real_params)
     api_ver_str = '{}/'.format(str(api_ver)) if api_ver is not None else ""
-    url = 'http://{}/{}{}.json'.format(host, str(api_ver_str), real_path)
+    secure_str = 's' if secure else ''
+    url = 'http{}://{}/{}{}.json'.format(secure_str, host, str(api_ver_str),
+                                         real_path)
     return url, remaining_params
 
 
@@ -74,7 +79,7 @@ def handle_res(res, return_raw_response, stream):
     elif stream:
         def generate_json():
             for line in res.iter_lines():
-                yield json.loads(line)
+                yield json.loads(line.decode('utf-8'))
         return generate_json()
     else:
         result = res.json

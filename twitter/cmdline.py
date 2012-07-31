@@ -93,7 +93,7 @@ except ImportError:
     from urllib2 import quote
 import webbrowser
 
-from .api import Twitter, TwitterError
+from .api2 import TwitterAPI, TwitterError, search
 from .oauth import OAuth, write_token_file, read_token_file
 from .oauth_dance import oauth_dance
 from . import ansi
@@ -120,8 +120,8 @@ def parse_args(args, options):
                  'datestamp', 'no-ssl']
     short_opts = "e:p:f:h?rR:c:l:td"
     opts, extra_args = getopt(args, short_opts, long_opts)
-    extra_args = [arg.decode(locale.getpreferredencoding())
-                  for arg in extra_args]
+    #extra_args = [arg.decode(locale.getpreferredencoding())
+    #              for arg in extra_args]
 
     for opt, arg in opts:
         if opt in ('-f', '--format'):
@@ -384,17 +384,11 @@ class StatusAction(Action):
 
 class SearchAction(Action):
     def __call__(self, twitter, options):
-        # We need to be pointing at search.twitter.com to work, and it is less
-        # tangly to do it here than in the main()
-        twitter.domain="search.twitter.com"
-        twitter.uriparts=()
-        # We need to bypass the TwitterCall parameter encoding, so we
-        # don't encode the plus sign, so we have to encode it ourselves
         query_string = "+".join(
             [quote(term)
              for term in options['extra_args']])
 
-        results = twitter.search(q=query_string)['results']
+        results = search(query_string)['results']
         f = get_formatter('search', options)
         for result in results:
             resultStr = f(result, options)
@@ -427,7 +421,7 @@ class ListsAction(StatusAction):
         screen_name = options['extra_args'][0]
 
         if not options['extra_args'][1:]:
-            lists = twitter.user.lists(user=screen_name)['lists']
+            lists = twitter.get("lists", screen_name=screen_name)['lists']
             if not lists:
                 printNicely("This user has no lists.")
             for list in lists:
@@ -435,36 +429,41 @@ class ListsAction(StatusAction):
                 printNicely(lf(list))
             return []
         else:
-            return reversed(twitter.user.lists.list.statuses(
-                    user=screen_name, list=options['extra_args'][1]))
+            return reversed(twitter.get(
+                    "lists/statuses",
+                    owner_screen_name=screen_name,
+                    list_id=options['extra_args'][1]))
 
 
 class MyListsAction(ListsAction):
     def getStatuses(self, twitter, options):
-        screen_name = twitter.account.verify_credentials()['screen_name']
+        screen_name = twitter.get("account/verify_credentials")['screen_name']
         options['extra_args'].insert(0, screen_name)
         return ListsAction.getStatuses(self, twitter, options)
 
 
 class FriendsAction(StatusAction):
     def getStatuses(self, twitter, options):
-        return reversed(twitter.statuses.friends_timeline(count=options["length"]))
+        return reversed(twitter.get("statuses/friends_timeline",
+                                    count=options["length"]))
 
 class PublicAction(StatusAction):
     def getStatuses(self, twitter, options):
-        return reversed(twitter.statuses.public_timeline(count=options["length"]))
+        return reversed(twitter.get("statuses/public_timeline",
+                                    count=options["length"]))
 
 class RepliesAction(StatusAction):
     def getStatuses(self, twitter, options):
-        return reversed(twitter.statuses.replies(count=options["length"]))
+        return reversed(twitter.get("statuses/replies",
+                                    count=options["length"]))
 
 class FollowAction(AdminAction):
     def getUser(self, twitter, user):
-        return twitter.friendships.create(id=user)
+        return twitter.post("friendships/create", screen_name=user)
 
 class LeaveAction(AdminAction):
     def getUser(self, twitter, user):
-        return twitter.friendships.destroy(id=user)
+        return twitter.post("friendships/destroy", screen_name=user)
 
 class SetStatusAction(Action):
     def __call__(self, twitter, options):
@@ -497,7 +496,7 @@ class SetStatusAction(Action):
             statusTxt = statusTxt[end:]
 
         for status in splitted:
-            twitter.statuses.update(status=status)
+            twitter.post("statuses/update", status=status)
 
 class TwitterShell(Action):
 
@@ -564,7 +563,7 @@ class DoNothingAction(Action):
 
 class RateLimitStatus(Action):
     def __call__(self, twitter, options):
-        rate = twitter.account.rate_limit_status()
+        rate = twitter.get("account/rate_limit_status")
         print("Remaining API requests: %s / %s (hourly limit)" % (rate['remaining_hits'], rate['hourly_limit']))
         print("Next reset in %ss (%s)" % (int(rate['reset_time_in_seconds']-time.time()),
                                           time.asctime(time.localtime(rate['reset_time_in_seconds']))))
@@ -633,12 +632,10 @@ def main(args=sys.argv[1:]):
 
     oauth_token, oauth_token_secret = read_token_file(oauth_filename)
 
-    twitter = Twitter(
+    twitter = TwitterAPI(
         auth=OAuth(
             oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET),
-        secure=options['secure'],
-        api_version='1',
-        domain='api.twitter.com')
+        secure=options['secure'])
 
     try:
         Action()(twitter, options)
