@@ -199,8 +199,6 @@ class TwitterCall(object):
 
 class Twitter(TwitterCall):
     """
-    The minimalist yet fully featured Twitter API class.
-
     Get RESTful data by accessing members of this class. The result
     is decoded python objects (lists and dicts).
 

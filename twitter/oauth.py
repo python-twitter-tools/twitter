@@ -22,6 +22,10 @@ strings in the file. Not terribly exciting.
 Finally, you can use the OAuth authenticator to connect to Twitter. In
 code it all goes like this::
 
+    import os.path
+    from twitter import OAuth, oauth_dance, read_token_file
+    from twitter.api2 import TwitterAPI
+
     MY_TWITTER_CREDS = os.path.expanduser('~/.my_app_credentials')
     if not os.path.exists(MY_TWITTER_CREDS):
         oauth_dance("My App Name", CONSUMER_KEY, CONSUMER_SECRET,
@@ -29,11 +33,12 @@ code it all goes like this::
 
     oauth_token, oauth_secret = read_token_file(MY_TWITTER_CREDS)
 
-    twitter = Twitter(auth=OAuth(
+    api = TwitterAPI(auth=OAuth(
         oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET))
 
     # Now work with Twitter
-    twitter.statuses.update('Hello, world!')
+    api.post("statuses/update",
+             status="Hello, world! From @sixohsix's Python Twitter Tools")
 
 """
 

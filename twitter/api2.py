@@ -1,3 +1,89 @@
+"""
+api2 is a simpler, more predictable means of working with the Twitter
+API in Python. It has the following improvements over the old API:
+
+ - more reliable connections, thanks to the Requests library
+ - simpler calling conventions
+ - no confusion between GET and POST
+
+
+Simple API Requests
+===================
+
+You can perform unauthenticated get requests using the `get`
+function. To get some tweets from the public timeline::
+
+    from twitter.api2 import get
+    tweets = get("statuses/public_timeline")
+
+The string "statuses/public_timeline" is found in the Twitter API
+documentation: https://dev.twitter.com/docs/api
+
+Any keyword arguments to `get` are turned into parameters sent to
+Twitter. That is, unless one of the parameters matches part of the
+URI, in which case it will be inserted::
+
+    retweets = get("statuses/:id/retweeted_by",
+                   id=230429161729163264,
+                   count=3)
+
+This returns a list of people who retweeted the tweet with the given
+id. id gets inserted into the URL where :id is. Count is passed as a
+parameter to control the max number of retweets to get. So, the
+specifically generated URL is:
+
+    http://api.twitter.com/1/statuses/230429161729163264/retweeted_by.json?count=3
+
+The point of using Python Twitter Tools is that you don't have to care
+about the specific URL.
+
+
+Results
+=======
+
+Twitter API calls return decoded JSON. This is converted into Python
+lists, dicts, ints, and strings. For example::
+
+    tweets = get("statuses/public_timeline")
+
+    # The first 'tweet' in the timeline
+    tweets[0]
+
+    # The screen name of the user who wrote the first 'tweet'
+    tweets[0]['user']['screen_name']
+
+
+Searching
+=========
+
+The search helper function will search twitter very easily::
+
+    from twitter.api2 import search
+    results = search("my search string")
+
+
+Authentication
+==============
+
+The Twitter API is limited unless you are authenticated. Assuming you
+have an OAuth authentication object, you can do authenticated calls
+like this::
+
+    from twitter.api2 import TwitterAPI
+    api = TwitterAPI(auth=oauth)
+
+    # Get tweets in your timeline:
+    api.get("statuses/home_timeline")
+
+    # Post a tweet to your timeline
+    api.post("statuses/update",
+             status="Using @sixohsix's Python Twitter Tools api2")
+
+The TwitterAPI's `get` and `post` methods work just like the `get`
+function described above.
+"""
+
+
 import requests
 import json
 
@@ -14,6 +100,10 @@ class TwitterAPIError(TwitterError):
 class TwitterAPI(object):
     def __init__(self, host='api.twitter.com', api_ver='1', auth=NoAuth(),
                  secure=True, stream=False, return_raw_response=False):
+        """
+        `host`        host to connect to (api.twitter.com)
+        `api_ver`     API version 
+        """
         self.host = host
         self.api_ver = api_ver
         self.auth = auth

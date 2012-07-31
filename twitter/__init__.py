@@ -1,8 +1,8 @@
 """
 The minimalist yet fully featured Twitter API and Python toolset.
 
-The Twitter and TwitterStream classes are the key to building your own
-Twitter-enabled applications.
+api2 is the best, and most supported way to build your own Twitter
+applications with Python.
 
 """
 
@@ -15,9 +15,18 @@ from .oauth import (OAuth, read_token_file, write_token_file,
 from .stream import TwitterStream
 from .oauth_dance import oauth_dance
 
+from . import api2
+
+
 # Who needs Sphinx? Not me!
 
+__doc__ += dedent(api2.__doc__)
+
+
 __doc__ += """
+**The legacy API below is deprecated and should not be used.**
+==============================================================
+
 The Twitter class
 -----------------
 """
