@@ -21,6 +21,7 @@ class Auth(object):
         by the authentication scheme in use."""
         raise NotImplementedError()
 
+
 class UserPassAuth(Auth):
     """
     Basic auth authentication using email/username and
