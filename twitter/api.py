@@ -5,10 +5,16 @@ except ImportError:
     import urllib2 as urllib_request
     import urllib2 as urllib_error
 
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
 from twitter.twitter_globals import POST_ACTIONS
 from twitter.auth import NoAuth
 
 import re
+import gzip
 
 try:
     import json
@@ -153,7 +159,7 @@ class TwitterCall(object):
         uriBase = "http%s://%s/%s%s%s" %(
                     secure_str, self.domain, uri, dot, self.format)
 
-        headers = {}
+        headers = {'Accept-Encoding': 'gzip'}
         if self.auth:
             headers.update(self.auth.generate_headers())
             arg_data = self.auth.encode_params(uriBase, method, kwargs)
@@ -171,12 +177,20 @@ class TwitterCall(object):
             handle = urllib_request.urlopen(req)
             if handle.headers['Content-Type'] in ['image/jpeg', 'image/png']:
                 return handle
+            elif handle.info().get('Content-Encoding') == 'gzip':
+                # Handle gzip decompression
+                buf = StringIO(handle.read())
+                f = gzip.GzipFile(fileobj=buf)
+                data = f.read()
+            else:
+                data = handle.read()
+
             if "json" == self.format:
-                res = json.loads(handle.read().decode('utf8'))
+                res = json.loads(data.decode('utf8'))
                 return wrap_response(res, handle.headers)
             else:
                 return wrap_response(
-                    handle.read().decode('utf8'), handle.headers)
+                    data.decode('utf8'), handle.headers)
         except urllib_error.HTTPError as e:
             if (e.code == 304):
                 return []
