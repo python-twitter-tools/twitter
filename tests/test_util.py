@@ -1,11 +1,16 @@
-import BaseHTTPServer
 from collections import namedtuple
 import contextlib
 import functools
 import socket
-import SocketServer
 import threading
 from twitter.util import find_links, follow_redirects, expand_line, parse_host_list
+
+try:
+    import http.server as BaseHTTPServer
+    import socketserver as SocketServer
+except ImportError:
+    import BaseHTTPServer
+    import SocketServer
 
 
 def test_find_links():
@@ -35,7 +40,7 @@ def start_server(*resp):
             response = responses.pop()
             assert response.path == self.path
             self.send_response(response.code)
-            for header, value in response.headers.iteritems():
+            for header, value in list(response.headers.items()):
                 self.send_header(header, value)
             self.end_headers()
             

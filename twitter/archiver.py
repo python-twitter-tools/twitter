@@ -25,8 +25,16 @@ AUTHENTICATION
 
 from __future__ import print_function
 
-import os, sys, time, calendar, urllib2, httplib, functools
+import os, sys, time, calendar, functools
 from getopt import gnu_getopt as getopt, GetoptError
+
+try:
+    import urllib.request as urllib2
+    import http.client as httplib
+except ImportError:
+    import urllib2
+    import httplib
+
 
 # T-Archiver (Twitter-Archiver) application registered by @stalkr_
 CONSUMER_KEY='d8hIyfzs7ievqeeZLjZrqQ'
@@ -299,7 +307,7 @@ def main(args=sys.argv[1:]):
         tweets = {}
         try:
             tweets = load_tweets(filename)
-        except Exception, e:
+        except Exception as e:
             err("Error when loading saved tweets: %s - continuing without"
                 % str(e))
 
@@ -328,7 +336,7 @@ def main(args=sys.argv[1:]):
         tweets = {}
         try:
             tweets = load_tweets(filename)
-        except Exception, e:
+        except Exception as e:
             err("Error when loading saved tweets: %s - continuing without"
                 % str(e))
 

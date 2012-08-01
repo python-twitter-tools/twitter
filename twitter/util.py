@@ -11,14 +11,16 @@ import contextlib
 import re
 import sys
 import time
-import urllib2
-import urlparse
 
 try:
     from html.entities import name2codepoint
     unichr = chr
+    import urllib.request as urllib2
+    import urllib.parse as urlparse
 except ImportError:
     from htmlentitydefs import name2codepoint
+    import urllib2
+    import urlparse
 
 def htmlentitydecode(s):
     return re.sub(
@@ -83,7 +85,7 @@ class Fail(object):
 def find_links(line):
     """Find all links in the given line. The function returns a sprintf style
     format string (with %s placeholders for the links) and a list of urls."""
-    l = line.replace(u"%", u"%%")
+    l = line.replace("%", "%%")
     regex = "(https?://[^ )]+)"
     return (
         re.sub(regex, "%s", l), 
