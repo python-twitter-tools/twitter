@@ -1,3 +1,4 @@
+# encoding: utf-8
 
 from twitter.api2 import get, search, TwitterAPI, TwitterError
 
