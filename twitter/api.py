@@ -59,7 +59,7 @@ class TwitterResponse(object):
 
     `headers` gives you access to the response headers as an
     httplib.HTTPHeaders instance. You can do
-    `response.headers.getheader('h')` to retrieve a header.
+    `response.headers.get('h')` to retrieve a header.
     """
     def __init__(self, headers):
         self.headers = headers
@@ -69,14 +69,14 @@ class TwitterResponse(object):
         """
         Remaining requests in the current rate-limit.
         """
-        return int(self.headers.getheader('X-RateLimit-Remaining'))
+        return int(self.headers.get('X-RateLimit-Remaining', "0"))
 
     @property
     def rate_limit_reset(self):
         """
         Time in UTC epoch seconds when the rate limit will reset.
         """
-        return int(self.headers.getheader('X-RateLimit-Reset'))
+        return int(self.headers.get('X-RateLimit-Reset', "0"))
 
 
 def wrap_response(response, headers):
