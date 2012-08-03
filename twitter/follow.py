@@ -18,8 +18,15 @@ AUTHENTICATION
 
 from __future__ import print_function
 
-import os, sys, time, calendar, urllib2, httplib
+import os, sys, time, calendar
 from getopt import gnu_getopt as getopt, GetoptError
+
+try:
+    import urllib.request as urllib2
+    import http.client as httplib
+except ImportError:
+    import urllib2
+    import httplib
 
 # T-Follow (Twitter-Follow) application registered by @stalkr_
 CONSUMER_KEY='USRZQfvFFjB6UvZIN2Edww'
@@ -30,6 +37,7 @@ from .oauth import OAuth, read_token_file
 from .oauth_dance import oauth_dance
 from .auth import NoAuth
 from .util import Fail, err
+
 
 def parse_args(args, options):
     """Parse arguments from command-line to set options."""
