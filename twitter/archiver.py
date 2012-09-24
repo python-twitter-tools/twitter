@@ -9,11 +9,14 @@ DESCRIPTION
     Provide "-" instead of users to read users from standard input.
 
 OPTIONS
- -o --oauth            authenticate to Twitter using OAuth (default no)
+ -o --oauth            authenticate to Twitter using OAuth (default: no)
  -s --save-dir <path>  directory to save archives (default: current dir)
  -a --api-rate         see current API rate limit status
  -t --timeline <file>  archive own timeline into given file name (requires
-                       OAuth, max 800 statuses).
+                       OAuth, max 800 statuses)
+ -m --mentions <file>  archive own mentions instead of timeline into
+                       given file name (requires OAuth, max 800 statuses)
+ -v --favorites        archive user's favorites instead of timeline
  -f --follow-redirects follow redirects of urls
  -r --redirect-sites   follow redirects for this comma separated list of hosts
 
@@ -49,8 +52,8 @@ from .follow import lookup
 
 def parse_args(args, options):
     """Parse arguments from command-line to set options."""
-    long_opts = ['help', 'oauth', 'save-dir=', 'api-rate', 'timeline=', 'follow-redirects',"redirect-sites="]
-    short_opts = "hos:at:fr:"
+    long_opts = ['help', 'oauth', 'save-dir=', 'api-rate', 'timeline=', 'mentions=', 'favorites', 'follow-redirects',"redirect-sites="]
+    short_opts = "hos:at:m:vfr:"
     opts, extra_args = getopt(args, short_opts, long_opts)
 
     for opt, arg in opts:
@@ -65,6 +68,10 @@ def parse_args(args, options):
             options['api-rate' ] = True
         elif opt in ('-t', '--timeline'):
             options['timeline'] = arg
+        elif opt in ('-m', '--mentions'):
+            options['mentions'] = arg
+        elif opt in ('-v', '--favorites'):
+            options['favorites'] = True
         elif opt in ('-f', '--follow-redirects'):
             options['follow-redirects'] = True
         elif opt in ('-r', '--redirect-sites'):
@@ -130,8 +137,8 @@ def direct_format_text(text):
     """Transform special chars in text to have only one line."""
     return text.replace('\n','\\n').replace('\r','\\r')
 
-def timeline_resolve_uids(twitter, tl):
-    """Resolve user ids to screen names from a timeline."""
+def statuses_resolve_uids(twitter, tl):
+    """Resolve user ids to screen names from statuses."""
     # get all user ids that needs a lookup (no screen_name key)
     user_ids = []
     for t in tl:
@@ -144,7 +151,7 @@ def timeline_resolve_uids(twitter, tl):
     # resolve all of them at once
     names = lookup(twitter, list(set(user_ids)))
 
-    # build new timeline with resolved uids
+    # build new statuses with resolved uids
     new_tl = []
     for t in tl:
         rt = t.get('retweeted_status')
@@ -158,20 +165,25 @@ def timeline_resolve_uids(twitter, tl):
 
     return new_tl
 
-def timeline_portion(twitter, screen_name, max_id=None):
-    """Get a portion of the timeline of a screen name."""
+def statuses_portion(twitter, screen_name, max_id=None, mentions=False, favorites=False):
+    """Get a portion of the statuses of a screen name."""
     kwargs = dict(count=200, include_rts=1, screen_name=screen_name)
     if max_id:
         kwargs['max_id'] = max_id
 
     tweets = {}
-    if screen_name:
-        tl = twitter.statuses.user_timeline(**kwargs)
-    else: # self
-        tl = twitter.statuses.home_timeline(**kwargs)
+    if mentions:
+        tl = twitter.statuses.mentions(**kwargs)
+    elif favorites:
+        tl = twitter.favorites(**kwargs) # API v1, favorites.list() in v1.1
+    else: # timeline
+        if screen_name:
+            tl = twitter.statuses.user_timeline(**kwargs)
+        else: # self
+            tl = twitter.statuses.home_timeline(**kwargs)
 
     # some tweets do not provide screen name but user id, resolve those
-    for t in timeline_resolve_uids(twitter, tl):
+    for t in statuses_resolve_uids(twitter, tl):
         text = t['text']
         rt = t.get('retweeted_status')
         if rt:
@@ -181,14 +193,14 @@ def timeline_portion(twitter, screen_name, max_id=None):
                                           format_text(text))
     return tweets
 
-def timeline(twitter, screen_name, tweets):
-    """Get the entire timeline of tweets for a screen name."""
+def statuses(twitter, screen_name, tweets, mentions=False, favorites=False):
+    """Get all the statuses for a screen name."""
     max_id = None
     fail = Fail()
-    # get portions of timeline, incrementing max id until no new tweets appear
+    # get portions of statuses, incrementing max id until no new tweets appear
     while True:
         try:
-            portion = timeline_portion(twitter, screen_name, max_id)
+            portion = statuses_portion(twitter, screen_name, max_id, mentions, favorites)
         except TwitterError as e:
             if e.e.code == 401:
                 err("Fail: %i Unauthorized (tweets of that user are protected)"
@@ -228,7 +240,7 @@ def timeline(twitter, screen_name, tweets):
             new = -len(tweets)
             tweets.update(portion)
             new += len(tweets)
-            err("Browsing %s timeline, new tweets: %i"
+            err("Browsing %s statuses, new tweets: %i"
                 % (screen_name if screen_name else "home", new))
             if new < 190:
                 break
@@ -250,6 +262,8 @@ def main(args=sys.argv[1:]):
         'save-dir': ".",
         'api-rate': False,
         'timeline': "",
+        'mentions': "",
+        'favorites': False,
         'follow-redirects': False,
         'redirect-sites': None,
     }
@@ -260,9 +274,10 @@ def main(args=sys.argv[1:]):
         raise SystemExit(1)
 
     # exit if no user given
-    # except if asking for API rate or archive of timeline
+    # except if asking for API rate, or archive of timeline or mentions
     if not options['extra_args'] and not (options['api-rate'] or
-                                          options['timeline']):
+                                          options['timeline'] or
+                                          options['mentions']):
         print(__doc__)
         return
 
@@ -295,14 +310,18 @@ def main(args=sys.argv[1:]):
     else:
         format_text = direct_format_text
     
-    # save own timeline (the user used in OAuth)
-    if options['timeline']:
+    # save own timeline or mentions (the user used in OAuth)
+    if options['timeline'] or options['mentions']:
         if isinstance(auth, NoAuth):
-            err("You must be authenticated to save timeline.")
+            err("You must be authenticated to save timeline or mentions.")
             raise SystemExit(1)
 
-        filename = options['save-dir'] + os.sep + options['timeline']
-        print("* Archiving own timeline in %s" % filename)
+        if options['timeline']:
+            filename = options['save-dir'] + os.sep + options['timeline']
+            print("* Archiving own timeline in %s" % filename)
+        elif options['mentions']:
+            filename = options['save-dir'] + os.sep + options['mentions']
+            print("* Archiving own mentions in %s" % filename)
 
         tweets = {}
         try:
@@ -312,15 +331,17 @@ def main(args=sys.argv[1:]):
                 % str(e))
 
         try:
-            # no screen_name means we want home_timeline, not user_timeline
-            timeline(twitter, "", tweets)
+            statuses(twitter, "", tweets, options['mentions'], options['favorites'])
         except KeyboardInterrupt:
             err()
             err("Interrupted")
             raise SystemExit(1)
 
         save_tweets(filename, tweets)
-        print("Total tweets in own timeline: %i" % len(tweets))
+        if options['timeline']:
+            print("Total tweets in own timeline: %i" % len(tweets))
+        elif options['mentions']:
+            print("Total mentions: %i" % len(tweets))
 
     # read users from command-line or stdin
     users = options['extra_args']
@@ -331,6 +352,8 @@ def main(args=sys.argv[1:]):
     total, total_new = 0, 0
     for user in users:
         filename = options['save-dir'] + os.sep + user
+        if options['favorites']:
+            filename = filename + "-favorites"
         print("* Archiving %s tweets in %s" % (user, filename))
 
         tweets = {}
@@ -343,7 +366,7 @@ def main(args=sys.argv[1:]):
         new = 0
         before = len(tweets)
         try:
-            timeline(twitter, user, tweets)
+            statuses(twitter, user, tweets, options['mentions'], options['favorites'])
         except KeyboardInterrupt:
             err()
             err("Interrupted")
