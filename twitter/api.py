@@ -41,7 +41,12 @@ class TwitterHTTPError(TwitterError):
         self.uri = uri
         self.format = format
         self.uriparts = uriparts
-        self.response_data = self.e.fp.read()
+        if self.e.headers['Content-Encoding'] == 'gzip':
+            buf = StringIO(self.e.fp.read())
+            f = gzip.GzipFile(fileobj=buf)
+            self.response_data = f.read()
+        else:
+            self.response_data = self.e.fp.read()
 
     def __str__(self):
         fmt = ("." + self.format) if self.format else ""
