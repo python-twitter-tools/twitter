@@ -7,6 +7,7 @@ except ImportError:
     import urllib2 as urllib_error
 import json
 from ssl import SSLError
+import socket
 
 from .api import TwitterCall, wrap_response
 
@@ -20,6 +21,7 @@ class TwitterJSONIter(object):
 
     def __iter__(self):
         sock = self.handle.fp._sock.fp._sock
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         if not self.block:
             sock.setblocking(False)
         while True:
