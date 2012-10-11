@@ -13,6 +13,9 @@ oauth = OAuth(*read_token_file('tests/oauth_creds')
 twitter = Twitter(domain='api.twitter.com',
                   auth=oauth,
                   api_version='1')
+twitter11 = Twitter(domain='api.twitter.com',
+                    auth=oauth,
+                    api_version='1.1')
 twitter_na = Twitter(domain='api.twitter.com', auth=noauth, api_version='1')
 
 
@@ -20,12 +23,6 @@ AZaz = "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 def get_random_str():
     return ''.join(choice(AZaz) for _ in range(10))
-
-
-def test_API_get_some_public_tweets():
-    updates = twitter_na.statuses.public_timeline()
-    assert updates
-    assert updates[0]['created_at']
 
 
 def test_API_set_tweet():
@@ -40,19 +37,12 @@ def test_API_set_tweet():
 
 
 def test_API_set_unicode_tweet():
-    random_tweet = u"A random tweet with unicode ⇰ÐÀ " + get_random_str()
+    random_tweet = u"A random tweet with unicode üøπ" + get_random_str()
     twitter.statuses.update(status=random_tweet)
 
     recent = twitter.statuses.user_timeline()
     assert recent
     assert random_tweet == recent[0]['text']
-
-
-def test_API_friendship_exists():
-    assert True == twitter.friendships.exists(
-        user_a='ptttest0001', user_b='sixohsix')
-    assert False == twitter.friendships.exists(
-        user_a='gruber', user_b='ptttest0001')
 
 
 def test_search():
@@ -72,3 +62,9 @@ def test_get_trends_2():
     # This is a nicer variation of the same call as above.
     world_trends = twitter.trends._(1)
     assert world_trends
+
+
+def test_get_trends_3():
+    # Of course they broke it all again in 1.1...
+    assert twitter11.trends.place(_id=1)
+

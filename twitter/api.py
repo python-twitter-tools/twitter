@@ -155,6 +155,12 @@ class TwitterCall(object):
         if id:
             uri += "/%s" %(id)
 
+        # If an _id kwarg is present, this is treated as id as a CGI
+        # param.
+        _id = kwargs.pop('_id', None)
+        if _id:
+            kwargs['id'] = _id
+
         secure_str = ''
         if self.secure:
             secure_str = 's'
