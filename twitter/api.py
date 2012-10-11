@@ -316,7 +316,7 @@ class Twitter(TwitterCall):
 
         if api_version is _DEFAULT:
             if domain == 'api.twitter.com':
-                api_version = '1'
+                api_version = '1.1'
             else:
                 api_version = None
 
