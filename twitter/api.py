@@ -74,14 +74,21 @@ class TwitterResponse(object):
         """
         Remaining requests in the current rate-limit.
         """
-        return int(self.headers.get('X-RateLimit-Remaining', "0"))
+        return int(self.headers.get('X-Rate-Limit-Remaining', "0"))
+
+    @property
+    def rate_limit_limit(self):
+        """
+        Remaining requests in the current rate-limit.
+        """
+        return int(self.headers.get('X-Rate-Limit-Limit', "0"))
 
     @property
     def rate_limit_reset(self):
         """
         Time in UTC epoch seconds when the rate limit will reset.
         """
-        return int(self.headers.get('X-RateLimit-Reset', "0"))
+        return int(self.headers.get('X-Rate-Limit-Reset', "0"))
 
 
 def wrap_response(response, headers):
@@ -179,7 +186,6 @@ class TwitterCall(object):
                 body = None
             else:
                 body = arg_data.encode('utf8')
-
         req = urllib_request.Request(uriBase, body, headers)
         return self._handle_response(req, uri, arg_data)
 
