@@ -79,7 +79,7 @@ class TwitterResponse(object):
     @property
     def rate_limit_limit(self):
         """
-        Remaining requests in the current rate-limit.
+        The rate limit ceiling for that given request.
         """
         return int(self.headers.get('X-Rate-Limit-Limit', "0"))
 
@@ -186,6 +186,7 @@ class TwitterCall(object):
                 body = None
             else:
                 body = arg_data.encode('utf8')
+
         req = urllib_request.Request(uriBase, body, headers)
         return self._handle_response(req, uri, arg_data)
 
