@@ -167,6 +167,9 @@ class TwitterCall(object):
         _id = kwargs.pop('_id', None)
         if _id:
             kwargs['id'] = _id
+        
+        # If an _timeout is specified in kwargs, use it
+        _timeout = kwargs.pop('_timeout', None)
 
         secure_str = ''
         if self.secure:
@@ -188,11 +191,14 @@ class TwitterCall(object):
                 body = arg_data.encode('utf8')
 
         req = urllib_request.Request(uriBase, body, headers)
-        return self._handle_response(req, uri, arg_data)
+        return self._handle_response(req, uri, arg_data, _timeout)
 
-    def _handle_response(self, req, uri, arg_data):
+    def _handle_response(self, req, uri, arg_data, _timeout=None):
+        kwargs = {}
+        if _timeout:
+            kwargs['timeout'] = _timeout
         try:
-            handle = urllib_request.urlopen(req)
+            handle = urllib_request.urlopen(req, **kwargs)
             if handle.headers['Content-Type'] in ['image/jpeg', 'image/png']:
                 return handle
             elif handle.info().get('Content-Encoding') == 'gzip':
@@ -256,6 +262,14 @@ class Twitter(TwitterCall):
         # Note how the magic `_` method can be used to insert data
         # into the middle of a call. You can also use replacement:
         t.user.list.members(user="tamtar", list="things-that-are-rad")
+        
+        # An *optional* `_timeout` parameter can also be used for API
+        # calls which take much more time than normal or twitter stops
+        # responding for some reasone
+        t.users.lookup(
+            screen_name=','.join(A_LIST_OF_100_SCREEN_NAMES), \
+            _timeout=1)
+
 
 
     Searching Twitter::
