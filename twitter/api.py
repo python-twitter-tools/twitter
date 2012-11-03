@@ -168,8 +168,8 @@ class TwitterCall(object):
         if _id:
             kwargs['id'] = _id
         
-        # If an timeout is specified in kwargs, use it
-        timeout = kwargs.pop('timeout', None)
+        # If an _timeout is specified in kwargs, use it
+        _timeout = kwargs.pop('_timeout', None)
 
         secure_str = ''
         if self.secure:
@@ -191,12 +191,12 @@ class TwitterCall(object):
                 body = arg_data.encode('utf8')
 
         req = urllib_request.Request(uriBase, body, headers)
-        return self._handle_response(req, uri, arg_data, timeout)
+        return self._handle_response(req, uri, arg_data, _timeout)
 
-    def _handle_response(self, req, uri, arg_data, timeout=None):
+    def _handle_response(self, req, uri, arg_data, _timeout=None):
         kwargs = {}
-        if timeout:
-            kwargs['timeout'] = timeout
+        if _timeout:
+            kwargs['timeout'] = _timeout
         try:
             handle = urllib_request.urlopen(req, **kwargs)
             if handle.headers['Content-Type'] in ['image/jpeg', 'image/png']:
@@ -263,12 +263,12 @@ class Twitter(TwitterCall):
         # into the middle of a call. You can also use replacement:
         t.user.list.members(user="tamtar", list="things-that-are-rad")
         
-        # An *optional* `timeout` parameter can also be used for API
+        # An *optional* `_timeout` parameter can also be used for API
         # calls which take much more time than normal or twitter stops
         # responding for some reasone
         t.users.lookup(
             screen_name=','.join(A_LIST_OF_100_SCREEN_NAMES), \
-            timeout=1)
+            _timeout=1)
 
 
 
