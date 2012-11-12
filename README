@@ -82,8 +82,9 @@ Examples::
 
     # see "Authentication" section below for tokens and keys
     t = Twitter(
-        auth=OAuth(OAUTH_TOKEN, OAUTH_SECRET,
-                   CONSUMER_KEY, CONSUMER_SECRET)))
+                auth=OAuth(OAUTH_TOKEN, OAUTH_SECRET,
+                           CONSUMER_KEY, CONSUMER_SECRET)
+               )
 
     # Get the public timeline
     t.statuses.public_timeline()
@@ -109,6 +110,11 @@ Examples::
     # Note how the magic `_` method can be used to insert data
     # into the middle of a call. You can also use replacement:
     t.user.list.members(user="tamtar", list="things-that-are-rad")
+
+    # An *optional* `_timeout` parameter can also be used for API
+    # calls which take much more time than normal or twitter stops
+    # responding for some reasone
+    t.users.lookup(screen_name=','.join(A_LIST_OF_100_SCREEN_NAMES), _timeout=1)
 
 
 Searching Twitter::

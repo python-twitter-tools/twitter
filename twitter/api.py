@@ -41,7 +41,12 @@ class TwitterHTTPError(TwitterError):
         self.uri = uri
         self.format = format
         self.uriparts = uriparts
-        self.response_data = self.e.fp.read()
+        if self.e.headers['Content-Encoding'] == 'gzip':
+            buf = StringIO(self.e.fp.read())
+            f = gzip.GzipFile(fileobj=buf)
+            self.response_data = f.read()
+        else:
+            self.response_data = self.e.fp.read()
 
     def __str__(self):
         fmt = ("." + self.format) if self.format else ""
@@ -69,14 +74,21 @@ class TwitterResponse(object):
         """
         Remaining requests in the current rate-limit.
         """
-        return int(self.headers.get('X-RateLimit-Remaining', "0"))
+        return int(self.headers.get('X-Rate-Limit-Remaining', "0"))
+
+    @property
+    def rate_limit_limit(self):
+        """
+        The rate limit ceiling for that given request.
+        """
+        return int(self.headers.get('X-Rate-Limit-Limit', "0"))
 
     @property
     def rate_limit_reset(self):
         """
         Time in UTC epoch seconds when the rate limit will reset.
         """
-        return int(self.headers.get('X-RateLimit-Reset', "0"))
+        return int(self.headers.get('X-Rate-Limit-Reset', "0"))
 
 
 def wrap_response(response, headers):
@@ -150,6 +162,15 @@ class TwitterCall(object):
         if id:
             uri += "/%s" %(id)
 
+        # If an _id kwarg is present, this is treated as id as a CGI
+        # param.
+        _id = kwargs.pop('_id', None)
+        if _id:
+            kwargs['id'] = _id
+        
+        # If an _timeout is specified in kwargs, use it
+        _timeout = kwargs.pop('_timeout', None)
+
         secure_str = ''
         if self.secure:
             secure_str = 's'
@@ -170,11 +191,14 @@ class TwitterCall(object):
                 body = arg_data.encode('utf8')
 
         req = urllib_request.Request(uriBase, body, headers)
-        return self._handle_response(req, uri, arg_data)
+        return self._handle_response(req, uri, arg_data, _timeout)
 
-    def _handle_response(self, req, uri, arg_data):
+    def _handle_response(self, req, uri, arg_data, _timeout=None):
+        kwargs = {}
+        if _timeout:
+            kwargs['timeout'] = _timeout
         try:
-            handle = urllib_request.urlopen(req)
+            handle = urllib_request.urlopen(req, **kwargs)
             if handle.headers['Content-Type'] in ['image/jpeg', 'image/png']:
                 return handle
             elif handle.info().get('Content-Encoding') == 'gzip':
@@ -236,6 +260,14 @@ class Twitter(TwitterCall):
         # Note how the magic `_` method can be used to insert data
         # into the middle of a call. You can also use replacement:
         t.user.list.members(user="tamtar", list="things-that-are-rad")
+        
+        # An *optional* `_timeout` parameter can also be used for API
+        # calls which take much more time than normal or twitter stops
+        # responding for some reasone
+        t.users.lookup(
+            screen_name=','.join(A_LIST_OF_100_SCREEN_NAMES), \
+            _timeout=1)
+
 
 
     Searching Twitter::
@@ -309,7 +341,7 @@ class Twitter(TwitterCall):
 
         if api_version is _DEFAULT:
             if domain == 'api.twitter.com':
-                api_version = '1'
+                api_version = '1.1'
             else:
                 api_version = None
 
