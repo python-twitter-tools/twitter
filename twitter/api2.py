@@ -102,7 +102,7 @@ class TwitterAPI(object):
                  secure=True, stream=False, return_raw_response=False):
         """
         `host`        host to connect to (api.twitter.com)
-        `api_ver`     API version 
+        `api_ver`     API version
         """
         self.host = host
         self.api_ver = api_ver
@@ -117,7 +117,7 @@ class TwitterAPI(object):
                                          path, kwargs)
         data = self.auth.encode_params(url, 'GET', remaining_params)
         headers = self.auth.generate_headers()
-        res = requests.get(url + '?' + data, headers=headers)
+        res = requests.get(url + '?' + data, headers=headers, prefetch=(not self.stream))
         return handle_res(res, self.return_raw_response, self.stream)
 
 
@@ -126,7 +126,7 @@ class TwitterAPI(object):
                                          path, kwargs)
         data = self.auth.encode_params(url, 'POST', remaining_params)
         headers = self.auth.generate_headers()
-        res = requests.post(url, data=data, headers=headers)
+        res = requests.post(url, data=data, headers=headers, prefetch=(not self.stream))
         return handle_res(res, self.return_raw_response, self.stream)
 
 

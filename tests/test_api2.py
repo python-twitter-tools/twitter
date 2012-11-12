@@ -58,8 +58,8 @@ def test_post_a_new_tweet():
 
 
 def test_can_get_raw_response():
-    raw_api = TwitterAPI(return_raw_response=True)
-    res = raw_api.get("statuses/public_timeline")
+    raw_api = TwitterAPI(return_raw_response=True, auth=oauth)
+    res = raw_api.get("statuses/home_timeline")
     assert res
     assert res.headers
     assert res.json
@@ -72,4 +72,5 @@ def test_can_stream_some_tweets():
         assert tweet
         tweets += 1
         if tweets > 2:
-            break
+            return
+
