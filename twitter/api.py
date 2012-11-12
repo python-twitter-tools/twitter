@@ -354,5 +354,41 @@ class Twitter(TwitterCall):
             callable_cls=TwitterCall,
             secure=secure, uriparts=uriparts)
 
+class TwitterData(object):
+    def __init__(
+        self, format="json",
+        domain="api.twitter.com", secure=True, auth=None,
+        api_version=_DEFAULT):
+
+        if not auth:
+            auth = NoAuth()
+
+        if (format not in ("json", "xml", "")):
+            raise ValueError("Unknown data format '%s'" %(format))
+
+        if api_version is _DEFAULT:
+            if domain == 'api.twitter.com':
+                api_version = '1.1'
+            else:
+                api_version = None
+
+        self.auth = auth
+        self.format = format
+        self.domain = domain
+        self.api_version = api_version
+        self.secure = secure
+
+
+class TwitterExtender(object):
+    def __init__(self, data, urlparts):
+        self.data = data
+        self.urlparts = urlparts
+
+    def __getattr__(self, k):
+        try:
+            return object.__getattr__(self, k)
+        except AttributeError:
+            return TwitterExtender(self.data, urlparts + (k,))
+
 
 __all__ = ["Twitter", "TwitterError", "TwitterHTTPError", "TwitterResponse"]
