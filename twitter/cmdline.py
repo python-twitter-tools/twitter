@@ -445,7 +445,7 @@ class MyListsAction(ListsAction):
 
 class FriendsAction(StatusAction):
     def getStatuses(self, twitter, options):
-        return reversed(twitter.get("statuses/friends_timeline",
+        return reversed(twitter.get("statuses/home_timeline",
                                     count=options["length"]))
 
 class PublicAction(StatusAction):
@@ -455,7 +455,7 @@ class PublicAction(StatusAction):
 
 class RepliesAction(StatusAction):
     def getStatuses(self, twitter, options):
-        return reversed(twitter.get("statuses/replies",
+        return reversed(twitter.get("statuses/mentions_timeline",
                                     count=options["length"]))
 
 class FollowAction(AdminAction):
@@ -640,6 +640,7 @@ def main(args=sys.argv[1:]):
     oauth_token, oauth_token_secret = read_token_file(oauth_filename)
 
     twitter = TwitterAPI(
+        api_version='1.1',
         auth=OAuth(
             oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET),
         secure=options['secure'])
@@ -653,3 +654,4 @@ def main(args=sys.argv[1:]):
         print(str(e), file=sys.stderr)
         print("Use 'twitter -h' for help.", file=sys.stderr)
         raise SystemExit(1)
+
