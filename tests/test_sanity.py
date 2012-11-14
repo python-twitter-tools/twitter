@@ -16,7 +16,7 @@ twitter = Twitter(domain='api.twitter.com',
 twitter11 = Twitter(domain='api.twitter.com',
                     auth=oauth,
                     api_version='1.1')
-twitter_na = Twitter(domain='api.twitter.com', auth=noauth, api_version='1')
+twitter_na = Twitter(domain='api.twitter.com', auth=noauth, api_version='1.1')
 
 
 AZaz = "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ"

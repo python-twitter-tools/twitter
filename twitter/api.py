@@ -221,7 +221,7 @@ class TwitterCall(object):
             else:
                 raise TwitterHTTPError(e, uri, self.format, arg_data)
 
-class Twitter(TwitterCall):
+class OldTwitter(TwitterCall):
     """
     Get RESTful data by accessing members of this class. The result
     is decoded python objects (lists and dicts).
@@ -354,41 +354,48 @@ class Twitter(TwitterCall):
             callable_cls=TwitterCall,
             secure=secure, uriparts=uriparts)
 
-class TwitterData(object):
-    def __init__(
-        self, format="json",
-        domain="api.twitter.com", secure=True, auth=None,
-        api_version=_DEFAULT):
 
-        if not auth:
-            auth = NoAuth()
-
-        if (format not in ("json", "xml", "")):
-            raise ValueError("Unknown data format '%s'" %(format))
-
-        if api_version is _DEFAULT:
-            if domain == 'api.twitter.com':
-                api_version = '1.1'
-            else:
-                api_version = None
-
-        self.auth = auth
-        self.format = format
-        self.domain = domain
-        self.api_version = api_version
-        self.secure = secure
-
+from api2 import TwitterAPI
 
 class TwitterExtender(object):
-    def __init__(self, data, urlparts):
-        self.data = data
+    def __init__(self, api, urlparts):
+        self.api = api
         self.urlparts = urlparts
 
     def __getattr__(self, k):
         try:
             return object.__getattr__(self, k)
         except AttributeError:
-            return TwitterExtender(self.data, urlparts + (k,))
+            return TwitterExtender(self.api, self.urlparts + (k,))
+
+    def __call__(self, **kwargs):
+        meth = (self.api.post
+                if kwargs.pop('_method', 'GET').lower() == 'post'
+                   or (self.urlparts and self.urlparts[-1] in POST_ACTIONS)
+                else self.api.get)
+        id = kwargs.pop('_id', None)
+        if id:
+            kwargs['id'] = id
+
+        urlparts = list(self.urlparts)
+        for arg in list(kwargs.keys()):
+            if arg.startswith('_') and arg in urlparts:
+                urlparts[urlparts.index(arg)] = str(kwargs.pop(arg))
+        uri = "/".join(urlparts)
+
+        res = meth(uri, **kwargs)
+        return wrap_response(json.loads(res.content), res.headers)
+
+    def _(self, arg):
+        return getattr(self, str(arg))
+
+
+def Twitter(**kwargs):
+    if kwargs.get('domain') == 'search.twitter.com' and kwargs.get('api_version') is None:
+        kwargs['api_version'] = None
+    api = TwitterAPI(return_raw_response=True, **kwargs)
+    return TwitterExtender(api, ())
+Twitter.__doc__ = OldTwitter.__doc__
 
 
 __all__ = ["Twitter", "TwitterError", "TwitterHTTPError", "TwitterResponse"]

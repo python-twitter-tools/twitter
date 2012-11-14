@@ -6,23 +6,23 @@ from .test_sanity import oauth, get_random_str
 
 
 api = TwitterAPI(auth=oauth, secure=True)
-stream_api = TwitterAPI(host="stream.twitter.com", auth=oauth, stream=True,
+stream_api = TwitterAPI(domain="stream.twitter.com", auth=oauth, stream=True,
                         secure=True)
 
 
-def test_can_get_public_tweet_json():
-    updates = get('statuses/public_timeline')
-    assert updates
-    assert updates[0]['text']
+#def test_can_get_public_tweet_json():
+#    updates = get('statuses/public_timeline')
+#    assert updates
+#    assert updates[0]['text']
 
 
 def test_can_get_specific_status():
-    update = get('statuses/show/:id', id=230400277440770048)
+    update = api.get('statuses/show/:id', id=230400277440770048)
     assert update
 
 
 def test_can_perform_a_search():
-    results = TwitterAPI(host="search.twitter.com", api_ver=None).get(
+    results = TwitterAPI(domain="search.twitter.com", api_version=None).get(
         'search', q="hello")
     assert results
 
@@ -54,7 +54,7 @@ def test_handle_not_authenticated():
 
 
 def test_post_a_new_tweet():
-    api.post("statuses/update", status=get_random_str() + "ïõ")
+    api.post("statuses/update", status=get_random_str() + u"ïõ")
 
 
 def test_can_get_raw_response():

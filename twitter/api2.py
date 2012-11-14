@@ -98,14 +98,14 @@ class TwitterAPIError(TwitterError):
 
 
 class TwitterAPI(object):
-    def __init__(self, host='api.twitter.com', api_ver='1', auth=NoAuth(),
+    def __init__(self, domain='api.twitter.com', api_version='1.1', auth=NoAuth(),
                  secure=True, stream=False, return_raw_response=False):
         """
         `host`        host to connect to (api.twitter.com)
         `api_ver`     API version
         """
-        self.host = host
-        self.api_ver = api_ver
+        self.domain = domain
+        self.api_ver = api_version
         self.auth = auth
         self.secure = secure
         self.stream = stream
@@ -113,7 +113,7 @@ class TwitterAPI(object):
 
 
     def get(self, path, **kwargs):
-        url, remaining_params = make_url(self.secure, self.host, self.api_ver,
+        url, remaining_params = make_url(self.secure, self.domain, self.api_ver,
                                          path, kwargs)
         data = self.auth.encode_params(url, 'GET', remaining_params)
         headers = self.auth.generate_headers()
@@ -122,7 +122,7 @@ class TwitterAPI(object):
 
 
     def post(self, path, **kwargs):
-        url, remaining_params = make_url(self.secure, self.host, self.api_ver,
+        url, remaining_params = make_url(self.secure, self.domain, self.api_ver,
                                          path, kwargs)
         data = self.auth.encode_params(url, 'POST', remaining_params)
         headers = self.auth.generate_headers()
@@ -135,7 +135,7 @@ _default_api = TwitterAPI()
 get = _default_api.get
 
 
-_search_api = TwitterAPI(host="search.twitter.com", api_ver=None)
+_search_api = TwitterAPI(domain="search.twitter.com", api_version=None)
 
 def search(q, **kwargs):
     return _search_api.get("search", q=q, **kwargs)
@@ -174,3 +174,4 @@ def handle_res(res, return_raw_response, stream):
     else:
         result = res.json
     return result
+
