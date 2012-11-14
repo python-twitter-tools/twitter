@@ -121,8 +121,8 @@ def parse_args(args, options):
                  'datestamp', 'no-ssl']
     short_opts = "e:p:f:h?rR:c:l:td"
     opts, extra_args = getopt(args, short_opts, long_opts)
-    #extra_args = [arg.decode(locale.getpreferredencoding())
-    #              for arg in extra_args]
+    extra_args = [arg.decode(locale.getpreferredencoding())
+                  for arg in extra_args]
 
     for opt, arg in opts:
         if opt in ('-f', '--format'):
@@ -470,7 +470,7 @@ class SetStatusAction(Action):
     def __call__(self, twitter, options):
         statusTxt = (" ".join(options['extra_args'])
                      if options['extra_args']
-                     else str(input("message: ")))
+                     else input("message: "))
         replies = []
         ptr = re.compile("@[\w_]+")
         while statusTxt:
@@ -499,6 +499,7 @@ class SetStatusAction(Action):
         if options['invert_split']:
             splitted.reverse()
         for status in splitted:
+            print(type(status))
             twitter.post("statuses/update", status=status)
 
 class TwitterShell(Action):
@@ -566,10 +567,13 @@ class DoNothingAction(Action):
 
 class RateLimitStatus(Action):
     def __call__(self, twitter, options):
-        rate = twitter.get("account/rate_limit_status")
-        print("Remaining API requests: %s / %s (hourly limit)" % (rate['remaining_hits'], rate['hourly_limit']))
-        print("Next reset in %ss (%s)" % (int(rate['reset_time_in_seconds']-time.time()),
-                                          time.asctime(time.localtime(rate['reset_time_in_seconds']))))
+        rate = twitter.get("application/rate_limit_status")
+        for res in rate['resources'].values():
+            for k, r in res.items():
+                print("Resource: {}".format(k))
+                print("  Remaining API requests: %s / %s (hourly limit)" % (r['remaining'], r['limit']))
+                print("  Next reset in %ss (%s)" % (int(r['reset']-time.time()),
+                                                    time.asctime(time.localtime(r['reset']))))
 
 actions = {
     'authorize' : DoNothingAction,

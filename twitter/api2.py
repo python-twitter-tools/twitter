@@ -98,7 +98,7 @@ class TwitterAPIError(TwitterError):
 
 
 class TwitterAPI(object):
-    def __init__(self, domain='api.twitter.com', api_version='1.1', auth=NoAuth(),
+    def __init__(self, domain='api.twitter.com', api_version='1.1', auth=None,
                  secure=True, stream=False, return_raw_response=False):
         """
         `host`        host to connect to (api.twitter.com)
@@ -148,8 +148,8 @@ def make_url(secure, host, api_ver, path, params):
                 raise TwitterError("Missing parameter for ':{}'".format(param))
             param = str(params.pop(param[1:]))
         real_params.append(param)
-    real_path = '/'.join(real_params)
-    api_ver_str = '{}/'.format(str(api_ver)) if api_ver is not None else ""
+    real_path = u'/'.join(real_params)
+    api_ver_str = u'{}/'.format(str(api_ver)) if api_ver is not None else ""
     secure_str = 's' if secure else ''
     url = 'http{}://{}/{}{}.json'.format(secure_str, host, str(api_ver_str),
                                          real_path)
