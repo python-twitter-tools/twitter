@@ -115,18 +115,16 @@ class TwitterAPI(object):
     def get(self, path, **kwargs):
         url, remaining_params = make_url(self.secure, self.domain, self.api_ver,
                                          path, kwargs)
-        data = self.auth.encode_params(url, 'GET', remaining_params)
-        headers = self.auth.generate_headers()
-        res = requests.get(url + '?' + data, headers=headers, prefetch=(not self.stream))
+        res = requests.get(url, params=remaining_params, prefetch=(not self.stream),
+                           auth=self.auth)
         return handle_res(res, self.return_raw_response, self.stream)
 
 
     def post(self, path, **kwargs):
         url, remaining_params = make_url(self.secure, self.domain, self.api_ver,
                                          path, kwargs)
-        data = self.auth.encode_params(url, 'POST', remaining_params)
-        headers = self.auth.generate_headers()
-        res = requests.post(url, data=data, headers=headers, prefetch=(not self.stream))
+        res = requests.post(url, params=remaining_params, prefetch=(not self.stream),
+                            auth=self.auth)
         return handle_res(res, self.return_raw_response, self.stream)
 
 
