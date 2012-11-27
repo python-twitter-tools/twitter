@@ -26,6 +26,6 @@ POST_ACTIONS = [
     'destroy',
 
     # Block Methods, Friendship Methods, Favorite Methods
-    'create',
+    'create', 'create_all',
 
 ]
