@@ -4,6 +4,8 @@ from __future__ import print_function
 import webbrowser
 import time
 
+import requests
+
 from .api import Twitter
 from .oauth import OAuth, write_token_file
 
@@ -28,11 +30,10 @@ def oauth_dance(app_name, consumer_key, consumer_secret, token_filename=None):
     the file.
     """
     print("Hi there! We're gonna get you all set up to use %s." % app_name)
-    twitter = Twitter(
-        auth=OAuth('', '', consumer_key, consumer_secret),
-        format='', api_version=None)
-    oauth_token, oauth_token_secret = parse_oauth_tokens(
-        twitter.oauth.request_token())
+    response = requests.get(
+        'https://api.twitter.com/oauth/request_token',
+        auth=OAuth('', '', consumer_key, consumer_secret))
+    oauth_token, oauth_token_secret = parse_oauth_tokens(response.text)
     print("""
 In the web browser window that opens please choose to Allow
 access. Copy the PIN number that appears on the next page and paste or
@@ -56,12 +57,11 @@ your PIN:
 
 """ + oauth_url)
     oauth_verifier = _input("Please enter the PIN: ").strip()
-    twitter = Twitter(
+    response = requests.post(
+        'https://api.twitter.com/oauth/access_token',
         auth=OAuth(
-            oauth_token, oauth_token_secret, consumer_key, consumer_secret),
-        format='', api_version=None)
-    oauth_token, oauth_token_secret = parse_oauth_tokens(
-        twitter.oauth.access_token(oauth_verifier=oauth_verifier))
+            oauth_token, oauth_token_secret, consumer_key, consumer_secret))
+    oauth_token, oauth_token_secret = parse_oauth_tokens(response.text)
     if token_filename:
         write_token_file(
             token_filename, oauth_token, oauth_token_secret)
@@ -78,3 +78,4 @@ def parse_oauth_tokens(result):
         elif k == 'oauth_token_secret':
             oauth_token_secret = v
     return oauth_token, oauth_token_secret
+

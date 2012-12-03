@@ -44,5 +44,7 @@ setup(name='twitter',
       twitter-archiver=twitter.archiver:main
       twitter-follow=twitter.follow:main
       twitter-stream-example=twitter.stream_example:main
+      horsee=twitter.horse:main
       """,
       )
+

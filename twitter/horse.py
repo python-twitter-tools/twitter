@@ -21,6 +21,8 @@ import sys
 import os
 
 from .api2 import TwitterAPI
+from .oauth_dance import oauth_dance
+from .oauth import read_token_file, OAuth
 
 
 # lololol
@@ -48,7 +50,7 @@ def markhov_dict(words, levels=LEVELS):
 
 def word_pairs(text):
     ws = [w.strip(",.!'()[]{}") for w in text.split()]
-    words = ["{} {}".format(w0, w1) for w0, w1 in zip(ws, ws[1:])]
+    words = [w0 + " " +  w1 for w0, w1 in zip(ws, ws[1:])]
     return words
 
 def horsify(d, levels=LEVELS, min_words=1, max_words=12, max_length=140):
@@ -83,7 +85,7 @@ def main():
     if not args[1:] or args[0] not in ('--tweet', '--print'):
         print(__doc__)
         sys.exit(1)
-    text = horsify(markhov_dict(open(args[1]).read().decode('utf-8')))
+    text = horsify(markhov_dict(word_pairs(open(args[1]).read().decode('utf-8'))))
     if args[0] == '--print':
         print(text)
     else:
