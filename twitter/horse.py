@@ -27,13 +27,13 @@ from .oauth import read_token_file, OAuth
 
 # lololol
 
-t = maketrans( 
-    "ABCDEFGHIJKLMabcdefghijklmNOPQRSTUVWXYZnopqrstuvwxyz", 
+t = maketrans(
+    "ABCDEFGHIJKLMabcdefghijklmNOPQRSTUVWXYZnopqrstuvwxyz",
     "NOPQRSTUVWXYZnopqrstuvwxyzABCDEFGHIJKLMabcdefghijklm")
 CONSUMER_KEY = "RE1Sw6xj8EGxkVGl85nxt".translate(t)
 CONSUMER_SECRET = "z6bBg83tzag8Rollcz2iMLmzoWIo51oaVifi3DLzp".translate(t)
 
-LEVELS = 2
+LEVELS = 3
 
 def markhov_dict(words, levels=LEVELS):
     d = dict()
@@ -50,14 +50,13 @@ def markhov_dict(words, levels=LEVELS):
 
 def word_pairs(text):
     ws = [w.strip(",.!'()[]{}") for w in text.split()]
-    words = [w0 + " " +  w1 for w0, w1 in zip(ws, ws[1:])]
-    return words
+    pairs = [w0 + " " +  w1 for w0, w1 in zip(ws, ws[1:])]
+    return ws
 
 def horsify(d, levels=LEVELS, min_words=1, max_words=12, max_length=140):
-    first_word = random.choice(random.choice(d.values()).keys())
-    words = [first_word]
+    words = [random.choice(d.keys())[-1]]
     key = [None] * levels
-    for _ in xrange(random.randint(min_words, max_words)):
+    for _ in xrange(max(0, random.randint(min_words - 1, max_words))):
         key = key[1:] + [words[-1]]
         for i in xrange(levels):
             k = ([None] * i) + key[i:]
@@ -101,4 +100,3 @@ def main():
             auth=OAuth(
                 oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET))
         twitter.post('statuses/update', status=text)
-
