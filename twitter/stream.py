@@ -53,11 +53,11 @@ def handle_stream_response(req, uri, arg_data, block):
     return iter(TwitterJSONIter(handle, uri, arg_data, block))
 
 class TwitterStreamCall(TwitterCall):
-    def _handle_response(self, req, uri, arg_data):
+    def _handle_response(self, req, uri, arg_data, _timeout=None):
         return handle_stream_response(req, uri, arg_data, block=True)
 
 class TwitterStreamCallNonBlocking(TwitterCall):
-    def _handle_response(self, req, uri, arg_data):
+    def _handle_response(self, req, uri, arg_data, _timeout=None):
         return handle_stream_response(req, uri, arg_data, block=False)
 
 class TwitterStream(TwitterStreamCall):
