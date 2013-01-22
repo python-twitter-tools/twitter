@@ -87,7 +87,7 @@ except ImportError:
         "This module requires python irclib available from "
         + "https://github.com/sixohsix/python-irclib/zipball/python-irclib3-0.4.8")
 
-OAUTH_FILE = os.environ.get('HOME', '') + os.sep + '.twitterbot_oauth'
+OAUTH_FILE = os.environ.get('HOME', os.environ.get('USERPROFILE', '')) + os.sep + '.twitterbot_oauth'
 
 def debug(msg):
     # uncomment this for debug text stuff
