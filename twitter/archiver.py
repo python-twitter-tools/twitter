@@ -244,7 +244,7 @@ def statuses(twitter, screen_name, tweets, mentions=False, favorites=False):
                 % (screen_name if screen_name else "home", new))
             if new < 190:
                 break
-            max_id = min(portion.keys()) # browse backwards
+            max_id = min(portion.keys())-1 # browse backwards
             fail = Fail()
 
 def rate_limit_status(twitter):
