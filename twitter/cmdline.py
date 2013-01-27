@@ -132,8 +132,9 @@ def parse_args(args, options):
                  'datestamp', 'no-ssl', 'force-ansi']
     short_opts = "e:p:f:h?rR:c:l:td"
     opts, extra_args = getopt(args, short_opts, long_opts)
-    extra_args = [arg.decode(locale.getpreferredencoding())
-                  for arg in extra_args]
+    if extra_args and hasattr(extra_args[0], 'decode'):
+        extra_args = [arg.decode(locale.getpreferredencoding())
+                      for arg in extra_args]
 
     for opt, arg in opts:
         if opt in ('-f', '--format'):
