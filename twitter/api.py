@@ -238,8 +238,8 @@ class Twitter(TwitterCall):
         t = Twitter(
             auth=OAuth(token, token_key, con_secret, con_secret_key)))
 
-        # Get the public timeline
-        t.statuses.public_timeline()
+        # Get your "home" timeline
+        t.statuses.home_timeline()
 
         # Get a particular friend's timeline
         t.statuses.friends_timeline(id="billybob")
@@ -274,13 +274,8 @@ class Twitter(TwitterCall):
 
     Searching Twitter::
 
-        twitter_search = Twitter(domain="search.twitter.com")
-
-        # Find the latest search trends
-        twitter_search.trends()
-
-        # Search for the latest News on #gaza
-        twitter_search.search(q="#gaza")
+        # Search for the latest tweets about #pycon
+        t.search.tweets(q="#pycon")
 
 
     Using the data returned
@@ -289,7 +284,7 @@ class Twitter(TwitterCall):
     Twitter API calls return decoded JSON. This is converted into
     a bunch of Python lists, dicts, ints, and strings. For example::
 
-        x = twitter.statuses.public_timeline()
+        x = twitter.statuses.home_timeline()
 
         # The first 'tweet' in the timeline
         x[0]
