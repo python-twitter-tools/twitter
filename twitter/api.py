@@ -167,7 +167,7 @@ class TwitterCall(object):
         _id = kwargs.pop('_id', None)
         if _id:
             kwargs['id'] = _id
-        
+
         # If an _timeout is specified in kwargs, use it
         _timeout = kwargs.pop('_timeout', None)
 
@@ -262,7 +262,7 @@ class Twitter(TwitterCall):
         # Note how the magic `_` method can be used to insert data
         # into the middle of a call. You can also use replacement:
         t.user.list.members(user="tamtar", list="things-that-are-rad")
-        
+
         # An *optional* `_timeout` parameter can also be used for API
         # calls which take much more time than normal or twitter stops
         # responding for some reasone
