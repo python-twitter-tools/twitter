@@ -130,5 +130,5 @@ def urlencode_noplus(query):
             new_query.append((k, v))
         query = new_query
         return urlencode(query).replace("+", "%20")
-        
+
     return urlencode(query, safe='~').replace("+", "%20")
