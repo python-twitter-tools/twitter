@@ -59,8 +59,7 @@ class AnsiCmd(object):
         ''' Returns the ansi cmd colour for a RESET '''
         if sys.stdout.isatty() or self.forceAnsi:
             return ESC + "[0m"
-        else:
-            return ""
+        return ""
 
     def cmdColour(self, colour):
         '''
@@ -69,8 +68,7 @@ class AnsiCmd(object):
         '''
         if sys.stdout.isatty() or self.forceAnsi:
             return ESC + "[" + colour + "m"
-        else:
-            return ""
+        return ""
 
     def cmdColourNamed(self, colour):
         ''' Return the ansi cmdColour for a given named `colour` '''
@@ -82,14 +80,12 @@ class AnsiCmd(object):
     def cmdBold(self):
         if sys.stdout.isatty() or self.forceAnsi:
             return ESC + "[1m"
-        else:
-            return ""
+        return ""
 
     def cmdUnderline(self):
         if sys.stdout.isatty() or self.forceAnsi:
             return ESC + "[4m"
-        else:
-            return ""
+        return ""
 
 """These exist to maintain compatibility with users of version<=1.9.0"""
 def cmdReset():
