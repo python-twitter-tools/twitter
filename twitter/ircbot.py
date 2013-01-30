@@ -36,7 +36,7 @@ oauth_token_file: <oauth_token_filename>
 
 from __future__ import print_function
 
-BOT_VERSION = "TwitterBot 1.6.1 (http://mike.verdone.ca/twitter)"
+BOT_VERSION = "TwitterBot 1.9.1 (http://mike.verdone.ca/twitter)"
 
 CONSUMER_KEY = "XryIxN3J2ACaJs50EizfLQ"
 CONSUMER_SECRET = "j7IuDCNjftVY8DBauRdqXs4jDl5Fgk1IJRag8iE"
