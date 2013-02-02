@@ -237,9 +237,16 @@ def main(args=sys.argv[1:]):
 
         for uid in user_ids:
             if options['show_id']:
-              print(str(uid) + "\t" + users[uid].encode("utf-8"))
+              try:
+                print(str(uid) + "\t" + users[uid].encode("utf-8"))
+              except KeyError:
+                pass
+            
             else:
-              print(users[uid].encode("utf-8"))
+              try:
+                print(users[uid].encode("utf-8"))
+              except KeyError:
+                pass
 
         # print total on stderr to separate from user list on stdout
         if options['followers']:
