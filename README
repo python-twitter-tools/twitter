@@ -73,55 +73,58 @@ is decoded python objects (lists and dicts).
 
 The Twitter API is documented at:
 
-  http://dev.twitter.com/doc
+**[http://dev.twitter.com/doc]()**
 
 
 Examples::
-    
-    from twitter import *
 
-    # see "Authentication" section below for tokens and keys
-    t = Twitter(
-                auth=OAuth(OAUTH_TOKEN, OAUTH_SECRET,
-                           CONSUMER_KEY, CONSUMER_SECRET)
-               )
+```python 
+from twitter import *
 
-    # Get your "home" timeline
-    t.statuses.home_timeline()
+# see "Authentication" section below for tokens and keys
+t = Twitter(
+            auth=OAuth(OAUTH_TOKEN, OAUTH_SECRET,
+                       CONSUMER_KEY, CONSUMER_SECRET)
+           )
 
-    # Get a particular friend's timeline
-    t.statuses.friends_timeline(id="billybob")
+# Get your "home" timeline
+t.statuses.home_timeline()
 
-    # Also supported (but totally weird)
-    t.statuses.friends_timeline.billybob()
+# Get a particular friend's timeline
+t.statuses.friends_timeline(id="billybob")
 
-    # Update your status
-    t.statuses.update(
-        status="Using @sixohsix's sweet Python Twitter Tools.")
+# Also supported (but totally weird)
+t.statuses.friends_timeline.billybob()
 
-    # Send a direct message
-    t.direct_messages.new(
-        user="billybob",
-        text="I think yer swell!")
+# Update your status
+t.statuses.update(
+    status="Using @sixohsix's sweet Python Twitter Tools.")
 
-    # Get the members of tamtar's list "Things That Are Rad"
-    t._("tamtar")._("things-that-are-rad").members()
+# Send a direct message
+t.direct_messages.new(
+    user="billybob",
+    text="I think yer swell!")
 
-    # Note how the magic `_` method can be used to insert data
-    # into the middle of a call. You can also use replacement:
-    t.user.list.members(user="tamtar", list="things-that-are-rad")
+# Get the members of tamtar's list "Things That Are Rad"
+t._("tamtar")._("things-that-are-rad").members()
 
-    # An *optional* `_timeout` parameter can also be used for API
-    # calls which take much more time than normal or twitter stops
-    # responding for some reasone
-    t.users.lookup(screen_name=','.join(A_LIST_OF_100_SCREEN_NAMES), _timeout=1)
+# Note how the magic `_` method can be used to insert data
+# into the middle of a call. You can also use replacement:
+t.user.list.members(user="tamtar", list="things-that-are-rad")
+
+# An *optional* `_timeout` parameter can also be used for API
+# calls which take much more time than normal or twitter stops
+# responding for some reasone
+t.users.lookup(screen_name=','.join(A_LIST_OF_100_SCREEN_NAMES), _timeout=1)
+```
 
 
 Searching Twitter::
 
-    # Search for the latest tweets about #pycon
-    t.search.tweets(q="#pycon")
-
+``` python
+# Search for the latest tweets about #pycon
+t.search.tweets(q="#pycon")
+```
 
 Using the data returned
 -----------------------
@@ -129,14 +132,15 @@ Using the data returned
 Twitter API calls return decoded JSON. This is converted into
 a bunch of Python lists, dicts, ints, and strings. For example::
 
-    x = twitter.statuses.home_timeline()
+```python
+x = twitter.statuses.home_timeline()
 
-    # The first 'tweet' in the timeline
-    x[0]
+# The first 'tweet' in the timeline
+x[0]
 
-    # The screen name of the user who wrote the first 'tweet'
-    x[0]['user']['screen_name']
-
+# The screen name of the user who wrote the first 'tweet'
+x[0]['user']['screen_name']
+```
 
 Getting raw XML data
 --------------------
@@ -144,7 +148,9 @@ Getting raw XML data
 If you prefer to get your Twitter data in XML format, pass
 format="xml" to the Twitter object when you instantiate it::
 
-    twitter = Twitter(format="xml")
+```python
+twitter = Twitter(format="xml")
+```
 
 The output will not be parsed in any way. It will be a raw string
 of XML.
@@ -159,11 +165,13 @@ Twitter class except the result of calling a method will be an
 iterator that yields objects decoded from the stream. For
 example::
 
-    twitter_stream = TwitterStream(auth=UserPassAuth('joe', 'joespassword'))
-    iterator = twitter_stream.statuses.sample()
+```python
+twitter_stream = TwitterStream(auth=UserPassAuth('joe', 'joespassword'))
+iterator = twitter_stream.statuses.sample()
 
-    for tweet in iterator:
-        ...do something with this tweet...
+for tweet in iterator:
+    # ...do something with this tweet...
+```
 
 The iterator will yield tweets forever and ever (until the stream
 breaks at which point it raises a TwitterHTTPError.)
@@ -197,7 +205,7 @@ Working with OAuth
 
 Visit the Twitter developer page and create a new application:
 
-    https://dev.twitter.com/apps/new
+**[https://dev.twitter.com/apps/new]()**
 
 This will get you a CONSUMER_KEY and CONSUMER_SECRET.
 
@@ -218,21 +226,22 @@ strings in the file. Not terribly exciting.
 Finally, you can use the OAuth authenticator to connect to Twitter. In
 code it all goes like this::
 
-    from twitter import *
+```python
+from twitter import *
 
-    MY_TWITTER_CREDS = os.path.expanduser('~/.my_app_credentials')
-    if not os.path.exists(MY_TWITTER_CREDS):
-        oauth_dance("My App Name", CONSUMER_KEY, CONSUMER_SECRET,
-                    MY_TWITTER_CREDS)
+MY_TWITTER_CREDS = os.path.expanduser('~/.my_app_credentials')
+if not os.path.exists(MY_TWITTER_CREDS):
+    oauth_dance("My App Name", CONSUMER_KEY, CONSUMER_SECRET,
+                MY_TWITTER_CREDS)
 
-    oauth_token, oauth_secret = read_token_file(MY_TWITTER_CREDS)
+oauth_token, oauth_secret = read_token_file(MY_TWITTER_CREDS)
 
-    twitter = Twitter(auth=OAuth(
-        oauth_token, oauth_secret, CONSUMER_KEY, CONSUMER_SECRET))
+twitter = Twitter(auth=OAuth(
+    oauth_token, oauth_secret, CONSUMER_KEY, CONSUMER_SECRET))
 
-    # Now work with Twitter
-    twitter.statuses.update('Hello, world!')
-
+# Now work with Twitter
+twitter.statuses.update('Hello, world!')
+```
 
 
 License
