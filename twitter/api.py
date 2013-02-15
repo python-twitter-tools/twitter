@@ -15,6 +15,7 @@ from twitter.auth import NoAuth
 
 import re
 import gzip
+import httplib
 
 try:
     import json
@@ -201,14 +202,17 @@ class TwitterCall(object):
             handle = urllib_request.urlopen(req, **kwargs)
             if handle.headers['Content-Type'] in ['image/jpeg', 'image/png']:
                 return handle
-            elif handle.info().get('Content-Encoding') == 'gzip':
+            try:
+                data = handle.read()
+            except httplib.IncompleteRead, e:
+                # Even if we don't get all the bytes we should have there
+                # may be a complete response in e.partial
+                data = e.partial
+            if handle.info().get('Content-Encoding') == 'gzip':
                 # Handle gzip decompression
-                buf = StringIO(handle.read())
+                buf = StringIO(data)
                 f = gzip.GzipFile(fileobj=buf)
                 data = f.read()
-            else:
-                data = handle.read()
-
             if "json" == self.format:
                 res = json.loads(data.decode('utf8'))
                 return wrap_response(res, handle.headers)
