@@ -73,7 +73,7 @@ is decoded python objects (lists and dicts).
 
 The Twitter API is documented at:
 
-**[](http://dev.twitter.com/doc)**
+**[http://dev.twitter.com/doc](http://dev.twitter.com/doc)**
 
 
 Examples::
@@ -205,7 +205,7 @@ Working with OAuth
 
 Visit the Twitter developer page and create a new application:
 
-**[](https://dev.twitter.com/apps/new)**
+**[https://dev.twitter.com/apps/new](https://dev.twitter.com/apps/new)**
 
 This will get you a CONSUMER_KEY and CONSUMER_SECRET.
 
