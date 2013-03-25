@@ -21,10 +21,7 @@ try:
 except ImportError:
     import httplib as http_client
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
+import json
 
 
 class _DEFAULT(object):

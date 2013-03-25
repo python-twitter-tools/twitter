@@ -68,7 +68,7 @@ class TwitterStream(TwitterStreamCall):
     iterator that yields objects decoded from the stream. For
     example::
 
-        twitter_stream = TwitterStream(auth=UserPassAuth('joe', 'joespassword'))
+        twitter_stream = TwitterStream(auth=OAuth(...))
         iterator = twitter_stream.statuses.sample()
 
         for tweet in iterator:
@@ -83,7 +83,7 @@ class TwitterStream(TwitterStreamCall):
     """
     def __init__(
         self, domain="stream.twitter.com", secure=True, auth=None,
-        api_version='1', block=True):
+        api_version='1.1', block=True):
         uriparts = ()
         uriparts += (str(api_version),)
 
