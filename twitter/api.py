@@ -48,7 +48,7 @@ class TwitterHTTPError(TwitterError):
             # can't read the error text
             # let's try some of it
             data = e.partial
-        if self.e.headers['Content-Encoding'] == 'gzip':
+        if self.e.headers.get('Content-Encoding') == 'gzip':
             buf = StringIO(data)
             f = gzip.GzipFile(fileobj=buf)
             self.response_data = f.read()
