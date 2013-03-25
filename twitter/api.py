@@ -352,10 +352,7 @@ class Twitter(TwitterCall):
             raise ValueError("Unknown data format '%s'" %(format))
 
         if api_version is _DEFAULT:
-            if domain == 'api.twitter.com':
-                api_version = '1.1'
-            else:
-                api_version = None
+            api_version = '1.1'
 
         uriparts = ()
         if api_version:
