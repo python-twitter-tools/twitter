@@ -15,12 +15,17 @@ from twitter.auth import NoAuth
 
 import re
 import gzip
-import httplib
+
+try:
+    import http.client as http_client
+except ImportError:
+    import httplib as http_client
 
 try:
     import json
 except ImportError:
     import simplejson as json
+
 
 class _DEFAULT(object):
     pass
@@ -44,7 +49,7 @@ class TwitterHTTPError(TwitterError):
         self.uriparts = uriparts
         try:
             data = self.e.fp.read()
-        except httplib.IncompleteRead, e:
+        except http_client.IncompleteRead as e:
             # can't read the error text
             # let's try some of it
             data = e.partial
@@ -210,7 +215,7 @@ class TwitterCall(object):
                 return handle
             try:
                 data = handle.read()
-            except httplib.IncompleteRead, e:
+            except http_client.IncompleteRead as e:
                 # Even if we don't get all the bytes we should have there
                 # may be a complete response in e.partial
                 data = e.partial
