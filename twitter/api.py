@@ -10,8 +10,8 @@ try:
 except ImportError:
     from io import BytesIO as StringIO
 
-from twitter.twitter_globals import POST_ACTIONS
-from twitter.auth import NoAuth
+from .twitter_globals import POST_ACTIONS
+from .auth import NoAuth
 
 import re
 import gzip
