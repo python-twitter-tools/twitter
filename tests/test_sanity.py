@@ -47,8 +47,7 @@ def test_API_set_unicode_tweet():
 
 
 def test_search():
-    t_search = Twitter(domain='search.twitter.com')
-    results = t_search.search(q='foo')
+    results = twitter11.search.tweets(q='foo')
     assert results
 
 
@@ -77,4 +76,3 @@ def test_TwitterHTTPError_raised_for_invalid_oauth():
         # this is the error we are looking for :)
         test_passed = True
     assert test_passed
-
