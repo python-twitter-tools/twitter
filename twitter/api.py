@@ -105,6 +105,8 @@ def wrap_response(response, headers):
     if response_typ is bool:
         # HURF DURF MY NAME IS PYTHON AND I CAN'T SUBCLASS bool.
         response_typ = int
+    elif response_typ is str:
+        return response
 
     class WrappedTwitterResponse(response_typ, TwitterResponse):
         __doc__ = TwitterResponse.__doc__
@@ -114,7 +116,6 @@ def wrap_response(response, headers):
             TwitterResponse.__init__(self, headers)
         def __new__(cls, response, headers):
             return response_typ.__new__(cls, response)
-
 
     return WrappedTwitterResponse(response, headers)
 
