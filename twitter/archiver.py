@@ -19,6 +19,8 @@ OPTIONS
  -v --favorites        archive user's favorites instead of timeline
  -f --follow-redirects follow redirects of urls
  -r --redirect-sites   follow redirects for this comma separated list of hosts
+ -d --dms <file>       archive own direct messages (both received and
+                       sent) into given file name.
 
 AUTHENTICATION
     Authenticate to Twitter using OAuth to archive tweets of private profiles
@@ -52,8 +54,8 @@ from .follow import lookup
 
 def parse_args(args, options):
     """Parse arguments from command-line to set options."""
-    long_opts = ['help', 'oauth', 'save-dir=', 'api-rate', 'timeline=', 'mentions=', 'favorites', 'follow-redirects',"redirect-sites="]
-    short_opts = "hos:at:m:vfr:"
+    long_opts = ['help', 'oauth', 'save-dir=', 'api-rate', 'timeline=', 'mentions=', 'favorites', 'follow-redirects',"redirect-sites=", 'dms=']
+    short_opts = "hos:at:m:vfr:d:"
     opts, extra_args = getopt(args, short_opts, long_opts)
 
     for opt, arg in opts:
@@ -76,6 +78,8 @@ def parse_args(args, options):
             options['follow-redirects'] = True
         elif opt in ('-r', '--redirect-sites'):
             options['redirect-sites'] = arg
+        elif opt in ('-d', '--dms'):
+            options['dms'] = arg
 
     options['extra_args'] = extra_args
 
@@ -165,7 +169,7 @@ def statuses_resolve_uids(twitter, tl):
 
     return new_tl
 
-def statuses_portion(twitter, screen_name, max_id=None, mentions=False, favorites=False):
+def statuses_portion(twitter, screen_name, max_id=None, mentions=False, favorites=False, received_dms=None):
     """Get a portion of the statuses of a screen name."""
     kwargs = dict(count=200, include_rts=1, screen_name=screen_name)
     if max_id:
@@ -176,6 +180,11 @@ def statuses_portion(twitter, screen_name, max_id=None, mentions=False, favorite
         tl = twitter.statuses.mentions(**kwargs)
     elif favorites:
         tl = twitter.favorites(**kwargs) # API v1, favorites.list() in v1.1
+    elif received_dms != None:
+        if received_dms:
+            tl = twitter.direct_messages(**kwargs)
+        else: # sent DMs
+            tl = twitter.direct_messages.sent(**kwargs)
     else: # timeline
         if screen_name:
             tl = twitter.statuses.user_timeline(**kwargs)
@@ -183,24 +192,38 @@ def statuses_portion(twitter, screen_name, max_id=None, mentions=False, favorite
             tl = twitter.statuses.home_timeline(**kwargs)
 
     # some tweets do not provide screen name but user id, resolve those
-    for t in statuses_resolve_uids(twitter, tl):
+    # this isn't a valid operation for DMs, so special-case them
+    if received_dms == None:
+      newtl = statuses_resolve_uids(twitter, tl)
+    else:
+      newtl = tl
+    for t in newtl:
         text = t['text']
         rt = t.get('retweeted_status')
         if rt:
             text = "RT @%s: %s" % (rt['user']['screen_name'], rt['text'])
-        tweets[t['id']] = "%s <%s> %s" % (format_date(t['created_at']),
-                                          t['user']['screen_name'],
-                                          format_text(text))
+        # DMs don't include mentions by default, so in order to show who
+        # the recipient was, we synthesise a mention. If we're not
+        # operating on DMs, behave as normal
+        if received_dms == None:
+          tweets[t['id']] = "%s <%s> %s" % (format_date(t['created_at']),
+                                            t['user']['screen_name'],
+                                            format_text(text))
+        else:
+          tweets[t['id']] = "%s <%s> @%s %s" % (format_date(t['created_at']),
+                                            t['sender_screen_name'],
+                                            t['recipient']['screen_name'],
+                                            format_text(text))
     return tweets
 
-def statuses(twitter, screen_name, tweets, mentions=False, favorites=False):
+def statuses(twitter, screen_name, tweets, mentions=False, favorites=False, received_dms=None):
     """Get all the statuses for a screen name."""
     max_id = None
     fail = Fail()
     # get portions of statuses, incrementing max id until no new tweets appear
     while True:
         try:
-            portion = statuses_portion(twitter, screen_name, max_id, mentions, favorites)
+            portion = statuses_portion(twitter, screen_name, max_id, mentions, favorites, received_dms)
         except TwitterError as e:
             if e.e.code == 401:
                 err("Fail: %i Unauthorized (tweets of that user are protected)"
@@ -263,6 +286,7 @@ def main(args=sys.argv[1:]):
         'api-rate': False,
         'timeline': "",
         'mentions': "",
+        'dms': "",
         'favorites': False,
         'follow-redirects': False,
         'redirect-sites': None,
@@ -277,7 +301,8 @@ def main(args=sys.argv[1:]):
     # except if asking for API rate, or archive of timeline or mentions
     if not options['extra_args'] and not (options['api-rate'] or
                                           options['timeline'] or
-                                          options['mentions']):
+                                          options['mentions'] or
+                                          options['dms']):
         print(__doc__)
         return
 
@@ -342,6 +367,33 @@ def main(args=sys.argv[1:]):
             print("Total tweets in own timeline: %i" % len(tweets))
         elif options['mentions']:
             print("Total mentions: %i" % len(tweets))
+
+    if options['dms']:
+        if isinstance(auth, NoAuth):
+            err("You must be authenticated to save DMs.")
+            raise SystemExit(1)
+
+        filename = options['save-dir'] + os.sep + options['dms']
+        print("* Archiving own DMs in %s" % filename)
+
+        dms = {}
+        try:
+            dms = load_tweets(filename)
+        except Exception, e:
+            err("Error when loading saved DMs: %s - continuing without"
+                % str(e))
+
+        try:
+            statuses(twitter, "", dms, received_dms=True)
+            statuses(twitter, "", dms, received_dms=False)
+        except KeyboardInterrupt:
+            err()
+            err("Interrupted")
+            raise SystemExit(1)
+
+        save_tweets(filename, dms)
+        print("Total DMs sent and received: %i" % len(dms))
+
 
     # read users from command-line or stdin
     users = options['extra_args']
