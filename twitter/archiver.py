@@ -186,9 +186,9 @@ def statuses_portion(twitter, screen_name, max_id=None, mentions=False, favorite
 
     tweets = {}
     if mentions:
-        tl = twitter.statuses.mentions(**kwargs)
+        tl = twitter.statuses.mentions_timeline(**kwargs)
     elif favorites:
-        tl = twitter.favorites(**kwargs) # API v1, favorites.list() in v1.1
+        tl = twitter.favorites.list(**kwargs)
     elif received_dms != None:
         if received_dms:
             tl = twitter.direct_messages(**kwargs)
@@ -329,7 +329,7 @@ def main(args=sys.argv[1:]):
     else:
         auth = NoAuth()
 
-    twitter = Twitter(auth=auth, api_version='1', domain='api.twitter.com')
+    twitter = Twitter(auth=auth, api_version='1.1', domain='api.twitter.com')
 
     if options['api-rate']:
         rate_limit_status(twitter)
