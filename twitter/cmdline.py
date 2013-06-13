@@ -65,7 +65,7 @@ prompt: <twitter_shell_prompt e.g. '[cyan]twitter[R]> '>
 from __future__ import print_function
 
 try:
-    input = __builtins__['raw_input']
+    input = __builtins__.raw_input
 except (AttributeError, KeyError):
     pass
 
@@ -217,7 +217,7 @@ class AnsiStatusFormatter(object):
 
     def __call__(self, status, options):
         colour = self._colourMap.colourFor(status['user']['screen_name'])
-        return ("%s%s%s%s %s" % (
+        return ("%s%s% 16s%s %s" %(
             get_time_string(status, options),
             ansiFormatter.cmdColour(colour), status['user']['screen_name'],
             ansiFormatter.cmdReset(), replaceInStatus(status['text'])))
@@ -697,3 +697,5 @@ def main(args=sys.argv[1:]):
         print(str(e), file=sys.stderr)
         print("Use 'twitter -h' for help.", file=sys.stderr)
         raise SystemExit(1)
+
+main()
