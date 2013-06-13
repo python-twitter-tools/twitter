@@ -170,6 +170,6 @@ def handle_res(res, return_raw_response, stream):
                 yield json.loads(line.decode('utf-8'))
         return generate_json()
     else:
-        result = res.json
+        result = res.json()
     return result
 
