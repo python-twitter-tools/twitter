@@ -12,6 +12,7 @@ from .api import Twitter, TwitterError, TwitterHTTPError, TwitterResponse
 from .auth import NoAuth, UserPassAuth
 from .oauth import (OAuth, read_token_file, write_token_file,
                     __doc__ as oauth_doc)
+from .oauth2 import OAuth2
 from .stream import TwitterStream
 from .oauth_dance import oauth_dance
 
@@ -55,4 +56,4 @@ __doc__ += dedent(oauth_doc)
 
 __all__ = ["Twitter", "TwitterStream", "TwitterResponse", "TwitterError",
            "TwitterHTTPError", "NoAuth", "OAuth", "UserPassAuth",
-           "read_token_file", "write_token_file", "oauth_dance"]
+           "read_token_file", "write_token_file", "oauth_dance", "OAuth2"]
