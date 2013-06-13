@@ -44,7 +44,7 @@ code it all goes like this::
 
 from __future__ import print_function
 
-from requests.auth import OAuth1
+from requests_oauthlib import OAuth1
 
 
 def write_token_file(filename, oauth_token, oauth_token_secret):
@@ -68,7 +68,7 @@ def OAuth(token, token_secret, consumer_key, consumer_secret):
     """
     An OAuth authenticator.
     """
-    return OAuth1(unicode(consumer_key), unicode(consumer_secret), 
+    return OAuth1(unicode(consumer_key), unicode(consumer_secret),
                   unicode(token), unicode(token_secret),
                   signature_type="query")
 
