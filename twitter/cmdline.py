@@ -103,7 +103,7 @@ from .api import Twitter, TwitterError
 from .oauth import OAuth, write_token_file, read_token_file
 from .oauth_dance import oauth_dance
 from . import ansi
-from .util import smrt_input, printNicely
+from .util import smrt_input, printNicely, align_text
 
 OPTIONS = {
     'action': 'friends',
@@ -217,10 +217,12 @@ class AnsiStatusFormatter(object):
 
     def __call__(self, status, options):
         colour = self._colourMap.colourFor(status['user']['screen_name'])
-        return ("%s%s% 16s%s %s" %(
+        ret = "%s%s% 16s%s " %(
             get_time_string(status, options),
-            ansiFormatter.cmdColour(colour), status['user']['screen_name'],
-            ansiFormatter.cmdReset(), replaceInStatus(status['text'])))
+            ansi.cmdColour(colour), status['user']['screen_name'],
+            ansi.cmdReset())
+        ret += "%s" % align_text(status['text'])
+        return ret
 
 class VerboseStatusFormatter(object):
     def __call__(self, status, options):

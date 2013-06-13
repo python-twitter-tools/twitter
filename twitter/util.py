@@ -10,6 +10,7 @@ from __future__ import print_function
 import contextlib
 import re
 import sys
+import textwrap
 import time
 
 try:
@@ -134,3 +135,12 @@ def parse_host_list(list_of_hosts):
         m.group(1) for m in re.finditer("\s*([^,\s]+)\s*,?\s*", list_of_hosts))
     return p
 
+
+def align_text(text, left_margin=16, max_width=80):
+    lines = []
+    for line in text.split('\n'):
+        temp_lines = textwrap.wrap(line, max_width - left_margin)
+        temp_lines = [(' ' * left_margin + line) for line in temp_lines]
+        lines.append('\n'.join(temp_lines))
+    ret = '\n'.join(lines)
+    return ret.lstrip()
