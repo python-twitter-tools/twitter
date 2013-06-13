@@ -136,7 +136,7 @@ def parse_host_list(list_of_hosts):
     return p
 
 
-def align_text(text, left_margin=16, max_width=80):
+def align_text(text, left_margin=17, max_width=160):
     lines = []
     for line in text.split('\n'):
         temp_lines = textwrap.wrap(line, max_width - left_margin)
