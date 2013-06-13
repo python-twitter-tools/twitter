@@ -1,4 +1,5 @@
-from requests.auth import HTTPBasicAuth, OAuth1
+from requests.auth import HTTPBasicAuth
+
 
 def UserPassAuth(username, password):
     """
@@ -6,6 +7,7 @@ def UserPassAuth(username, password):
     password. Deprecated.
     """
     return HTTPBasicAuth(username, password)
+
 
 def NoAuth():
     """

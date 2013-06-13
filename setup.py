@@ -5,7 +5,9 @@ version = '1.9.0'
 
 install_requires = [
     # -*- Extra requirements: -*-
-    "requests >= 0.13"
+    "oauthlib==0.4.2",
+    "requests==1.2.3",
+    "requests-oauthlib==0.3.2",
     ]
 
 setup(name='twitter',
