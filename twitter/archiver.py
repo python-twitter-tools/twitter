@@ -389,7 +389,7 @@ def main(args=sys.argv[1:]):
         dms = {}
         try:
             dms = load_tweets(filename)
-        except Exception, e:
+        except Exception as e:
             err("Error when loading saved DMs: %s - continuing without"
                 % str(e))
 
