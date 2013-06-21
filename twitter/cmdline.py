@@ -15,7 +15,6 @@ ACTIONS:
                     tweets from that list
  mylist         get list of your lists; give a list name to get tweets
                     from that list
- public         get latest public tweets
  pyprompt       start a Python prompt for interacting with the twitter
                     object directly
  replies        get latest replies to you
@@ -464,7 +463,7 @@ class ListsAction(StatusAction):
         screen_name = options['extra_args'][0]
 
         if not options['extra_args'][1:]:
-            lists = twitter.user.lists(user=screen_name)['lists']
+            lists = twitter.lists.list(screen_name=screen_name)
             if not lists:
                 printNicely("This user has no lists.")
             for list in lists:
@@ -485,15 +484,11 @@ class MyListsAction(ListsAction):
 
 class FriendsAction(StatusAction):
     def getStatuses(self, twitter, options):
-        return reversed(twitter.statuses.friends_timeline(count=options["length"]))
-
-class PublicAction(StatusAction):
-    def getStatuses(self, twitter, options):
-        return reversed(twitter.statuses.public_timeline(count=options["length"]))
+        return reversed(twitter.statuses.home_timeline(count=options["length"]))
 
 class RepliesAction(StatusAction):
     def getStatuses(self, twitter, options):
-        return reversed(twitter.statuses.replies(count=options["length"]))
+        return reversed(twitter.statuses.mentions_timeline(count=options["length"]))
 
 class FollowAction(AdminAction):
     def getUser(self, twitter, user):
@@ -616,7 +611,6 @@ actions = {
     'mylist'    : MyListsAction,
     'help'      : HelpAction,
     'leave'     : LeaveAction,
-    'public'    : PublicAction,
     'pyprompt'  : PythonPromptAction,
     'replies'   : RepliesAction,
     'search'    : SearchAction,
@@ -661,11 +655,11 @@ def main(args=sys.argv[1:]):
             if v: options[k] = v
 
     if options['refresh'] and options['action'] not in (
-        'friends', 'public', 'replies'):
-        print("You can only refresh the friends, public, or replies actions.", file=sys.stderr)
+        'friends', 'replies'):
+        print("You can only refresh the friends or replies actions.", file=sys.stderr)
         print("Use 'twitter -h' for help.", file=sys.stderr)
         return 1
-    
+
     oauth_filename = os.path.expanduser(options['oauth_filename'])
 
     if (options['action'] == 'authorize'
@@ -673,7 +667,7 @@ def main(args=sys.argv[1:]):
         oauth_dance(
             "the Command-Line Tool", CONSUMER_KEY, CONSUMER_SECRET,
             options['oauth_filename'])
-        
+
     global ansiFormatter
     ansiFormatter = ansi.AnsiCmd(options["force-ansi"])
 
@@ -683,7 +677,7 @@ def main(args=sys.argv[1:]):
         auth=OAuth(
             oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET),
         secure=options['secure'],
-        api_version='1',
+        api_version='1.1',
         domain='api.twitter.com')
 
     try:
