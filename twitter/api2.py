@@ -128,17 +128,6 @@ class TwitterAPI(object):
         return handle_res(res, self.return_raw_response, self.stream)
 
 
-_default_api = TwitterAPI()
-
-get = _default_api.get
-
-
-_search_api = TwitterAPI(domain="search.twitter.com", api_version=None)
-
-def search(q, **kwargs):
-    return _search_api.get("search", q=q, **kwargs)
-
-
 def make_url(secure, host, api_ver, path, params):
     remaining_params = dict(params)
     real_params = []

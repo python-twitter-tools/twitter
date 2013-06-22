@@ -97,7 +97,7 @@ except ImportError:
 
 import webbrowser
 
-from .api2 import TwitterAPI, TwitterError, search
+from .api2 import TwitterAPI, TwitterError
 from .oauth import OAuth, write_token_file, read_token_file
 from .oauth_dance import oauth_dance
 from . import ansi
@@ -278,8 +278,8 @@ class VerboseAdminFormatter(object):
 class SearchFormatter(object):
     def __call__(self, result, options):
         return("%s%s %s" % (
-            get_time_string(result, options, "%a, %d %b %Y %H:%M:%S +0000"),
-            result['from_user'], result['text']))
+            get_time_string(result, options),
+            result['user']['screen_name'], result['text']))
 
 class VerboseSearchFormatter(SearchFormatter):
     pass  # Default to the regular one
@@ -424,7 +424,7 @@ class SearchAction(Action):
             [quote(term)
              for term in options['extra_args']])
 
-        results = search(query_string)['results']
+        results = twitter.get('search/tweets', q=query_string)['statuses']
         f = get_formatter('search', options)
         for result in results:
             resultStr = f(result, options)
