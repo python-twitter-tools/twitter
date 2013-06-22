@@ -19,6 +19,9 @@ OPTIONS
  -v --favorites        archive user's favorites instead of timeline
  -f --follow-redirects follow redirects of urls
  -r --redirect-sites   follow redirects for this comma separated list of hosts
+ -d --dms <file>       archive own direct messages (both received and
+                       sent) into given file name.
+ -i --isoformat        store dates in ISO format (specifically RFC 3339)
 
 AUTHENTICATION
     Authenticate to Twitter using OAuth to archive tweets of private profiles
@@ -28,7 +31,8 @@ AUTHENTICATION
 
 from __future__ import print_function
 
-import os, sys, time, calendar, functools
+import os, sys, time as _time, calendar, functools
+from datetime import time, date, datetime
 from getopt import gnu_getopt as getopt, GetoptError
 
 try:
@@ -49,11 +53,12 @@ from .oauth_dance import oauth_dance
 from .auth import NoAuth
 from .util import Fail, err, expand_line, parse_host_list
 from .follow import lookup
+from .timezones import utc as UTC, Local
 
 def parse_args(args, options):
     """Parse arguments from command-line to set options."""
-    long_opts = ['help', 'oauth', 'save-dir=', 'api-rate', 'timeline=', 'mentions=', 'favorites', 'follow-redirects',"redirect-sites="]
-    short_opts = "hos:at:m:vfr:"
+    long_opts = ['help', 'oauth', 'save-dir=', 'api-rate', 'timeline=', 'mentions=', 'favorites', 'follow-redirects',"redirect-sites=", 'dms=', 'isoformat']
+    short_opts = "hos:at:m:vfr:d:i"
     opts, extra_args = getopt(args, short_opts, long_opts)
 
     for opt, arg in opts:
@@ -76,6 +81,10 @@ def parse_args(args, options):
             options['follow-redirects'] = True
         elif opt in ('-r', '--redirect-sites'):
             options['redirect-sites'] = arg
+        elif opt in ('-d', '--dms'):
+            options['dms'] = arg
+        elif opt in ('-i', '--isoformat'):
+            options['isoformat'] = True
 
     options['extra_args'] = extra_args
 
@@ -120,14 +129,22 @@ def save_tweets(filename, tweets):
 
     archive.close()
 
-def format_date(utc, to_localtime=True):
+def format_date(utc, isoformat=False):
     """Parse Twitter's UTC date into UTC or local time."""
-    u = time.strptime(utc.replace('+0000','UTC'), '%a %b %d %H:%M:%S %Z %Y')
-    if to_localtime and time.timezone != 0:
-        t = time.localtime(calendar.timegm(u))
-        return time.strftime("%Y-%m-%d %H:%M:%S", t) + " " + time.tzname[1]
+    u = datetime.strptime(utc.replace('+0000','UTC'), '%a %b %d %H:%M:%S %Z %Y')
+    # This is the least painful way I could find to create a non-naive
+    # datetime including a UTC timezone. Alternative suggestions
+    # welcome.
+    unew = datetime.combine(u.date(), time(u.time().hour,
+        u.time().minute, u.time().second, tzinfo=UTC))
+
+    # Convert to localtime
+    unew = unew.astimezone(Local)
+
+    if isoformat:
+        return unew.isoformat()
     else:
-        return time.strftime("%Y-%m-%d %H:%M:%S UTC", u)
+        return unew.strftime('%Y-%m-%d %H:%M:%S %Z')
 
 def expand_format_text(hosts, text):
     """Following redirects in links."""
@@ -165,7 +182,7 @@ def statuses_resolve_uids(twitter, tl):
 
     return new_tl
 
-def statuses_portion(twitter, screen_name, max_id=None, mentions=False, favorites=False):
+def statuses_portion(twitter, screen_name, max_id=None, mentions=False, favorites=False, received_dms=None, isoformat=False):
     """Get a portion of the statuses of a screen name."""
     kwargs = dict(count=200, include_rts=1, screen_name=screen_name)
     if max_id:
@@ -173,9 +190,14 @@ def statuses_portion(twitter, screen_name, max_id=None, mentions=False, favorite
 
     tweets = {}
     if mentions:
-        tl = twitter.statuses.mentions(**kwargs)
+        tl = twitter.statuses.mentions_timeline(**kwargs)
     elif favorites:
-        tl = twitter.favorites(**kwargs) # API v1, favorites.list() in v1.1
+        tl = twitter.favorites.list(**kwargs)
+    elif received_dms != None:
+        if received_dms:
+            tl = twitter.direct_messages(**kwargs)
+        else: # sent DMs
+            tl = twitter.direct_messages.sent(**kwargs)
     else: # timeline
         if screen_name:
             tl = twitter.statuses.user_timeline(**kwargs)
@@ -183,24 +205,38 @@ def statuses_portion(twitter, screen_name, max_id=None, mentions=False, favorite
             tl = twitter.statuses.home_timeline(**kwargs)
 
     # some tweets do not provide screen name but user id, resolve those
-    for t in statuses_resolve_uids(twitter, tl):
+    # this isn't a valid operation for DMs, so special-case them
+    if received_dms == None:
+      newtl = statuses_resolve_uids(twitter, tl)
+    else:
+      newtl = tl
+    for t in newtl:
         text = t['text']
         rt = t.get('retweeted_status')
         if rt:
             text = "RT @%s: %s" % (rt['user']['screen_name'], rt['text'])
-        tweets[t['id']] = "%s <%s> %s" % (format_date(t['created_at']),
-                                          t['user']['screen_name'],
-                                          format_text(text))
+        # DMs don't include mentions by default, so in order to show who
+        # the recipient was, we synthesise a mention. If we're not
+        # operating on DMs, behave as normal
+        if received_dms == None:
+          tweets[t['id']] = "%s <%s> %s" % (format_date(t['created_at'], isoformat=isoformat),
+                                            t['user']['screen_name'],
+                                            format_text(text))
+        else:
+          tweets[t['id']] = "%s <%s> @%s %s" % (format_date(t['created_at'], isoformat=isoformat),
+                                            t['sender_screen_name'],
+                                            t['recipient']['screen_name'],
+                                            format_text(text))
     return tweets
 
-def statuses(twitter, screen_name, tweets, mentions=False, favorites=False):
+def statuses(twitter, screen_name, tweets, mentions=False, favorites=False, received_dms=None, isoformat=False):
     """Get all the statuses for a screen name."""
     max_id = None
     fail = Fail()
     # get portions of statuses, incrementing max id until no new tweets appear
     while True:
         try:
-            portion = statuses_portion(twitter, screen_name, max_id, mentions, favorites)
+            portion = statuses_portion(twitter, screen_name, max_id, mentions, favorites, received_dms, isoformat)
         except TwitterError as e:
             if e.e.code == 401:
                 err("Fail: %i Unauthorized (tweets of that user are protected)"
@@ -263,9 +299,11 @@ def main(args=sys.argv[1:]):
         'api-rate': False,
         'timeline': "",
         'mentions': "",
+        'dms': "",
         'favorites': False,
         'follow-redirects': False,
         'redirect-sites': None,
+        'isoformat': False,
     }
     try:
         parse_args(args, options)
@@ -277,7 +315,8 @@ def main(args=sys.argv[1:]):
     # except if asking for API rate, or archive of timeline or mentions
     if not options['extra_args'] and not (options['api-rate'] or
                                           options['timeline'] or
-                                          options['mentions']):
+                                          options['mentions'] or
+                                          options['dms']):
         print(__doc__)
         return
 
@@ -294,7 +333,7 @@ def main(args=sys.argv[1:]):
     else:
         auth = NoAuth()
 
-    twitter = Twitter(auth=auth, api_version='1', domain='api.twitter.com')
+    twitter = Twitter(auth=auth, api_version='1.1', domain='api.twitter.com')
 
     if options['api-rate']:
         rate_limit_status(twitter)
@@ -331,7 +370,7 @@ def main(args=sys.argv[1:]):
                 % str(e))
 
         try:
-            statuses(twitter, "", tweets, options['mentions'], options['favorites'])
+            statuses(twitter, "", tweets, options['mentions'], options['favorites'], isoformat=options['isoformat'])
         except KeyboardInterrupt:
             err()
             err("Interrupted")
@@ -342,6 +381,33 @@ def main(args=sys.argv[1:]):
             print("Total tweets in own timeline: %i" % len(tweets))
         elif options['mentions']:
             print("Total mentions: %i" % len(tweets))
+
+    if options['dms']:
+        if isinstance(auth, NoAuth):
+            err("You must be authenticated to save DMs.")
+            raise SystemExit(1)
+
+        filename = options['save-dir'] + os.sep + options['dms']
+        print("* Archiving own DMs in %s" % filename)
+
+        dms = {}
+        try:
+            dms = load_tweets(filename)
+        except Exception as e:
+            err("Error when loading saved DMs: %s - continuing without"
+                % str(e))
+
+        try:
+            statuses(twitter, "", dms, received_dms=True, isoformat=options['isoformat'])
+            statuses(twitter, "", dms, received_dms=False, isoformat=options['isoformat'])
+        except KeyboardInterrupt:
+            err()
+            err("Interrupted")
+            raise SystemExit(1)
+
+        save_tweets(filename, dms)
+        print("Total DMs sent and received: %i" % len(dms))
+
 
     # read users from command-line or stdin
     users = options['extra_args']
@@ -366,7 +432,7 @@ def main(args=sys.argv[1:]):
         new = 0
         before = len(tweets)
         try:
-            statuses(twitter, user, tweets, options['mentions'], options['favorites'])
+            statuses(twitter, user, tweets, options['mentions'], options['favorites'], isoformat=options['isoformat'])
         except KeyboardInterrupt:
             err()
             err("Interrupted")
