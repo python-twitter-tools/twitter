@@ -88,15 +88,15 @@ def find_links(line):
     l = line.replace("%", "%%")
     regex = "(https?://[^ )]+)"
     return (
-        re.sub(regex, "%s", l), 
+        re.sub(regex, "%s", l),
         [m.group(1) for m in re.finditer(regex, l)])
-    
+
 def follow_redirects(link, sites= None):
     """Follow directs for the link as long as the redirects are on the given
     sites and return the resolved link."""
     def follow(url):
         return sites == None or urlparse.urlparse(url).hostname in sites
-                
+
     class RedirectHandler(urllib2.HTTPRedirectHandler):
         def __init__(self):
             self.last_url = None
@@ -108,7 +108,7 @@ def follow_redirects(link, sites= None):
                 self, req, fp, code, msg, hdrs, newurl)
             r.get_method = lambda : 'HEAD'
             return r
-            
+
     if not follow(link):
         return link
     redirect_handler = RedirectHandler()
@@ -133,4 +133,4 @@ def parse_host_list(list_of_hosts):
     p = set(
         m.group(1) for m in re.finditer("\s*([^,\s]+)\s*,?\s*", list_of_hosts))
     return p
-    
+

@@ -8,6 +8,7 @@ except ImportError:
 import json
 from ssl import SSLError
 import socket
+import sys
 
 from .api import TwitterCall, wrap_response
 
@@ -20,7 +21,10 @@ class TwitterJSONIter(object):
         self.block = block
 
     def __iter__(self):
-        sock = self.handle.fp._sock.fp._sock
+        if sys.version_info >= (3, 0):
+            sock = self.handle.fp.raw._sock
+        else:
+            sock = self.handle.fp._sock.fp._sock
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         if not self.block:
             sock.setblocking(False)
@@ -53,11 +57,11 @@ def handle_stream_response(req, uri, arg_data, block):
     return iter(TwitterJSONIter(handle, uri, arg_data, block))
 
 class TwitterStreamCall(TwitterCall):
-    def _handle_response(self, req, uri, arg_data):
+    def _handle_response(self, req, uri, arg_data, _timeout=None):
         return handle_stream_response(req, uri, arg_data, block=True)
 
 class TwitterStreamCallNonBlocking(TwitterCall):
-    def _handle_response(self, req, uri, arg_data):
+    def _handle_response(self, req, uri, arg_data, _timeout=None):
         return handle_stream_response(req, uri, arg_data, block=False)
 
 class TwitterStream(TwitterStreamCall):
@@ -68,7 +72,7 @@ class TwitterStream(TwitterStreamCall):
     iterator that yields objects decoded from the stream. For
     example::
 
-        twitter_stream = TwitterStream(auth=UserPassAuth('joe', 'joespassword'))
+        twitter_stream = TwitterStream(auth=OAuth(...))
         iterator = twitter_stream.statuses.sample()
 
         for tweet in iterator:
@@ -83,7 +87,7 @@ class TwitterStream(TwitterStreamCall):
     """
     def __init__(
         self, domain="stream.twitter.com", secure=True, auth=None,
-        api_version='1', block=True):
+        api_version='1.1', block=True):
         uriparts = ()
         uriparts += (str(api_version),)
 

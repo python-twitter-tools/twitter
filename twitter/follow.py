@@ -9,6 +9,7 @@ OPTIONS
  -r --followers        display followers of the given user (default)
  -g --following        display users the given user is following
  -a --api-rate         see your current API rate limit status
+ -i --ids              prepend user id to each line. useful to tracking renames
 
 AUTHENTICATION
     Authenticate to Twitter using OAuth to see following/followers of private
@@ -41,8 +42,8 @@ from .util import Fail, err
 
 def parse_args(args, options):
     """Parse arguments from command-line to set options."""
-    long_opts = ['help', 'oauth', 'followers', 'following', 'api-rate']
-    short_opts = "horga"
+    long_opts = ['help', 'oauth', 'followers', 'following', 'api-rate', 'ids']
+    short_opts = "horgai"
     opts, extra_args = getopt(args, short_opts, long_opts)
 
     for opt, arg in opts:
@@ -57,6 +58,8 @@ def parse_args(args, options):
             options['followers'] = False
         elif opt in ('-a', '--api-rate'):
             options['api-rate' ] = True
+        elif opt in ('-i', '--ids'):
+            options['show_id'] = True
 
     options['extra_args'] = extra_args
 
@@ -188,7 +191,8 @@ def main(args=sys.argv[1:]):
     options = {
         'oauth': False,
         'followers': True,
-        'api-rate': False
+        'api-rate': False,
+        'show_id': False
     }
     try:
         parse_args(args, options)
@@ -214,7 +218,7 @@ def main(args=sys.argv[1:]):
     else:
         auth = NoAuth()
 
-    twitter = Twitter(auth=auth, api_version='1', domain='api.twitter.com')
+    twitter = Twitter(auth=auth, api_version='1.1', domain='api.twitter.com')
 
     if options['api-rate']:
         rate_limit_status(twitter)
@@ -232,7 +236,17 @@ def main(args=sys.argv[1:]):
             raise SystemExit(1)
 
         for uid in user_ids:
-            print(users[uid].encode("utf-8"))
+            if options['show_id']:
+              try:
+                print(str(uid) + "\t" + users[uid].encode("utf-8"))
+              except KeyError:
+                pass
+            
+            else:
+              try:
+                print(users[uid].encode("utf-8"))
+              except KeyError:
+                pass
 
         # print total on stderr to separate from user list on stdout
         if options['followers']:

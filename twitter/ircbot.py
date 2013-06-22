@@ -36,7 +36,7 @@ oauth_token_file: <oauth_token_filename>
 
 from __future__ import print_function
 
-BOT_VERSION = "TwitterBot 1.6.1 (http://mike.verdone.ca/twitter)"
+BOT_VERSION = "TwitterBot 1.9.1 (http://mike.verdone.ca/twitter)"
 
 CONSUMER_KEY = "XryIxN3J2ACaJs50EizfLQ"
 CONSUMER_SECRET = "j7IuDCNjftVY8DBauRdqXs4jDl5Fgk1IJRag8iE"
@@ -87,7 +87,7 @@ except ImportError:
         "This module requires python irclib available from "
         + "https://github.com/sixohsix/python-irclib/zipball/python-irclib3-0.4.8")
 
-OAUTH_FILE = os.environ.get('HOME', '') + os.sep + '.twitterbot_oauth'
+OAUTH_FILE = os.environ.get('HOME', os.environ.get('USERPROFILE', '')) + os.sep + '.twitterbot_oauth'
 
 def debug(msg):
     # uncomment this for debug text stuff
