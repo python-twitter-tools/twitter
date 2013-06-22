@@ -133,10 +133,13 @@ def format_date(utc, isoformat=False):
     """Parse Twitter's UTC date into UTC or local time."""
     u = datetime.strptime(utc.replace('+0000','UTC'), '%a %b %d %H:%M:%S %Z %Y')
     # This is the least painful way I could find to create a non-naive
-    # datetime that included a timezone of UTC. Alternative suggestions
+    # datetime including a UTC timezone. Alternative suggestions
     # welcome.
     unew = datetime.combine(u.date(), time(u.time().hour,
         u.time().minute, u.time().second, tzinfo=UTC))
+
+    # Convert to localtime
+    unew = unew.astimezone(Local)
 
     if isoformat:
         return unew.isoformat()
