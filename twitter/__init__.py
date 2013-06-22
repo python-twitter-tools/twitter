@@ -18,6 +18,8 @@ from .oauth_dance import oauth_dance
 
 from . import api2
 
+from .api2 import TwitterAPIError
+
 
 # Who needs Sphinx? Not me!
 

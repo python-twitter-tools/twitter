@@ -1,35 +1,18 @@
 # encoding: utf-8
 
-from twitter.api2 import get, search, TwitterAPI, TwitterError
+from twitter.api2 import TwitterAPI, TwitterError
 
 from .test_sanity import oauth, get_random_str
 
-
+noauth_api = TwitterAPI()
 api = TwitterAPI(auth=oauth, secure=True)
 stream_api = TwitterAPI(domain="stream.twitter.com", auth=oauth, stream=True,
                         secure=True)
 
 
-#def test_can_get_public_tweet_json():
-#    updates = get('statuses/public_timeline')
-#    assert updates
-#    assert updates[0]['text']
-
-
 def test_can_get_specific_status():
     update = api.get('statuses/show/:id', id=230400277440770048)
     assert update
-
-
-def test_can_perform_a_search():
-    results = TwitterAPI(domain="search.twitter.com", api_version=None).get(
-        'search', q="hello")
-    assert results
-
-
-def test_can_do_an_easy_search():
-    results = search("hello")
-    assert results
 
 
 def test_can_do_oauth():
@@ -39,7 +22,7 @@ def test_can_do_oauth():
 
 def test_handle_404():
     try:
-        get("garbage")
+        noauth_api.get("garbage")
         assert False
     except TwitterError as e:
         pass
@@ -47,7 +30,7 @@ def test_handle_404():
 
 def test_handle_not_authenticated():
     try:
-        get("statuses/home_timeline")
+        noauth_api.get("statuses/home_timeline")
         assert False
     except TwitterError as e:
         pass

@@ -3,7 +3,7 @@
 from random import choice
 import time
 
-from twitter import Twitter, NoAuth, OAuth, read_token_file, TwitterHTTPError
+from twitter import Twitter, NoAuth, OAuth, read_token_file, TwitterAPIError
 from twitter.cmdline import CONSUMER_KEY, CONSUMER_SECRET
 
 noauth = NoAuth()
@@ -55,7 +55,7 @@ def test_TwitterHTTPError_raised_for_invalid_oauth():
     test_passed = False
     try:
         twitter11_na.statuses.mentions_timeline()
-    except TwitterHTTPError:
+    except TwitterAPIError:
         # this is the error we are looking for :)
         test_passed = True
     assert test_passed
