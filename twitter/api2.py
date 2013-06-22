@@ -115,7 +115,7 @@ class TwitterAPI(object):
     def get(self, path, **kwargs):
         url, remaining_params = make_url(self.secure, self.domain, self.api_ver,
                                          path, kwargs)
-        res = requests.get(url, params=remaining_params, prefetch=(not self.stream),
+        res = requests.get(url, params=remaining_params, stream=self.stream,
                            auth=self.auth)
         return handle_res(res, self.return_raw_response, self.stream)
 
@@ -123,7 +123,7 @@ class TwitterAPI(object):
     def post(self, path, **kwargs):
         url, remaining_params = make_url(self.secure, self.domain, self.api_ver,
                                          path, kwargs)
-        res = requests.post(url, params=remaining_params, prefetch=(not self.stream),
+        res = requests.post(url, params=remaining_params, stream=self.stream,
                             auth=self.auth)
         return handle_res(res, self.return_raw_response, self.stream)
 
@@ -170,6 +170,6 @@ def handle_res(res, return_raw_response, stream):
                 yield json.loads(line.decode('utf-8'))
         return generate_json()
     else:
-        result = res.json
+        result = res.json()
     return result
 
