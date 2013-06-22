@@ -218,7 +218,7 @@ def main(args=sys.argv[1:]):
     else:
         auth = NoAuth()
 
-    twitter = Twitter(auth=auth, api_version='1', domain='api.twitter.com')
+    twitter = Twitter(auth=auth, api_version='1.1', domain='api.twitter.com')
 
     if options['api-rate']:
         rate_limit_status(twitter)
