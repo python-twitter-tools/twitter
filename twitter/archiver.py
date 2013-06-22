@@ -129,14 +129,15 @@ def save_tweets(filename, tweets):
 
     archive.close()
 
-def format_date(utc, to_localtime=True, isoformat=False):
+def format_date(utc, isoformat=False):
     """Parse Twitter's UTC date into UTC or local time."""
     u = datetime.strptime(utc.replace('+0000','UTC'), '%a %b %d %H:%M:%S %Z %Y')
+    # This is the least painful way I could find to create a non-naive
+    # datetime that included a timezone of UTC. Alternative suggestions
+    # welcome.
     unew = datetime.combine(u.date(), time(u.time().hour,
         u.time().minute, u.time().second, tzinfo=UTC))
 
-    if to_localtime and _time.timezone != 0:
-        unew = unew.astimezone(Local)
     if isoformat:
         return unew.isoformat()
     else:
