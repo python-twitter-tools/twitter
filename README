@@ -96,6 +96,12 @@ t.statuses.friends_timeline(id="billybob")
 # Also supported (but totally weird)
 t.statuses.friends_timeline.billybob()
 
+# to pass in GET/POST parameters, such as `count`
+t.statuses.home_timeline(count=5)
+
+# to pass in the GET/POST parameter `id` you need to use `_id`
+t.statuses.oembed(_id=1234567890)
+
 # Update your status
 t.statuses.update(
     status="Using @sixohsix's sweet Python Twitter Tools.")
@@ -116,8 +122,13 @@ t.user.list.members(user="tamtar", list="things-that-are-rad")
 # calls which take much more time than normal or twitter stops
 # responding for some reasone
 t.users.lookup(screen_name=','.join(A_LIST_OF_100_SCREEN_NAMES), _timeout=1)
-```
 
+# Overriding Method: GET/POST
+# you should not need to use this method as this library properly
+# detects whether GET or POST should be used, Nevertheless
+# to force a particular method, use `_method`
+t.statuses.oembed(_id=1234567890, _method='GET')
+```
 
 Searching Twitter::
 
