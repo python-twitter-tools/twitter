@@ -28,6 +28,12 @@ POST_ACTIONS = [
     # Block Methods, Friendship Methods, Favorite Methods
     'create', 'create_all',
 
+    # Users Methods
+    'lookup',
+
+    # Semantic Methods
+    'filter',
+
     # OAuth Methods
     'token',
 ]
