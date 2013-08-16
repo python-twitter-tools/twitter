@@ -28,6 +28,9 @@ POST_ACTIONS = [
     # Block Methods, Friendship Methods, Favorite Methods
     'create', 'create_all',
 
+    # Streaming Methods
+    'filter', 'sample', 'firehose', 'user', 'site',
+
     # OAuth Methods
     'token',
 ]
