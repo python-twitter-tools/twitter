@@ -10,7 +10,7 @@ from ssl import SSLError
 import socket
 import sys
 
-from .api import TwitterCall, wrap_response
+from .api import TwitterCall, wrap_response, TwitterHTTPError
 
 class TwitterJSONIter(object):
 
