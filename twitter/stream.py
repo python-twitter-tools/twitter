@@ -59,7 +59,7 @@ class TwitterJSONIter(object):
                 else:
                     self.buf += sock.recv(1024)
             except SSLError as e:
-                if ((not self.block) and (e.errno == 2)) or ((self.timeout) and (e.errno == 2)):
+                if (not self.block or self.timeout) and (e.errno == 2):
                     # Apparently this means there was nothing in the socket buf
                     pass
                 else:
