@@ -28,7 +28,7 @@ except ImportError:
     from urllib import quote, urlencode
 
 from base64 import b64encode
-from twitter.auth import Auth
+from .auth import Auth
 
 
 class OAuth2(Auth):
