@@ -43,6 +43,7 @@ FORMATS for the --format option
 
  default         one line per status
  verbose         multiple lines per status, more verbose status info
+ json            raw json data from the api on each line
  urls            nothing but URLs
  ansi            ansi colour (rainbow mode)
 
@@ -228,6 +229,11 @@ class VerboseStatusFormatter(object):
             status['created_at'],
             gHtmlParser.unescape(status['text'])))
 
+class JSONStatusFormatter(object):
+    def __call__(self, status, options):
+         status['text'] = gHtmlParser.unescape(status['text'])
+         return json.dumps(status)
+
 class URLStatusFormatter(object):
     urlmatch = re.compile(r'https?://\S+')
     def __call__(self, status, options):
@@ -316,6 +322,7 @@ formatters = {}
 status_formatters = {
     'default': StatusFormatter,
     'verbose': VerboseStatusFormatter,
+    'json': JSONStatusFormatter,
     'urls': URLStatusFormatter,
     'ansi': AnsiStatusFormatter
 }
