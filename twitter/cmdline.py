@@ -73,14 +73,15 @@ except (AttributeError, KeyError):
 CONSUMER_KEY = 'uS6hO2sV6tDKIOeVjhnFnQ'
 CONSUMER_SECRET = 'MEYTOS97VvlHX7K1rwHPEqVpTSqZ71HtvoK4sVuYk'
 
-import sys
-import time
 from getopt import gnu_getopt as getopt, GetoptError
 from getpass import getpass
-import re
-import os.path
+import json
 import locale
+import os.path
+import re
 import string
+import sys
+import time
 
 try:
     from ConfigParser import SafeConfigParser
