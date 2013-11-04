@@ -283,7 +283,7 @@ twitter = Twitter(auth=OAuth(
     oauth_token, oauth_secret, CONSUMER_KEY, CONSUMER_SECRET))
 
 # Now work with Twitter
-twitter.statuses.update('Hello, world!')
+twitter.statuses.update(status='Hello, world!')
 ```
 
 
