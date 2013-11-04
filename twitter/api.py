@@ -125,7 +125,7 @@ class TwitterCall(object):
 
     def __init__(
         self, auth, format, domain, callable_cls, uri="",
-        uriparts=None, secure=True):
+        uriparts=None, secure=True, timeout=None):
         self.auth = auth
         self.format = format
         self.domain = domain
@@ -133,6 +133,7 @@ class TwitterCall(object):
         self.uri = uri
         self.uriparts = uriparts
         self.secure = secure
+        self.timeout = timeout
 
     def __getattr__(self, k):
         try:
@@ -141,7 +142,7 @@ class TwitterCall(object):
             def extend_call(arg):
                 return self.callable_cls(
                     auth=self.auth, format=self.format, domain=self.domain,
-                    callable_cls=self.callable_cls, uriparts=self.uriparts \
+                    callable_cls=self.callable_cls, timeout=self.timeout, uriparts=self.uriparts \
                         + (arg,),
                     secure=self.secure)
             if k == "_":
