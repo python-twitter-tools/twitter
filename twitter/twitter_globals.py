@@ -29,7 +29,7 @@ POST_ACTIONS = [
     'create', 'create_all',
 
     # Users Methods
-    'lookup',
+    'lookup', 'report_spam',
 
     # Semantic Methods
     'filter',
