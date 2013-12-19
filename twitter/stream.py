@@ -57,7 +57,11 @@ class TwitterJSONIter(object):
                     else:
                         yield {"timeout":True}
                 else:
-                    self.buf += sock.recv(1024)
+                    received = sock.recv(1024)
+                    if self.block and not received:
+                        # Receiving nothing means Twitter hung up on us
+                        return
+                    self.buf += received
             except SSLError as e:
                 if (not self.block or self.timeout) and (e.errno == 2):
                     # Apparently this means there was nothing in the socket buf
