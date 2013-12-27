@@ -14,14 +14,14 @@ from .api import TwitterCall, wrap_response, TwitterHTTPError
 
 class TwitterJSONIter(object):
 
-    def __init__(self, handle, uri, arg_data, block=True, timeout=None):
+    def __init__(self, handle, uri, arg_data, block=True, timeout=None, display_sizes=False):
         self.decoder = json.JSONDecoder()
         self.handle = handle
         self.buf = b""
         self.block = block
         self.timeout = timeout
         self.timer = time.time()
-
+        self.display_sizes = display_sizes
 
     def __iter__(self):
         if sys.version_info >= (3, 0):
@@ -35,12 +35,15 @@ class TwitterJSONIter(object):
             utf8_buf = self.buf.decode('utf8').lstrip()
             pos = utf8_buf.find('{')
             if pos != -1:
+                if self.display_sizes:
+                    for size in utf8_buf[:pos].split('\n'):
+                        yield wrap_response(size.strip(), self.handle.headers)
                 utf8_buf = utf8_buf[pos:]
                 self.buf = utf8_buf.encode('utf-8')
             try:
                 res, ptr = self.decoder.raw_decode(utf8_buf)
                 self.buf = utf8_buf[ptr:].encode('utf8')
-                if isinstance(res, dict):
+                if isinstance(res, dict) or self.display_sizes:
                     yield wrap_response(res, self.handle.headers)
                 self.timer = time.time()
                 continue
@@ -72,7 +75,8 @@ class TwitterJSONIter(object):
 
 def handle_stream_response(req, uri, arg_data, block, timeout=None):
     handle = urllib_request.urlopen(req,)
-    return iter(TwitterJSONIter(handle, uri, arg_data, block, timeout=timeout))
+    return iter(TwitterJSONIter(handle, uri, arg_data, block, timeout=timeout,
+            display_sizes=("delimited=length" in req.get_data().lower())))
 
 class TwitterStreamCallWithTimeout(TwitterCall):
     def _handle_response(self, req, uri, arg_data, _timeout=None):
