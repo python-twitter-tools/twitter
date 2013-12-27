@@ -254,7 +254,7 @@ class TwitterBot(object):
                 "%sI'm already following %s." %(get_prefix('error'), name))
         else:
             try:
-                self.twitter.friendships.create(id=name)
+                self.twitter.friendships.create(screen_name=name)
             except TwitterError:
                 conn.privmsg(
                     userNick,
@@ -278,7 +278,7 @@ class TwitterBot(object):
                 userNick,
                 "%sI'm not following %s." %(get_prefix('error'), name))
         else:
-            self.twitter.friendships.destroy(id=name)
+            self.twitter.friendships.destroy(screen_name=name)
             conn.privmsg(
                 userNick,
                 "%sOkay! I've stopped following %s." %(
