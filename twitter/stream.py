@@ -119,4 +119,4 @@ class TwitterStream(TwitterStreamCall):
         TwitterStreamCall.__init__(
             self, auth=auth, format="json", domain=domain,
             callable_cls=call_cls,
-            secure=secure, uriparts=uriparts, timeout=timeout)
+            secure=secure, uriparts=uriparts, timeout=timeout, gzip=False)
