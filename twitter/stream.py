@@ -70,18 +70,18 @@ class TwitterJSONIter(object):
                 else:
                     raise
 
-def handle_stream_response(req, uri, arg_data, block, timeout=None):
+def handle_stream_response(req, uri, arg_data, block=True, timeout=None):
     handle = urllib_request.urlopen(req,)
     return iter(TwitterJSONIter(handle, uri, arg_data, block, timeout=timeout,
             display_sizes=("delimited=length" in req.get_data().lower())))
 
 class TwitterStreamCallWithTimeout(TwitterCall):
     def _handle_response(self, req, uri, arg_data, _timeout=None):
-        return handle_stream_response(req, uri, arg_data, block=True, timeout=self.timeout)
+        return handle_stream_response(req, uri, arg_data, timeout=self.timeout)
 
 class TwitterStreamCall(TwitterCall):
     def _handle_response(self, req, uri, arg_data, _timeout=None):
-        return handle_stream_response(req, uri, arg_data, block=True)
+        return handle_stream_response(req, uri, arg_data)
 
 class TwitterStreamCallNonBlocking(TwitterCall):
     def _handle_response(self, req, uri, arg_data, _timeout=None):
