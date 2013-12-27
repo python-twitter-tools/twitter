@@ -14,7 +14,10 @@ from .api import TwitterCall, wrap_response, TwitterHTTPError
 
 class TwitterJSONIter(object):
 
-    def __init__(self, handle, uri, arg_data, block=True, timeout=None, display_sizes=False):
+    def __init__(self, handle, uri, arg_data, block=True,
+                 timeout=None, display_sizes=False):
+        self.uri = uri
+        self.arg_data = arg_data
         self.decoder = json.JSONDecoder()
         self.handle = handle
         self.buf = b""
@@ -52,8 +55,6 @@ class TwitterJSONIter(object):
                     pass
                 else:
                     yield None
-            except urllib_error.HTTPError as e:
-                raise TwitterHTTPError(e, uri, self.format, arg_data)
             # this is a non-blocking read (ie, it will return if any data is available)
             try:
                 if self.timeout:
@@ -68,12 +69,15 @@ class TwitterJSONIter(object):
                     # Apparently this means there was nothing in the socket buf
                     pass
                 else:
-                    raise
+                    raise TwitterHTTPError(e, self.uri, self.arg_data)
 
 def handle_stream_response(req, uri, arg_data, block=True, timeout=None):
-    handle = urllib_request.urlopen(req,)
-    return iter(TwitterJSONIter(handle, uri, arg_data, block, timeout=timeout,
+    try:
+        handle = urllib_request.urlopen(req,)
+        return iter(TwitterJSONIter(handle, uri, arg_data, block, timeout=timeout,
             display_sizes=("delimited=length" in req.get_data().lower())))
+    except urllib_error.HTTPError as e:
+        raise TwitterHTTPError(e, uri, arg_data)
 
 class TwitterStreamCallWithTimeout(TwitterCall):
     def _handle_response(self, req, uri, arg_data, _timeout=None):
