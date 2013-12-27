@@ -32,11 +32,16 @@ class TwitterJSONIter(object):
         if not self.block or self.timeout:
             sock.setblocking(False)
         while True:
+            utf8_buf = self.buf.decode('utf8').lstrip()
+            pos = utf8_buf.find('{')
+            if pos != -1:
+                utf8_buf = utf8_buf[pos:]
+                self.buf = utf8_buf.encode('utf-8')
             try:
-                utf8_buf = self.buf.decode('utf8').lstrip()
                 res, ptr = self.decoder.raw_decode(utf8_buf)
                 self.buf = utf8_buf[ptr:].encode('utf8')
-                yield wrap_response(res, self.handle.headers)
+                if isinstance(res, dict):
+                    yield wrap_response(res, self.handle.headers)
                 self.timer = time.time()
                 continue
             except ValueError as e:
