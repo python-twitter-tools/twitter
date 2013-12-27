@@ -57,15 +57,12 @@ class TwitterJSONIter(object):
             # this is a non-blocking read (ie, it will return if any data is available)
             try:
                 if self.timeout:
-                    ready_to_read = select.select([sock], [], [], self.timeout)
-                    if ready_to_read[0]:
-                        self.buf += sock.recv(1024)
-                        if time.time() - self.timer > self.timeout:
+                    if not self.buf.strip():
+                        ready_to_read = select.select([sock], [], [], self.timeout)
+                        if not ready_to_read[0] and time.time() - self.timer > self.timeout:
                             yield {"timeout":True}
-                    else:
-                        yield {"timeout":True}
-                else:
-                    self.buf += sock.recv(1024)
+                            continue
+                self.buf += sock.recv(1024)
             except SSLError as e:
                 if (not self.block or self.timeout) and (e.errno == 2):
                     # Apparently this means there was nothing in the socket buf
