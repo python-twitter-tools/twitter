@@ -128,7 +128,7 @@ class TwitterCall(object):
 
     def __init__(
         self, auth, format, domain, callable_cls, uri="",
-        uriparts=None, secure=True, timeout=None, gzip=False):
+        uriparts=None, secure=True, timeout=None, gzip=True):
         self.auth = auth
         self.format = format
         self.domain = domain
