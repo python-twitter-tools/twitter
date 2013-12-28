@@ -8,7 +8,7 @@
 POST_ACTIONS = [
 
     # Status Methods
-    'update', 'retweet',
+    'update', 'retweet', 'update_with_media',
 
     # Direct Message Methods
     'new',

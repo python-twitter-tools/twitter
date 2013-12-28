@@ -195,17 +195,46 @@ class TwitterCall(object):
         uriBase = "http%s://%s/%s%s%s" %(
                     secure_str, self.domain, uri, dot, self.format)
 
+        # Catch media arguments to handle oauth query differently for multipart
+        media = None
+        for arg in ['media[]', 'banner', 'image']:
+            if arg in kwargs:
+                media = kwargs.pop(arg)
+                mediafield = arg
+                break
+
         headers = {}
         if self.gzip:
             headers['Accept-Encoding'] = 'gzip'
         if self.auth:
             headers.update(self.auth.generate_headers())
-            arg_data = self.auth.encode_params(uriBase, method, kwargs)
-            if method == 'GET':
+            # Use urlencoded oauth args with no params when sending media
+            # via multipart and send it directly via uri even for post
+            arg_data = self.auth.encode_params(uriBase, method,
+                {} if media else kwargs )
+            if method == 'GET' or media:
                 uriBase += '?' + arg_data
                 body = None
             else:
                 body = arg_data.encode('utf8')
+
+        # Handle query as multipart when sending media
+        if media:
+            BOUNDARY = "###Python-Twitter###"
+            bod = []
+            bod.append('--' + BOUNDARY)
+            bod.append('Content-Disposition: form-data; name="%s"' %
+                mediafield)
+            bod.append('')
+            bod.append(media)
+            for k, v in kwargs.items():
+                bod.append('--' + BOUNDARY)
+                bod.append('Content-Disposition: form-data; name="%s"' % k)
+                bod.append('')
+                bod.append(v)
+            bod.append('--' + BOUNDARY + '--')
+            body = '\r\n'.join(bod)
+            headers['Content-Type'] = 'multipart/form-data; boundary=%s' % BOUNDARY
 
         req = urllib_request.Request(uriBase, body, headers)
         return self._handle_response(req, uri, arg_data, _timeout)
