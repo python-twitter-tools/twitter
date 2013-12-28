@@ -128,9 +128,9 @@ def urlencode_noplus(query):
         TILDE = '____TILDE-PYTHON-TWITTER____'
         for k,v in query:
             if type(k) is unicode: k = k.encode('utf-8')
-            k = k.replace("~", TILDE)
+            k = str(k).replace("~", TILDE)
             if type(v) is unicode: v = v.encode('utf-8')
-            v = v.replace("~", TILDE)
+            v = str(v).replace("~", TILDE)
             new_query.append((k, v))
         query = new_query
         return urlencode(query).replace(TILDE, "~").replace("+", "%20")
