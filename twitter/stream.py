@@ -69,7 +69,7 @@ class TwitterJSONIter(object):
                     # Apparently this means there was nothing in the socket buf
                     pass
                 else:
-                    raise TwitterHTTPError(e, self.uri, self.arg_data)
+                    raise TwitterHTTPError(e, self.uri, "json", self.arg_data)
 
 def handle_stream_response(req, uri, arg_data, block=True, timeout=None):
     try:
@@ -77,7 +77,7 @@ def handle_stream_response(req, uri, arg_data, block=True, timeout=None):
         return iter(TwitterJSONIter(handle, uri, arg_data, block, timeout=timeout,
             display_sizes=("delimited=length" in req.get_data().lower())))
     except urllib_error.HTTPError as e:
-        raise TwitterHTTPError(e, uri, arg_data)
+        raise TwitterHTTPError(e, uri, "json", arg_data)
 
 class TwitterStreamCallWithTimeout(TwitterCall):
     def _handle_response(self, req, uri, arg_data, _timeout=None):
