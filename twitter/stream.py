@@ -51,7 +51,7 @@ class TwitterJSONIter(object):
                 self.timer = time.time()
                 continue
             except ValueError as e:
-                if self.block:
+                if self.block and not self.timeout:
                     pass
                 else:
                     yield None
