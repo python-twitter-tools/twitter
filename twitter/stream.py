@@ -5,12 +5,19 @@ try:
 except ImportError:
     import urllib2 as urllib_request
     import urllib2 as urllib_error
+import re
 import json
 from ssl import SSLError
 import socket
 import sys, select, time
 
 from .api import TwitterCall, wrap_response, TwitterHTTPError
+
+re_clean_hexa = re.compile(r"^[\n\r\s]*[a-f\d]+[\n\r]+")
+re_clean_hexa2 = re.compile(r"[\n\r]+[a-f\d]+[\n\r]+")
+def clean_hexa(t):
+    t = re_clean_hexa.sub('', t)
+    return re_clean_hexa2.sub('', t)
 
 class TwitterJSONIter(object):
 
@@ -35,14 +42,14 @@ class TwitterJSONIter(object):
         if not self.block or self.timeout:
             sock.setblocking(False)
         while True:
-            utf8_buf = self.buf.decode('utf8').lstrip()
+            utf8_buf = self.buf.decode('utf8')
             pos = utf8_buf.find('{')
             if pos != -1:
                 if self.display_sizes:
                     for size in utf8_buf[:pos].split('\n'):
                         yield wrap_response(size.strip(), self.handle.headers)
                 utf8_buf = utf8_buf[pos:]
-                self.buf = utf8_buf.encode('utf-8')
+            self.buf = utf8_buf.encode('utf8')
             try:
                 res, ptr = self.decoder.raw_decode(utf8_buf)
                 self.buf = utf8_buf[ptr:].encode('utf8')
@@ -57,13 +64,14 @@ class TwitterJSONIter(object):
                     yield None
             # this is a non-blocking read (ie, it will return if any data is available)
             try:
-                if self.timeout:
-                    if not self.buf.strip():
-                        ready_to_read = select.select([sock], [], [], self.timeout)
-                        if not ready_to_read[0] and time.time() - self.timer > self.timeout:
-                            yield {"timeout":True}
-                            continue
-                self.buf += sock.recv(1024)
+                if self.timeout and not self.buf:
+                    ready_to_read = select.select([sock], [], [], self.timeout)
+                    if not ready_to_read[0] and time.time() - self.timer > self.timeout:
+                        yield {"timeout":True}
+                        continue
+                self.buf += clean_hexa(sock.recv(1024)).strip('\n\r')
+                if self.timeout and not self.buf and time.time() - self.timer > self.timeout:
+                    yield {"timeout":True}
             except SSLError as e:
                 if (not self.block or self.timeout) and (e.errno == 2):
                     # Apparently this means there was nothing in the socket buf
