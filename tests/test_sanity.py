@@ -47,9 +47,9 @@ def test_search():
     assert results
 
 
-def test_get_trends_3():
-    # Of course they broke it all again in 1.1...
-    assert twitter11.trends.place(_id=1)
+#def test_get_trends_3():
+#    # Of course they broke it all again in 1.1...
+#    assert twitter11.trends.place(_id=1)
 
 def test_TwitterHTTPError_raised_for_invalid_oauth():
     test_passed = False
