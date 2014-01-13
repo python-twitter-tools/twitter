@@ -14,14 +14,17 @@ from .api import TwitterCall, wrap_response, TwitterHTTPError
 
 class TwitterJSONIter(object):
 
-    def __init__(self, handle, uri, arg_data, block=True, timeout=None):
+    def __init__(self, handle, uri, arg_data, block=True,
+                 timeout=None, display_sizes=False):
+        self.uri = uri
+        self.arg_data = arg_data
         self.decoder = json.JSONDecoder()
         self.handle = handle
         self.buf = b""
         self.block = block
         self.timeout = timeout
         self.timer = time.time()
-
+        self.display_sizes = display_sizes
 
     def __iter__(self):
         if sys.version_info >= (3, 0):
@@ -32,32 +35,41 @@ class TwitterJSONIter(object):
         if not self.block or self.timeout:
             sock.setblocking(False)
         while True:
+            utf8_buf = self.buf.decode('utf8').lstrip()
+            pos = utf8_buf.find('{')
+            if pos != -1:
+                if self.display_sizes:
+                    for size in utf8_buf[:pos].split('\n'):
+                        yield wrap_response(size.strip(), self.handle.headers)
+                utf8_buf = utf8_buf[pos:]
+                self.buf = utf8_buf.encode('utf-8')
             try:
-                utf8_buf = self.buf.decode('utf8').lstrip()
                 res, ptr = self.decoder.raw_decode(utf8_buf)
                 self.buf = utf8_buf[ptr:].encode('utf8')
-                yield wrap_response(res, self.handle.headers)
+                if isinstance(res, dict) or self.display_sizes:
+                    yield wrap_response(res, self.handle.headers)
                 self.timer = time.time()
                 continue
             except ValueError as e:
-                if self.block:
+                if self.block and not self.timeout:
                     pass
                 else:
                     yield None
-            except urllib_error.HTTPError as e:
-                raise TwitterHTTPError(e, uri, self.format, arg_data)
             # this is a non-blocking read (ie, it will return if any data is available)
             try:
                 if self.timeout:
-                    ready_to_read = select.select([sock], [], [], self.timeout)
-                    if ready_to_read[0]:
-                        self.buf += sock.recv(1024)
-                        if time.time() - self.timer > self.timeout:
+                    if not self.buf.strip():
+                        ready_to_read = select.select([sock], [], [], self.timeout)
+                        if not ready_to_read[0] and time.time() - self.timer > self.timeout:
                             yield {"timeout":True}
                     else:
                         yield {"timeout":True}
                 else:
-                    self.buf += sock.recv(1024)
+                    received = sock.recv(1024)
+                    if self.block and not received:
+                        # Receiving nothing means Twitter hung up on us
+                        return
+                    self.buf += received
             except SSLError as e:
                 if (not self.block or self.timeout) and (e.errno == 2):
                     # Apparently this means there was nothing in the socket buf
@@ -65,17 +77,21 @@ class TwitterJSONIter(object):
                 else:
                     raise
 
-def handle_stream_response(req, uri, arg_data, block, timeout=None):
-    handle = urllib_request.urlopen(req,)
-    return iter(TwitterJSONIter(handle, uri, arg_data, block, timeout=timeout))
+def handle_stream_response(req, uri, arg_data, block=True, timeout=None):
+    try:
+        handle = urllib_request.urlopen(req,)
+        return iter(TwitterJSONIter(handle, uri, arg_data, block, timeout=timeout,
+            display_sizes=("delimited=length" in req.get_data().lower())))
+    except urllib_error.HTTPError as e:
+        raise TwitterHTTPError(e, uri, "json", arg_data)
 
 class TwitterStreamCallWithTimeout(TwitterCall):
     def _handle_response(self, req, uri, arg_data, _timeout=None):
-        return handle_stream_response(req, uri, arg_data, block=True, timeout=self.timeout)
+        return handle_stream_response(req, uri, arg_data, timeout=self.timeout)
 
 class TwitterStreamCall(TwitterCall):
     def _handle_response(self, req, uri, arg_data, _timeout=None):
-        return handle_stream_response(req, uri, arg_data, block=True)
+        return handle_stream_response(req, uri, arg_data)
 
 class TwitterStreamCallNonBlocking(TwitterCall):
     def _handle_response(self, req, uri, arg_data, _timeout=None):
@@ -119,4 +135,4 @@ class TwitterStream(TwitterStreamCall):
         TwitterStreamCall.__init__(
             self, auth=auth, format="json", domain=domain,
             callable_cls=call_cls,
-            secure=secure, uriparts=uriparts, timeout=timeout)
+            secure=secure, uriparts=uriparts, timeout=timeout, gzip=False)
