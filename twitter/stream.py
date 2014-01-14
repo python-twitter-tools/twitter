@@ -82,8 +82,11 @@ class TwitterJSONIter(object):
 def handle_stream_response(req, uri, arg_data, block=True, timeout=None):
     try:
         handle = urllib_request.urlopen(req,)
+        display_sizes = False
+        if req.data:
+            display_sizes = ("delimited=length" in req.data.lower())
         return iter(TwitterJSONIter(handle, uri, arg_data, block, timeout=timeout,
-            display_sizes=("delimited=length" in req.get_data().lower())))
+            display_sizes=display_sizes))
     except urllib_error.HTTPError as e:
         raise TwitterHTTPError(e, uri, "json", arg_data)
 
