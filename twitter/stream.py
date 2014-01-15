@@ -17,6 +17,8 @@ class TwitterJSONIter(object):
     def __init__(self, handle, uri, arg_data, block=True, timeout=None):
         self.decoder = json.JSONDecoder()
         self.handle = handle
+        self.uri = uri
+        self.arg_data = arg_data
         self.buf = b""
         self.block = block
         self.timeout = timeout
@@ -45,7 +47,7 @@ class TwitterJSONIter(object):
                 else:
                     yield None
             except urllib_error.HTTPError as e:
-                raise TwitterHTTPError(e, uri, self.format, arg_data)
+                raise TwitterHTTPError(e, self.uri, "json", self.arg_data)
             # this is a non-blocking read (ie, it will return if any data is available)
             try:
                 if self.timeout:
@@ -64,18 +66,20 @@ class TwitterJSONIter(object):
                     pass
                 else:
                     raise
+            except urllib_error.HTTPError as e:
+                raise TwitterHTTPError(e, self.uri, "json", self.arg_data)
 
-def handle_stream_response(req, uri, arg_data, block, timeout=None):
+def handle_stream_response(req, uri, arg_data, block=True, timeout=None):
     handle = urllib_request.urlopen(req,)
     return iter(TwitterJSONIter(handle, uri, arg_data, block, timeout=timeout))
 
 class TwitterStreamCallWithTimeout(TwitterCall):
     def _handle_response(self, req, uri, arg_data, _timeout=None):
-        return handle_stream_response(req, uri, arg_data, block=True, timeout=self.timeout)
+        return handle_stream_response(req, uri, arg_data, timeout=self.timeout)
 
 class TwitterStreamCall(TwitterCall):
     def _handle_response(self, req, uri, arg_data, _timeout=None):
-        return handle_stream_response(req, uri, arg_data, block=True)
+        return handle_stream_response(req, uri, arg_data)
 
 class TwitterStreamCallNonBlocking(TwitterCall):
     def _handle_response(self, req, uri, arg_data, _timeout=None):
