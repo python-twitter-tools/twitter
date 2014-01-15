@@ -146,9 +146,9 @@ class TwitterCall(object):
             def extend_call(arg):
                 return self.callable_cls(
                     auth=self.auth, format=self.format, domain=self.domain,
-                    callable_cls=self.callable_cls, timeout=self.timeout, uriparts=self.uriparts,
+                    callable_cls=self.callable_cls, timeout=self.timeout,
                     secure=self.secure, gzip=self.gzip,
-                    (arg,))
+                    uriparts=self.uriparts + (arg,))
             if k == "_":
                 return extend_call
             else:
