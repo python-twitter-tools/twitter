@@ -36,6 +36,9 @@ class TwitterJSONIter(object):
         while True:
             try:
                 utf8_buf = self.buf.decode('utf8').lstrip()
+                if utf8_buf and utf8_buf[0] != '{':  # Remove the hex delimiter length and extra whitespace.
+                    utf8_buf = utf8_buf.lstrip('0123456789abcdefABCDEF')
+                    utf8_buf = utf8_buf.lstrip()
                 res, ptr = self.decoder.raw_decode(utf8_buf)
                 self.buf = utf8_buf[ptr:].encode('utf8')
                 yield wrap_response(res, self.handle.headers)
@@ -46,8 +49,8 @@ class TwitterJSONIter(object):
                     pass
                 else:
                     yield None
-            except urllib_error.HTTPError as e:
-                raise TwitterHTTPError(e, self.uri, "json", self.arg_data)
+            except urllib_error.HTTPError as e:  # Probably unnecessary, no dynamic url calls in the try block.
+                raise TwitterHTTPError(e, self.uri, 'json', self.arg_data)
             # this is a non-blocking read (ie, it will return if any data is available)
             try:
                 if self.timeout:
@@ -59,7 +62,7 @@ class TwitterJSONIter(object):
                     else:
                         yield {"timeout":True}
                 else:
-                    self.buf += sock.recv(1024)
+                    self.buf += sock.recv(1024)  # As tweets are typically longer than 1KB, consider increasing this size.
             except SSLError as e:
                 if (not self.block or self.timeout) and (e.errno == 2):
                     # Apparently this means there was nothing in the socket buf
@@ -67,19 +70,19 @@ class TwitterJSONIter(object):
                 else:
                     raise
             except urllib_error.HTTPError as e:
-                raise TwitterHTTPError(e, self.uri, "json", self.arg_data)
+                raise TwitterHTTPError(e, self.uri, 'json', self.arg_data)
 
-def handle_stream_response(req, uri, arg_data, block=True, timeout=None):
+def handle_stream_response(req, uri, arg_data, block, timeout=None):
     handle = urllib_request.urlopen(req,)
     return iter(TwitterJSONIter(handle, uri, arg_data, block, timeout=timeout))
 
 class TwitterStreamCallWithTimeout(TwitterCall):
     def _handle_response(self, req, uri, arg_data, _timeout=None):
-        return handle_stream_response(req, uri, arg_data, timeout=self.timeout)
+        return handle_stream_response(req, uri, arg_data, block=True, timeout=self.timeout)
 
 class TwitterStreamCall(TwitterCall):
     def _handle_response(self, req, uri, arg_data, _timeout=None):
-        return handle_stream_response(req, uri, arg_data)
+        return handle_stream_response(req, uri, arg_data, block=True)
 
 class TwitterStreamCallNonBlocking(TwitterCall):
     def _handle_response(self, req, uri, arg_data, _timeout=None):
