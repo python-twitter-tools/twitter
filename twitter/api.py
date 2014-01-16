@@ -203,7 +203,7 @@ class TwitterCall(object):
                 mediafield = arg
                 break
 
-        headers['Accept-Encoding'] = 'gzip' if self.gzip else dict()
+        headers = {'Accept-Encoding': 'gzip'} if self.gzip else dict()
         if self.auth:
             headers.update(self.auth.generate_headers())
             # Use urlencoded oauth args with no params when sending media
