@@ -289,11 +289,8 @@ class Twitter(TwitterCall):
         # Get your "home" timeline
         t.statuses.home_timeline()
 
-        # Get a particular friend's timeline
-        t.statuses.friends_timeline(id="billybob")
-
-        # Also supported (but totally weird)
-        t.statuses.friends_timeline.billybob()
+        # Get a particular friend's tweets
+        t.statuses.user_timeline(user_id="billybob")
 
         # Update your status
         t.statuses.update(

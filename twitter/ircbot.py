@@ -164,7 +164,7 @@ class TwitterBot(object):
     def check_statuses(self):
         debug("In check_statuses")
         try:
-            updates = reversed(self.twitter.statuses.friends_timeline())
+            updates = reversed(self.twitter.statuses.home_timeline())
         except Exception as e:
             print("Exception while querying twitter:", file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
