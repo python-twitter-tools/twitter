@@ -148,7 +148,6 @@ class TwitterBot(object):
         self.twitter = Twitter(
             auth=OAuth(
                 oauth_token, oauth_secret, CONSUMER_KEY, CONSUMER_SECRET),
-            api_version='1',
             domain='api.twitter.com')
 
         self.irc = irclib.IRC()
