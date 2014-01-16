@@ -62,7 +62,7 @@ class TwitterJSONIter(object):
                     else:
                         yield {"timeout":True}
                 else:
-                    self.buf += sock.recv(1024)  # As tweets are typically longer than 1KB, consider increasing this size.
+                    self.buf += sock.recv(2048)
             except SSLError as e:
                 if (not self.block or self.timeout) and (e.errno == 2):
                     # Apparently this means there was nothing in the socket buf
