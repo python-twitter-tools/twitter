@@ -13,11 +13,11 @@ import sys, select, time
 
 from .api import TwitterCall, wrap_response, TwitterHTTPError
 
-re_clean_hexa = re.compile(r"^[\n\r\s]*[a-f\d]+[\n\r]+")
-re_clean_hexa2 = re.compile(r"[\n\r]+[a-f\d]+[\n\r]+")
+re_clean_hexa = re.compile(b"^[\n\r\s]*[a-f\d]+[\n\r]+")
+re_clean_hexa2 = re.compile(b"[\n\r]+[a-f\d]+[\n\r]+")
 def clean_hexa(t):
-    t = re_clean_hexa.sub('', t)
-    return re_clean_hexa2.sub('', t)
+    t = re_clean_hexa.sub(b'', t)
+    return re_clean_hexa2.sub(b'', t)
 
 class TwitterJSONIter(object):
 
@@ -49,7 +49,7 @@ class TwitterJSONIter(object):
                     for size in utf8_buf[:pos].split('\n'):
                         yield wrap_response(size.strip(), self.handle.headers)
                 utf8_buf = utf8_buf[pos:]
-            self.buf = utf8_buf.encode('utf8')
+            self.buf = utf8_buf.strip("\n\r").encode('utf8')
             try:
                 res, ptr = self.decoder.raw_decode(utf8_buf)
                 self.buf = utf8_buf[ptr:].encode('utf8')
@@ -69,7 +69,7 @@ class TwitterJSONIter(object):
                     if not ready_to_read[0] and time.time() - self.timer > self.timeout:
                         yield {"timeout":True}
                         continue
-                self.buf += clean_hexa(sock.recv(1024)).strip('\n\r')
+                self.buf += clean_hexa(sock.recv(1024))
                 if self.timeout and not self.buf and time.time() - self.timer > self.timeout:
                     yield {"timeout":True}
             except SSLError as e:
@@ -84,7 +84,7 @@ def handle_stream_response(req, uri, arg_data, block=True, timeout=None):
         handle = urllib_request.urlopen(req,)
         display_sizes = False
         if req.data:
-            display_sizes = ("delimited=length" in req.data.lower())
+            display_sizes = ("delimited=length" in str(req.data.lower()))
         return iter(TwitterJSONIter(handle, uri, arg_data, block, timeout=timeout,
             display_sizes=display_sizes))
     except urllib_error.HTTPError as e:
