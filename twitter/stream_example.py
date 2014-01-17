@@ -4,25 +4,39 @@ from the "sample" stream as fast as possible.
 
 USAGE
 
-  twitter-stream-example <username> <password>
+  stream-example -t <token> -ts <token_secret> -ck <consumer_key> -cs <consumer_secret>
 
 """
 
 from __future__ import print_function
 
-import sys
+import argparse
 
-from .stream import TwitterStream
-from .auth import UserPassAuth
-from .util import printNicely
+from twitter.stream import TwitterStream
+from twitter.oauth import OAuth
+from twitter.util import printNicely
 
-def main(args=sys.argv[1:]):
-    if not args[1:]:
-        print(__doc__)
-        return 1
 
-    # When using twitter stream you must authorize. UserPass or OAuth.
-    stream = TwitterStream(auth=UserPassAuth(args[0], args[1]))
+def parse_arguments():
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-t',  '--token', help='The Twitter Access Token.')
+    parser.add_argument('-ts', '--token_secret', help='The Twitter Access Token Secret.')
+    parser.add_argument('-ck', '--consumer_key', help='The Twitter Consumer Key.')
+    parser.add_argument('-cs', '--consumer_secret', help='The Twitter Consumer Secret.')
+
+    return parser.parse_args()
+
+##  parse_arguments()
+
+
+def main():
+
+    args = parse_arguments()
+
+    # When using twitter stream you must authorize.
+    stream = TwitterStream(auth=OAuth(args.token, args.token_secret, args.consumer_key, args.consumer_secret))
 
     # Iterate over the sample stream.
     tweet_iter = stream.statuses.sample()
@@ -31,3 +45,8 @@ def main(args=sys.argv[1:]):
         # or data message.
         if tweet.get('text'):
             printNicely(tweet['text'])
+
+##  main()
+
+if __name__ == '__main__':
+    main()
