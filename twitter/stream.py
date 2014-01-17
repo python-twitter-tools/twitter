@@ -25,6 +25,29 @@ class TwitterJSONIter(object):
         self.timer = time.time()
 
 
+    def recv_chunk(self, sock):
+        buf = sock.recv(32)
+        if buf:
+            # Find the HTTP chunk size.
+            decoded = buf.decode('utf-8')  # Use UTF-8 instead of ASCII because the data contains JSON, a UTF-8 format.
+            start = decoded.find('\r\n')
+            if start > 0:
+                # Decode the chunk size.
+                remaining = int(decoded[:start], 16)
+                chunk = buf[start + 2:]  # Add the length of the CRLF pair.
+                remaining -= len(chunk)
+
+                while remaining > 0:
+
+                    balance = sock.recv(remaining + 2)  # Add the length of the chunk's CRLF pair.
+                    if balance:
+                        chunk += balance
+                        remaining -= len(balance)
+                # If necessary, remove the trailing CRLF pair. (This precludes an extra trip through the JSON parser.)
+                return chunk[:-2] if remaining == -2 and chunk[-2] == 0x0d and chunk[-1] == 0x0a else chunk
+        return b''
+
+
     def __iter__(self):
         if sys.version_info >= (3, 0):
             sock = self.handle.fp.raw._sock
@@ -36,9 +59,6 @@ class TwitterJSONIter(object):
         while True:
             try:
                 utf8_buf = self.buf.decode('utf8').lstrip()
-                if utf8_buf and utf8_buf[0] != '{':  # Remove the hex delimiter length and extra whitespace.
-                    utf8_buf = utf8_buf.lstrip('0123456789abcdefABCDEF')
-                    utf8_buf = utf8_buf.lstrip()
                 res, ptr = self.decoder.raw_decode(utf8_buf)
                 self.buf = utf8_buf[ptr:].encode('utf8')
                 yield wrap_response(res, self.handle.headers)
@@ -49,20 +69,18 @@ class TwitterJSONIter(object):
                     pass
                 else:
                     yield None
-            except urllib_error.HTTPError as e:  # Probably unnecessary, no dynamic url calls in the try block.
-                raise TwitterHTTPError(e, self.uri, 'json', self.arg_data)
             # this is a non-blocking read (ie, it will return if any data is available)
             try:
                 if self.timeout:
                     ready_to_read = select.select([sock], [], [], self.timeout)
                     if ready_to_read[0]:
-                        self.buf += sock.recv(1024)
+                        self.buf += self.recv_chunk(sock)
                         if time.time() - self.timer > self.timeout:
                             yield {"timeout":True}
                     else:
                         yield {"timeout":True}
                 else:
-                    self.buf += sock.recv(2048)
+                    self.buf += self.recv_chunk(sock)
             except SSLError as e:
                 if (not self.block or self.timeout) and (e.errno == 2):
                     # Apparently this means there was nothing in the socket buf
