@@ -196,12 +196,12 @@ class TwitterCall(object):
                     secure_str, self.domain, uri, dot, self.format)
 
         headers = {'Accept-Encoding': 'gzip'} if self.gzip else dict()
+        body = None; arg_data = None
         if self.auth:
             headers.update(self.auth.generate_headers())
             arg_data = self.auth.encode_params(uriBase, method, kwargs)
             if method == 'GET':
                 uriBase += '?' + arg_data
-                body = None
             else:
                 body = arg_data.encode('utf8')
 

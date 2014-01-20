@@ -25,6 +25,8 @@ def parse_arguments():
     parser.add_argument('-ts', '--token_secret', help='The Twitter Access Token Secret.')
     parser.add_argument('-ck', '--consumer_key', help='The Twitter Consumer Key.')
     parser.add_argument('-cs', '--consumer_secret', help='The Twitter Consumer Secret.')
+    parser.add_argument('-us', '--user_stream', action='store_true', help='Connect to the user stream endpoint.')
+    parser.add_argument('-ss', '--site_stream', action='store_true', help='Connect to the site stream endpoint.')
 
     return parser.parse_args()
 
@@ -36,10 +38,18 @@ def main():
     args = parse_arguments()
 
     # When using twitter stream you must authorize.
-    stream = TwitterStream(auth=OAuth(args.token, args.token_secret, args.consumer_key, args.consumer_secret))
+    auth = OAuth(args.token, args.token_secret, args.consumer_key, args.consumer_secret)
+    if args.user_stream:
+        stream = TwitterStream(auth=auth, domain='userstream.twitter.com')
+        tweet_iter = stream.user()
+    elif args.site_stream:
+        stream = TwitterStream(auth=auth, domain='sitestream.twitter.com')
+        tweet_iter = stream.site()
+    else:
+        stream = TwitterStream(auth=auth)
+        tweet_iter = stream.statuses.sample()
 
     # Iterate over the sample stream.
-    tweet_iter = stream.statuses.sample()
     for tweet in tweet_iter:
         # You must test that your tweet has text. It might be a delete
         # or data message.
