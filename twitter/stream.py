@@ -38,7 +38,6 @@ class TwitterJSONIter(object):
                 remaining -= len(chunk)
 
                 while remaining > 0:
-
                     balance = sock.recv(remaining + 2)  # Add the length of the chunk's CRLF pair.
                     if balance:
                         chunk += balance
