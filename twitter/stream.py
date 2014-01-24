@@ -28,11 +28,10 @@ class TwitterJSONIter(object):
     def recv_chunk(self, sock):
         buf = sock.recv(32)
         if buf:
-            # Find the HTTP chunk size.
-            crlf = buf.find(b'\r\n')
+            crlf = buf.find(b'\r\n')  # Find the HTTP chunk size.
             if crlf > 0:
                 remaining = int(buf[:crlf].decode(), 16)  # Decode the chunk size.
-                chunk = bytearray(buf[crlf + 2:])  # Add the length of the length header CRLF pair.
+                chunk = bytearray(buf[crlf + 2:])  # Create the chunk buffer.
                 remaining -= len(chunk)
 
                 while remaining > 0:
