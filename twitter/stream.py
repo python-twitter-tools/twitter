@@ -28,22 +28,21 @@ class TwitterJSONIter(object):
     def recv_chunk(self, sock):
         buf = sock.recv(32)
         if buf:
-            # Find the HTTP chunk size.
-            decoded = buf.decode('utf-8')  # Use UTF-8 instead of ASCII because the data contains JSON, a UTF-8 format.
-            start = decoded.find('\r\n')
-            if start > 0:
-                # Decode the chunk size.
-                remaining = int(decoded[:start], 16)
-                chunk = buf[start + 2:]  # Add the length of the CRLF pair.
+            crlf = buf.find(b'\r\n')  # Find the HTTP chunk size.
+            if crlf > 0:
+                remaining = int(buf[:crlf].decode(), 16)  # Decode the chunk size.
+                chunk = bytearray(buf[crlf + 2:])  # Create the chunk buffer.
                 remaining -= len(chunk)
 
                 while remaining > 0:
                     balance = sock.recv(remaining + 2)  # Add the length of the chunk's CRLF pair.
                     if balance:
-                        chunk += balance
+                        chunk.extend(balance)
                         remaining -= len(balance)
-                # If necessary, remove the trailing CRLF pair. (This precludes an extra trip through the JSON parser.)
-                return chunk[:-2] if remaining == -2 and chunk[-2] == 0x0d and chunk[-1] == 0x0a else chunk
+                # If possible, remove the trailing CRLF pair. (This precludes an extra trip through the JSON parser.)
+                if remaining == -2 and chunk[-2] == 0x0d and chunk[-1] == 0x0a:
+                    del chunk[-2:]
+                return chunk
         return b''
 
 
