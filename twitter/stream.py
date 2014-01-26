@@ -41,10 +41,8 @@ class TwitterJSONIter(object):
         self.handle = handle
         self.uri = uri
         self.arg_data = arg_data
-        self.buf = b""
         self.block = block
         self.timeout = timeout
-        self.timer = time.time()
 
 
     def __iter__(self):
@@ -55,13 +53,15 @@ class TwitterJSONIter(object):
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         if not self.block or self.timeout:
             sock.setblocking(False)
+        buf = b''
+        timer = time.time()
         while True:
             try:
-                utf8_buf = self.buf.decode('utf8').lstrip()
+                utf8_buf = buf.decode('utf-8').lstrip()
                 res, ptr = self.decoder.raw_decode(utf8_buf)
-                self.buf = utf8_buf[ptr:].encode('utf8')
+                buf = utf8_buf[ptr:].encode('utf-8')
                 yield wrap_response(res, self.handle.headers)
-                self.timer = time.time()
+                timer = time.time()
                 continue
             except ValueError as e:
                 if self.block:
@@ -73,13 +73,13 @@ class TwitterJSONIter(object):
                 if self.timeout:
                     ready_to_read = select.select([sock], [], [], self.timeout)
                     if ready_to_read[0]:
-                        self.buf += recv_chunk(sock)
-                        if time.time() - self.timer > self.timeout:
+                        buf += recv_chunk(sock)
+                        if time.time() - timer > self.timeout:
                             yield {"timeout":True}
                     else:
                         yield {"timeout":True}
                 else:
-                    self.buf += recv_chunk(sock)
+                    buf += recv_chunk(sock)
             except SSLError as e:
                 if (not self.block or self.timeout) and (e.errno == 2):
                     # Apparently this means there was nothing in the socket buf
