@@ -12,6 +12,28 @@ import sys, select, time
 
 from .api import TwitterCall, wrap_response, TwitterHTTPError
 
+def recv_chunk(sock):
+    buf = sock.recv(10)  # Scan for an up to a 4GiB chunk size (0xffffffff).
+    if buf:
+        crlf = buf.find(b'\r\n')  # Find the HTTP chunk size.
+        if crlf > 0:
+            remaining = int(buf[:crlf], 16)  # Decode the chunk size.
+            chunk = bytearray(remaining)  # Create the chunk buffer.
+
+            start = crlf + 2  # Add in the length of the header's CRLF pair.
+            end = len(buf) - start
+
+            chunk[:end] = buf[start:]
+            chunk[end:] = sock.recv(remaining - end)
+
+            sock.recv(2)  # Read the trailing CRLF pair. Throw it away.
+
+            return chunk
+    return b''
+
+##  recv_chunk()
+
+
 class TwitterJSONIter(object):
 
     def __init__(self, handle, uri, arg_data, block=True, timeout=None):
@@ -23,27 +45,6 @@ class TwitterJSONIter(object):
         self.block = block
         self.timeout = timeout
         self.timer = time.time()
-
-
-    def recv_chunk(self, sock):
-        buf = sock.recv(32)
-        if buf:
-            crlf = buf.find(b'\r\n')  # Find the HTTP chunk size.
-            if crlf > 0:
-                remaining = int(buf[:crlf].decode(), 16)  # Decode the chunk size.
-                chunk = bytearray(buf[crlf + 2:])  # Create the chunk buffer.
-                remaining -= len(chunk)
-
-                while remaining > 0:
-                    balance = sock.recv(remaining + 2)  # Add the length of the chunk's CRLF pair.
-                    if balance:
-                        chunk.extend(balance)
-                        remaining -= len(balance)
-                # If possible, remove the trailing CRLF pair. (This precludes an extra trip through the JSON parser.)
-                if remaining == -2 and chunk[-2] == 0x0d and chunk[-1] == 0x0a:
-                    del chunk[-2:]
-                return chunk
-        return b''
 
 
     def __iter__(self):
@@ -72,13 +73,13 @@ class TwitterJSONIter(object):
                 if self.timeout:
                     ready_to_read = select.select([sock], [], [], self.timeout)
                     if ready_to_read[0]:
-                        self.buf += self.recv_chunk(sock)
+                        self.buf += recv_chunk(sock)
                         if time.time() - self.timer > self.timeout:
                             yield {"timeout":True}
                     else:
                         yield {"timeout":True}
                 else:
-                    self.buf += self.recv_chunk(sock)
+                    self.buf += recv_chunk(sock)
             except SSLError as e:
                 if (not self.block or self.timeout) and (e.errno == 2):
                     # Apparently this means there was nothing in the socket buf
