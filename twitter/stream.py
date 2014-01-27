@@ -12,7 +12,8 @@ import sys, select, time
 
 from .api import TwitterCall, wrap_response, TwitterHTTPError
 
-def recv_chunk(sock):
+def recv_chunk(sock):  # -> bytearray:
+
     buf = sock.recv(10)  # Scan for an up to a 4GiB chunk size (0xffffffff).
     if buf:
         crlf = buf.find(b'\r\n')  # Find the HTTP chunk size.
@@ -29,7 +30,7 @@ def recv_chunk(sock):
             sock.recv(2)  # Read the trailing CRLF pair. Throw it away.
 
             return chunk
-    return b''
+    return bytearray()
 
 ##  recv_chunk()
 
@@ -37,7 +38,6 @@ def recv_chunk(sock):
 class TwitterJSONIter(object):
 
     def __init__(self, handle, uri, arg_data, block=True, timeout=None):
-        self.decoder = json.JSONDecoder()
         self.handle = handle
         self.uri = uri
         self.arg_data = arg_data
@@ -46,20 +46,18 @@ class TwitterJSONIter(object):
 
 
     def __iter__(self):
-        if sys.version_info >= (3, 0):
-            sock = self.handle.fp.raw._sock
-        else:
-            sock = self.handle.fp._sock.fp._sock
+        sock = self.handle.fp.raw._sock if sys.version_info >= (3, 0) else self.handle.fp._sock.fp._sock
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         if not self.block or self.timeout:
             sock.setblocking(False)
-        buf = b''
+        buf = u''
+        json_decoder = json.JSONDecoder()
         timer = time.time()
         while True:
             try:
-                utf8_buf = buf.decode('utf-8').lstrip()
-                res, ptr = self.decoder.raw_decode(utf8_buf)
-                buf = utf8_buf[ptr:].encode('utf-8')
+                buf = buf.lstrip()
+                res, ptr = json_decoder.raw_decode(buf)
+                buf = buf[ptr:]
                 yield wrap_response(res, self.handle.headers)
                 timer = time.time()
                 continue
@@ -73,13 +71,13 @@ class TwitterJSONIter(object):
                 if self.timeout:
                     ready_to_read = select.select([sock], [], [], self.timeout)
                     if ready_to_read[0]:
-                        buf += recv_chunk(sock)
+                        buf += recv_chunk(sock).decode('utf-8')
                         if time.time() - timer > self.timeout:
-                            yield {"timeout":True}
+                            yield {"timeout": True}
                     else:
-                        yield {"timeout":True}
+                        yield {"timeout": True}
                 else:
-                    buf += recv_chunk(sock)
+                    buf += recv_chunk(sock).decode('utf-8')
             except SSLError as e:
                 if (not self.block or self.timeout) and (e.errno == 2):
                     # Apparently this means there was nothing in the socket buf
