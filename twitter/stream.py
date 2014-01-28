@@ -70,6 +70,7 @@ class TwitterJSONIter(object):
                 else:
                     yield None
             try:
+                buf = buf.lstrip()  # Remove any keep-alive delimiters to detect hangups.
                 if self.timeout:  # this is a non-blocking read (ie, it will return if any data is available)
 
                     ready_to_read = select.select([sock], [], [], self.timeout)
