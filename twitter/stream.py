@@ -17,7 +17,7 @@ def recv_chunk(sock):  # -> bytearray:
     buf = sock.recv(8)  # Scan for an up to 16MiB chunk size (0xffffff).
     crlf = buf.find(b'\r\n')  # Find the HTTP chunk size.
 
-    if crlf > 0:  # Check because non-blocking calls can return empty data.
+    if crlf > 0:  # If there is a length, then process it
 
         remaining = int(buf[:crlf], 16)  # Decode the chunk size.
 
@@ -25,10 +25,13 @@ def recv_chunk(sock):  # -> bytearray:
         end = len(buf) - start
 
         chunk = bytearray(remaining)
-        chunk[:end] = buf[start:]
-        chunk[end:] = sock.recv(remaining - end)
 
-        sock.recv(2)  # Read the trailing CRLF pair. Throw it away.
+        if end < remaining:
+            chunk[:end] = buf[start:]
+            chunk[end:] = sock.recv(remaining - end)
+            sock.recv(2)  # Read the trailing CRLF pair. Throw it away.
+        else:  # E.g. an HTTP chunk with just a keep-alive delimiter.
+            chunk[:remaining] = buf[start:start + remaining]
 
         return chunk
 
@@ -50,7 +53,7 @@ class TwitterJSONIter(object):
     def __iter__(self):
         sock = self.handle.fp.raw._sock if sys.version_info >= (3, 0) else self.handle.fp._sock.fp._sock
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-        sock.setblocking(self.block and not self.timeout)  # not (not self.block or self.timeout)
+        sock.setblocking(self.block and not self.timeout)
         buf = u''
         json_decoder = json.JSONDecoder()
         timer = time.time()
@@ -63,10 +66,8 @@ class TwitterJSONIter(object):
                 timer = time.time()
                 continue
             except ValueError as e:
-                if self.block:
-                    pass
-                else:
-                    yield None
+                if self.block: pass
+                else: yield None
             try:
                 buf = buf.lstrip()  # Remove any keep-alive delimiters to detect hangups.
                 if self.timeout:
@@ -82,7 +83,8 @@ class TwitterJSONIter(object):
                 if not buf and self.block:
                     yield {'hangup': True}
             except SSLError as e:
-                if (not self.block or self.timeout) and (e.errno == 2): pass  # Empty buffer during polling.
+                # Error from a non-blocking read of an empty buffer.
+                if (not self.block or self.timeout) and (e.errno == 2): pass
                 else: raise
 
 def handle_stream_response(req, uri, arg_data, block, timeout=None):
