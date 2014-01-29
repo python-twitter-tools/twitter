@@ -26,12 +26,16 @@ def recv_chunk(sock):  # -> bytearray:
 
         chunk = bytearray(remaining)
 
-        if end < remaining:
+        if remaining <= 2:  # E.g. an HTTP chunk with just a keep-alive delimiter.
+            chunk[:remaining] = buf[start:start + remaining]
+        # There are several edge cases (remaining == [3-6]) as the chunk size exceeds the length
+        # of the initial read of 8 bytes. With Twitter, these do not, in practice, occur. The
+        # shortest real message JSON starts with '{"limit":{'. Hence, it exceeds in size the
+        # edge cases and we do not need to address them.
+        else:  # There is more to read in the chunk.
             chunk[:end] = buf[start:]
             chunk[end:] = sock.recv(remaining - end)
             sock.recv(2)  # Read the trailing CRLF pair. Throw it away.
-        else:  # E.g. an HTTP chunk with just a keep-alive delimiter.
-            chunk[:remaining] = buf[start:start + remaining]
 
         return chunk
 
@@ -76,8 +80,7 @@ class TwitterJSONIter(object):
                         buf += recv_chunk(sock).decode('utf-8')  # This is a non-blocking read.
                         if time.time() - timer > self.timeout:
                             yield {'timeout': True}
-                    else:
-                        yield {'timeout': True}
+                    else: yield {'timeout': True}
                 else:
                     buf += recv_chunk(sock).decode('utf-8')
                 if not buf and self.block:
