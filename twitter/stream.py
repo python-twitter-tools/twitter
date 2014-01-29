@@ -30,8 +30,8 @@ def recv_chunk(sock):  # -> bytearray:
             chunk[:remaining] = buf[start:start + remaining]
         # There are several edge cases (remaining == [3-6]) as the chunk size exceeds the length
         # of the initial read of 8 bytes. With Twitter, these do not, in practice, occur. The
-        # shortest real message JSON starts with '{"limit":{'. Hence, it exceeds in size the
-        # edge cases and we do not need to address them.
+        # shortest JSON message starts with '{"limit":{'. Hence, it exceeds in size the edge cases
+        # and eliminates the need to address them.
         else:  # There is more to read in the chunk.
             chunk[:end] = buf[start:]
             chunk[end:] = sock.recv(remaining - end)
