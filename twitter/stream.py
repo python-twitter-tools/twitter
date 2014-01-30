@@ -12,84 +12,89 @@ import sys, select, time
 
 from .api import TwitterCall, wrap_response, TwitterHTTPError
 
+def recv_chunk(sock):  # -> bytearray:
+
+    buf = sock.recv(8)  # Scan for an up to 16MiB chunk size (0xffffff).
+    crlf = buf.find(b'\r\n')  # Find the HTTP chunk size.
+
+    if crlf > 0:  # If there is a length, then process it
+
+        remaining = int(buf[:crlf], 16)  # Decode the chunk size.
+
+        start = crlf + 2  # Add in the length of the header's CRLF pair.
+        end = len(buf) - start
+
+        chunk = bytearray(remaining)
+
+        if remaining <= 2:  # E.g. an HTTP chunk with just a keep-alive delimiter.
+            chunk[:remaining] = buf[start:start + remaining]
+        # There are several edge cases (remaining == [3-6]) as the chunk size exceeds the length
+        # of the initial read of 8 bytes. With Twitter, these do not, in practice, occur. The
+        # shortest JSON message starts with '{"limit":{'. Hence, it exceeds in size the edge cases
+        # and eliminates the need to address them.
+        else:  # There is more to read in the chunk.
+            chunk[:end] = buf[start:]
+            chunk[end:] = sock.recv(remaining - end)
+            sock.recv(2)  # Read the trailing CRLF pair. Throw it away.
+
+        return chunk
+
+    return bytearray()
+
+##  recv_chunk()
+
+
 class TwitterJSONIter(object):
 
     def __init__(self, handle, uri, arg_data, block=True, timeout=None):
-        self.decoder = json.JSONDecoder()
         self.handle = handle
         self.uri = uri
         self.arg_data = arg_data
-        self.buf = b""
         self.block = block
         self.timeout = timeout
-        self.timer = time.time()
-
-
-    def recv_chunk(self, sock):
-        buf = sock.recv(32)
-        if buf:
-            crlf = buf.find(b'\r\n')  # Find the HTTP chunk size.
-            if crlf > 0:
-                remaining = int(buf[:crlf].decode(), 16)  # Decode the chunk size.
-                chunk = bytearray(buf[crlf + 2:])  # Create the chunk buffer.
-                remaining -= len(chunk)
-
-                while remaining > 0:
-                    balance = sock.recv(remaining + 2)  # Add the length of the chunk's CRLF pair.
-                    if balance:
-                        chunk.extend(balance)
-                        remaining -= len(balance)
-                # If possible, remove the trailing CRLF pair. (This precludes an extra trip through the JSON parser.)
-                if remaining == -2 and chunk[-2] == 0x0d and chunk[-1] == 0x0a:
-                    del chunk[-2:]
-                return chunk
-        return b''
 
 
     def __iter__(self):
-        if sys.version_info >= (3, 0):
-            sock = self.handle.fp.raw._sock
-        else:
-            sock = self.handle.fp._sock.fp._sock
+        sock = self.handle.fp.raw._sock if sys.version_info >= (3, 0) else self.handle.fp._sock.fp._sock
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-        if not self.block or self.timeout:
-            sock.setblocking(False)
+        sock.setblocking(self.block and not self.timeout)
+        buf = u''
+        json_decoder = json.JSONDecoder()
+        timer = time.time()
         while True:
             try:
-                utf8_buf = self.buf.decode('utf8').lstrip()
-                res, ptr = self.decoder.raw_decode(utf8_buf)
-                self.buf = utf8_buf[ptr:].encode('utf8')
+                buf = buf.lstrip()
+                res, ptr = json_decoder.raw_decode(buf)
+                buf = buf[ptr:]
                 yield wrap_response(res, self.handle.headers)
-                self.timer = time.time()
+                timer = time.time()
                 continue
             except ValueError as e:
-                if self.block:
-                    pass
-                else:
-                    yield None
-            # this is a non-blocking read (ie, it will return if any data is available)
+                if self.block: pass
+                else: yield None
             try:
+                buf = buf.lstrip()  # Remove any keep-alive delimiters to detect hangups.
                 if self.timeout:
                     ready_to_read = select.select([sock], [], [], self.timeout)
                     if ready_to_read[0]:
-                        self.buf += self.recv_chunk(sock)
-                        if time.time() - self.timer > self.timeout:
-                            yield {"timeout":True}
-                    else:
-                        yield {"timeout":True}
+                        buf += recv_chunk(sock).decode('utf-8')  # This is a non-blocking read.
+                        if time.time() - timer > self.timeout:
+                            yield {'timeout': True}
+                    else: yield {'timeout': True}
                 else:
-                    self.buf += self.recv_chunk(sock)
+                    buf += recv_chunk(sock).decode('utf-8')
+                if not buf and self.block:
+                    yield {'hangup': True}
             except SSLError as e:
-                if (not self.block or self.timeout) and (e.errno == 2):
-                    # Apparently this means there was nothing in the socket buf
-                    pass
-                else:
-                    raise
-            except urllib_error.HTTPError as e:
-                raise TwitterHTTPError(e, self.uri, 'json', self.arg_data)
+                # Error from a non-blocking read of an empty buffer.
+                if (not self.block or self.timeout) and (e.errno == 2): pass
+                else: raise
 
 def handle_stream_response(req, uri, arg_data, block, timeout=None):
-    handle = urllib_request.urlopen(req,)
+    try:
+        handle = urllib_request.urlopen(req,)
+    except urllib_error.HTTPError as e:
+        raise TwitterHTTPError(e, uri, 'json', arg_data)
     return iter(TwitterJSONIter(handle, uri, arg_data, block, timeout=timeout))
 
 class TwitterStreamCallWithTimeout(TwitterCall):
