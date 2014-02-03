@@ -32,9 +32,6 @@ POST_ACTIONS = [
     # Users Methods
     'lookup', 'report_spam',
 
-    # Geo Methods
-    'place',
-
     # Streaming Methods
     'filter', 'user', 'site',
 
