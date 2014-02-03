@@ -128,7 +128,7 @@ class TwitterCall(object):
 
     def __init__(
         self, auth, format, domain, callable_cls, uri="",
-        uriparts=None, secure=True, timeout=None):
+        uriparts=None, secure=True, timeout=None, gzip=False):
         self.auth = auth
         self.format = format
         self.domain = domain
@@ -137,6 +137,7 @@ class TwitterCall(object):
         self.uriparts = uriparts
         self.secure = secure
         self.timeout = timeout
+        self.gzip = gzip
 
     def __getattr__(self, k):
         try:
@@ -145,9 +146,9 @@ class TwitterCall(object):
             def extend_call(arg):
                 return self.callable_cls(
                     auth=self.auth, format=self.format, domain=self.domain,
-                    callable_cls=self.callable_cls, timeout=self.timeout, uriparts=self.uriparts \
-                        + (arg,),
-                    secure=self.secure)
+                    callable_cls=self.callable_cls, timeout=self.timeout,
+                    secure=self.secure, gzip=self.gzip,
+                    uriparts=self.uriparts + (arg,))
             if k == "_":
                 return extend_call
             else:
@@ -194,13 +195,13 @@ class TwitterCall(object):
         uriBase = "http%s://%s/%s%s%s" %(
                     secure_str, self.domain, uri, dot, self.format)
 
-        headers = {'Accept-Encoding': 'gzip'}
+        headers = {'Accept-Encoding': 'gzip'} if self.gzip else dict()
+        body = None; arg_data = None
         if self.auth:
             headers.update(self.auth.generate_headers())
             arg_data = self.auth.encode_params(uriBase, method, kwargs)
             if method == 'GET':
                 uriBase += '?' + arg_data
-                body = None
             else:
                 body = arg_data.encode('utf8')
 
