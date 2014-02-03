@@ -500,11 +500,11 @@ class RepliesAction(StatusAction):
 
 class FollowAction(AdminAction):
     def getUser(self, twitter, user):
-        return twitter.friendships.create(id=user)
+        return twitter.friendships.create(screen_name=user)
 
 class LeaveAction(AdminAction):
     def getUser(self, twitter, user):
-        return twitter.friendships.destroy(id=user)
+        return twitter.friendships.destroy(screen_name=user)
 
 class SetStatusAction(Action):
     def __call__(self, twitter, options):
