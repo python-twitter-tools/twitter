@@ -59,6 +59,7 @@ class TwitterHTTPError(TwitterError):
             self.response_data = f.read()
         else:
             self.response_data = data
+        super(TwitterHTTPError, self).__init__(str(self))
 
     def __str__(self):
         fmt = ("." + self.format) if self.format else ""
