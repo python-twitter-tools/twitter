@@ -30,12 +30,12 @@ def parse_arguments():
 
     return parser.parse_args()
 
-##  parse_arguments()
-
-
 def main():
-
     args = parse_arguments()
+
+    if not all((args.token, args.token_secret, args.consumer_key, args.consumer_secret)):
+        print(__doc__)
+        return 2
 
     # When using twitter stream you must authorize.
     auth = OAuth(args.token, args.token_secret, args.consumer_key, args.consumer_secret)
@@ -55,8 +55,6 @@ def main():
         # or data message.
         if tweet.get('text'):
             printNicely(tweet['text'])
-
-##  main()
 
 if __name__ == '__main__':
     main()
