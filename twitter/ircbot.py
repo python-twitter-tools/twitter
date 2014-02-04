@@ -148,7 +148,6 @@ class TwitterBot(object):
         self.twitter = Twitter(
             auth=OAuth(
                 oauth_token, oauth_secret, CONSUMER_KEY, CONSUMER_SECRET),
-            api_version='1',
             domain='api.twitter.com')
 
         self.irc = irclib.IRC()
@@ -165,7 +164,7 @@ class TwitterBot(object):
     def check_statuses(self):
         debug("In check_statuses")
         try:
-            updates = reversed(self.twitter.statuses.friends_timeline())
+            updates = reversed(self.twitter.statuses.home_timeline())
         except Exception as e:
             print("Exception while querying twitter:", file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
@@ -255,7 +254,7 @@ class TwitterBot(object):
                 "%sI'm already following %s." %(get_prefix('error'), name))
         else:
             try:
-                self.twitter.friendships.create(id=name)
+                self.twitter.friendships.create(screen_name=name)
             except TwitterError:
                 conn.privmsg(
                     userNick,
@@ -279,7 +278,7 @@ class TwitterBot(object):
                 userNick,
                 "%sI'm not following %s." %(get_prefix('error'), name))
         else:
-            self.twitter.friendships.destroy(id=name)
+            self.twitter.friendships.destroy(screen_name=name)
             conn.privmsg(
                 userNick,
                 "%sOkay! I've stopped following %s." %(

@@ -121,14 +121,18 @@ class OAuth(Auth):
 # %20 rather than '+' when constructing an OAuth signature (and therefore
 # also in the request itself.)
 # So here is a specialized version which does exactly that.
+# In Python2, since there is no safe option for urlencode, we force it by hand
 def urlencode_noplus(query):
     if not PY3:
         new_query = []
+        TILDE = '____TILDE-PYTHON-TWITTER____'
         for k,v in query:
             if type(k) is unicode: k = k.encode('utf-8')
+            k = str(k).replace("~", TILDE)
             if type(v) is unicode: v = v.encode('utf-8')
+            v = str(v).replace("~", TILDE)
             new_query.append((k, v))
         query = new_query
-        return urlencode(query).replace("+", "%20")
+        return urlencode(query).replace(TILDE, "~").replace("+", "%20")
 
     return urlencode(query, safe='~').replace("+", "%20")
