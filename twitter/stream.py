@@ -26,7 +26,7 @@ def recv_chunk(sock):  # -> bytearray:
 
         chunk = bytearray(remaining)
 
-        if remaining <= 2:  # E.g. an HTTP chunk with just a keep-alive delimiter.
+        if remaining <= 2:  # E.g. an HTTP chunk with just a keep-alive delimiter or end of stream (0).
             chunk[:remaining] = buf[start:start + remaining]
         # There are several edge cases (remaining == [3-6]) as the chunk size exceeds the length
         # of the initial read of 8 bytes. With Twitter, these do not, in practice, occur. The
@@ -58,7 +58,7 @@ class TwitterJSONIter(object):
         sock = self.handle.fp.raw._sock if sys.version_info >= (3, 0) else self.handle.fp._sock.fp._sock
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         sock.setblocking(self.block and not self.timeout)
-        buf = u''
+        buf = ''
         json_decoder = json.JSONDecoder()
         timer = time.time()
         while True:
@@ -85,6 +85,7 @@ class TwitterJSONIter(object):
                     buf += recv_chunk(sock).decode('utf-8')
                 if not buf and self.block:
                     yield {'hangup': True}
+                    break
             except SSLError as e:
                 # Error from a non-blocking read of an empty buffer.
                 if (not self.block or self.timeout) and (e.errno == 2): pass
