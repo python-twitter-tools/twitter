@@ -19,7 +19,7 @@ def recv_chunk(sock):  # -> bytearray:
 
     if crlf > 0:  # If there is a length, then process it
 
-        size = int(header[:crlf], 16)  # Decode the chunk size. Rarely exceeds 8KiB in size.
+        size = int(header[:crlf], 16)  # Decode the chunk size. Rarely exceeds 8KiB.
         chunk = bytearray(size)
         start = crlf + 2  # Add in the length of the header's CRLF pair.
 
