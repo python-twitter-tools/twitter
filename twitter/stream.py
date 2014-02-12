@@ -14,27 +14,26 @@ from .api import TwitterCall, wrap_response, TwitterHTTPError
 
 def recv_chunk(sock):  # -> bytearray:
 
-    buf = sock.recv(8)  # Scan for an up to 16MiB chunk size (0xffffff).
-    crlf = buf.find(b'\r\n')  # Find the HTTP chunk size.
+    header = sock.recv(8)  # Scan for an up to 16MiB chunk size (0xffffff).
+    crlf = header.find(b'\r\n')  # Find the HTTP chunk size.
 
     if crlf > 0:  # If there is a length, then process it
 
-        remaining = int(buf[:crlf], 16)  # Decode the chunk size.
-
+        size = int(header[:crlf], 16)  # Decode the chunk size. Rarely exceeds 8KiB.
+        chunk = bytearray(size)
         start = crlf + 2  # Add in the length of the header's CRLF pair.
-        end = len(buf) - start
 
-        chunk = bytearray(remaining)
-
-        if remaining <= 2:  # E.g. an HTTP chunk with just a keep-alive delimiter or end of stream (0).
-            chunk[:remaining] = buf[start:start + remaining]
-        # There are several edge cases (remaining == [3-6]) as the chunk size exceeds the length
+        if size <= 3:  # E.g. an HTTP chunk with just a keep-alive delimiter or end of stream (0).
+            chunk[:size] = header[start:start + size]
+        # There are several edge cases (size == [4-6]) as the chunk size exceeds the length
         # of the initial read of 8 bytes. With Twitter, these do not, in practice, occur. The
         # shortest JSON message starts with '{"limit":{'. Hence, it exceeds in size the edge cases
         # and eliminates the need to address them.
         else:  # There is more to read in the chunk.
-            chunk[:end] = buf[start:]
-            chunk[end:] = sock.recv(remaining - end)
+            end = len(header) - start
+            chunk[:end] = header[start:]
+            buffer = memoryview(chunk)[end:]  # Create a view into the bytearray to hold the rest of the chunk.
+            sock.recv_into(buffer)
             sock.recv(2)  # Read the trailing CRLF pair. Throw it away.
 
         return chunk
