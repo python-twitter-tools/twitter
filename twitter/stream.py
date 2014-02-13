@@ -32,8 +32,14 @@ def recv_chunk(sock):  # -> bytearray:
         else:  # There is more to read in the chunk.
             end = len(header) - start
             chunk[:end] = header[start:]
-            buffer = memoryview(chunk)[end:]  # Create a view into the bytearray to hold the rest of the chunk.
-            sock.recv_into(buffer)
+
+            if (sys.version_info[0], sys.version_info[1]) >= (2, 7):
+
+                # When possible, use less memory by reading directly into the buffer.
+                buffer = memoryview(chunk)[end:]
+                sock.recv_into(buffer)
+            else:
+                chunk[end:] = sock.recv(size - end)  # Merge the returned bytes into the bytearray.
             sock.recv(2)  # Read the trailing CRLF pair. Throw it away.
 
         return chunk
