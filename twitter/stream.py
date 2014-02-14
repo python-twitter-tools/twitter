@@ -12,6 +12,8 @@ import sys, select, time
 
 from .api import TwitterCall, wrap_response, TwitterHTTPError
 
+modern_python = sys.version_info >= (2, 7)
+
 def recv_chunk(sock):  # -> bytearray:
 
     header = sock.recv(8)  # Scan for an up to 16MiB chunk size (0xffffff).
@@ -33,7 +35,7 @@ def recv_chunk(sock):  # -> bytearray:
             end = len(header) - start
             chunk[:end] = header[start:]
 
-            if (sys.version_info[0], sys.version_info[1]) >= (2, 7):
+            if modern_python:
 
                 # When possible, use less memory by reading directly into the buffer.
                 buffer = memoryview(chunk)[end:]
