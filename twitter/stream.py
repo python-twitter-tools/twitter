@@ -107,7 +107,7 @@ class TwitterJSONIter(object):
                 yield wrap_response(res, self.handle.headers)
                 continue
             except ValueError as e:
-                if self.block: pass
+                if self.block and not self.timeout: pass
                 else: yield None
             try:
                 buf = buf.lstrip()  # Remove any keep-alive delimiters to detect hangups.
