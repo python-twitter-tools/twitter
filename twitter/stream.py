@@ -105,22 +105,19 @@ class TwitterJSONIter(object):
                 res, ptr = json_decoder.raw_decode(buf)
                 buf = buf[ptr:]
                 yield wrap_response(res, self.handle.headers)
-                timer = time.time()
                 continue
             except ValueError as e:
                 if self.block: pass
                 else: yield None
             try:
                 buf = buf.lstrip()  # Remove any keep-alive delimiters to detect hangups.
-                if self.timeout:
+                if self.timeout and not buf:  # This is a non-blocking read.
                     ready_to_read = select.select([sock], [], [], self.timeout)
-                    if ready_to_read[0]:
-                        buf += recv_chunk(sock).decode('utf-8')  # This is a non-blocking read.
-                        if time.time() - timer > self.timeout:
-                            yield {'timeout': True}
-                    else: yield {'timeout': True}
-                else:
-                    buf += recv_chunk(sock).decode('utf-8')
+                    if not ready_to_read[0] and time.time() - timer > self.timeout:
+                        yield {'timeout': True}
+                        continue
+                timer = time.time()
+                buf += recv_chunk(sock).decode('utf-8')
                 if not buf and self.block:
                     yield {'hangup': True}
                     break
