@@ -36,7 +36,7 @@ def recv_chunk_old(sock): # -> bytearray:
         # and eliminates the need to address them.
         else: # There is more to read in the chunk.
             chunk[:end] = buf[start:]
-            chunk[end:] = sock.recv(remaining - end)
+            chunk[end:] = sock.recv(max(0, remaining - end))
             sock.recv(2) # Read the trailing CRLF pair. Throw it away.
 
         return chunk
