@@ -118,7 +118,7 @@ class TwitterJSONIter(object):
                         continue
                 timer = time.time()
                 buf += recv_chunk(sock).decode('utf-8')
-                if not buf and self.block:
+                if not buf:
                     yield {'hangup': True}
                     break
             except SSLError as e:
