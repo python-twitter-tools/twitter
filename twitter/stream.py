@@ -12,7 +12,13 @@ import sys, select, time
 
 from .api import TwitterCall, wrap_response, TwitterHTTPError
 
-python27_3 = sys.version_info >= (2, 7)
+PY_27_OR_HIGHER = sys.version_info >= (2, 7)
+PY_3_OR_HIGHER = sys.version_info >= (3, 0)
+
+Timeout = {'timeout': True}
+Hangup = {'hangup': True}
+
+
 def recv_chunk(sock): # -> bytearray:
 
     header = sock.recv(8)  # Scan for an up to 16MiB chunk size (0xffffff).
@@ -33,7 +39,7 @@ def recv_chunk(sock): # -> bytearray:
         else:  # There is more to read in the chunk.
             end = len(header) - start
             chunk[:end] = header[start:]
-            if python27_3:  # When possible, use less memory by reading directly into the buffer.
+            if PY_27_OR_HIGHER:  # When possible, use less memory by reading directly into the buffer.
                 buffer = memoryview(chunk)[end:]  # Create a view into the bytearray to hold the rest of the chunk.
                 sock.recv_into(buffer)
             else:  # less efficient for python2.6 compatibility
@@ -43,6 +49,24 @@ def recv_chunk(sock): # -> bytearray:
         return chunk
 
     return bytearray()
+
+
+class Timer(object):
+    def __init__(self, timeout):
+        # If timeout is None, we always expire.
+        self.timeout = timeout
+        self.reset()
+
+    def reset(self):
+        self.time = time.time()
+
+    def expired(self):
+        if self.timeout is None:
+            return True
+        elif time.time() - self.time > self.timeout:
+            self.reset()
+            return True
+        return False
 
 
 class TwitterJSONIter(object):
@@ -56,37 +80,41 @@ class TwitterJSONIter(object):
 
 
     def __iter__(self):
-        sock = self.handle.fp.raw._sock if sys.version_info >= (3, 0) else self.handle.fp._sock.fp._sock
+        actually_blocking = self.block and not self.timeout
+        sock = self.handle.fp.raw._sock if PY_3_OR_HIGHER else self.handle.fp._sock.fp._sock
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-        sock.setblocking(self.block and not self.timeout)
+        sock.setblocking(actually_blocking)
         buf = ''
         json_decoder = json.JSONDecoder()
-        timer = time.time()
+        timer = Timer(self.timeout)
+        timeout_token = Timeout if self.timeout else None
         while True:
+            buf = buf.lstrip()
             try:
-                buf = buf.lstrip()
                 res, ptr = json_decoder.raw_decode(buf)
                 buf = buf[ptr:]
                 yield wrap_response(res, self.handle.headers)
+                timer.reset()
                 continue
             except ValueError as e:
-                if self.block: pass
-                else: yield None
+                if not actually_blocking and timer.expired():
+                    yield timeout_token
             try:
                 buf = buf.lstrip()  # Remove any keep-alive delimiters to detect hangups.
                 if self.timeout and not buf:  # This is a non-blocking read.
-                    ready_to_read = select.select([sock], [], [], self.timeout)
-                    if not ready_to_read[0] and time.time() - timer > self.timeout:
-                        yield {'timeout': True}
+                    ready_to_read = select.select([sock], [], [], self.timeout)[0]
+                    if not ready_to_read and timer.expired():
+                        yield timeout_token
                         continue
-                timer = time.time()
                 buf += recv_chunk(sock).decode('utf-8')
                 if not buf:
-                    yield {'hangup': True}
+                    yield Hangup
                     break
             except SSLError as e:
                 # Error from a non-blocking read of an empty buffer.
-                if (not self.block or self.timeout) and (e.errno == 2): pass
+                if not actually_blocking and (e.errno == 2):
+                    if timer.expired():
+                        yield timeout_token
                 else: raise
 
 def handle_stream_response(req, uri, arg_data, block, timeout=None):
@@ -96,19 +124,7 @@ def handle_stream_response(req, uri, arg_data, block, timeout=None):
         raise TwitterHTTPError(e, uri, 'json', arg_data)
     return iter(TwitterJSONIter(handle, uri, arg_data, block, timeout=timeout))
 
-class TwitterStreamCallWithTimeout(TwitterCall):
-    def _handle_response(self, req, uri, arg_data, _timeout=None):
-        return handle_stream_response(req, uri, arg_data, block=True, timeout=self.timeout)
-
-class TwitterStreamCall(TwitterCall):
-    def _handle_response(self, req, uri, arg_data, _timeout=None):
-        return handle_stream_response(req, uri, arg_data, block=True)
-
-class TwitterStreamCallNonBlocking(TwitterCall):
-    def _handle_response(self, req, uri, arg_data, _timeout=None):
-        return handle_stream_response(req, uri, arg_data, block=False)
-
-class TwitterStream(TwitterStreamCall):
+class TwitterStream(TwitterCall):
     """
     The TwitterStream object is an interface to the Twitter Stream API
     (stream.twitter.com). This can be used pretty much the same as the
@@ -132,18 +148,15 @@ class TwitterStream(TwitterStreamCall):
     def __init__(
         self, domain="stream.twitter.com", secure=True, auth=None,
         api_version='1.1', block=True, timeout=None):
-        uriparts = ()
-        uriparts += (str(api_version),)
+        uriparts = (str(api_version),)
+        timeout = float(timeout) if timeout else None
 
-        if block:
-            if timeout:
-                call_cls = TwitterStreamCallWithTimeout
-            else:
-                call_cls = TwitterStreamCall
-        else:
-            call_cls = TwitterStreamCallNonBlocking
+        class TwitterStreamCall(TwitterCall):
+            def _handle_response(self, req, uri, arg_data, _timeout=None):
+                return handle_stream_response(
+                    req, uri, arg_data, block=block, timeout=_timeout or timeout)
 
-        TwitterStreamCall.__init__(
+        TwitterCall.__init__(
             self, auth=auth, format="json", domain=domain,
-            callable_cls=call_cls,
+            callable_cls=TwitterStreamCall,
             secure=secure, uriparts=uriparts, timeout=timeout, gzip=False)
