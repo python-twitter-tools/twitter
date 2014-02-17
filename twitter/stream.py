@@ -12,7 +12,7 @@ import sys, select, time
 
 from .api import TwitterCall, wrap_response, TwitterHTTPError
 
-python26 = sys.version_info < (2, 7)
+python27_3 = sys.version_info >= (2, 7)
 def recv_chunk(sock): # -> bytearray:
 
     header = sock.recv(8)  # Scan for an up to 16MiB chunk size (0xffffff).
@@ -33,11 +33,11 @@ def recv_chunk(sock): # -> bytearray:
         else:  # There is more to read in the chunk.
             end = len(header) - start
             chunk[:end] = header[start:]
-            if python26:  # less efficient for python2.6 compatibility
-                chunk[end:] = sock.recv(max(0, size - end))
-            else:  # When possible, use less memory by reading directly into the buffer.
+            if python27_3:  # When possible, use less memory by reading directly into the buffer.
                 buffer = memoryview(chunk)[end:]  # Create a view into the bytearray to hold the rest of the chunk.
                 sock.recv_into(buffer)
+            else:  # less efficient for python2.6 compatibility
+                chunk[end:] = sock.recv(max(0, size - end))
             sock.recv(2)  # Read the trailing CRLF pair. Throw it away.
 
         return chunk
