@@ -12,43 +12,9 @@ import sys, select, time
 
 from .api import TwitterCall, wrap_response, TwitterHTTPError
 
-def recv_chunk_old(sock): # -> bytearray:
-    """
-    Compatible with Python 2.6, but less efficient.
-    """
-    buf = sock.recv(8) # Scan for an up to 16MiB chunk size (0xffffff).
-    crlf = buf.find(b'\r\n') # Find the HTTP chunk size.
+python27_3 = sys.version_info >= (2, 7)
+def recv_chunk(sock): # -> bytearray:
 
-    if crlf > 0: # If there is a length, then process it
-
-        remaining = int(buf[:crlf], 16) # Decode the chunk size.
-
-        start = crlf + 2 # Add in the length of the header's CRLF pair.
-        end = len(buf) - start
-
-        chunk = bytearray(remaining)
-
-        if remaining <= 2: # E.g. an HTTP chunk with just a keep-alive delimiter or end of stream (0).
-            chunk[:remaining] = buf[start:start + remaining]
-        # There are several edge cases (remaining == [3-6]) as the chunk size exceeds the length
-        # of the initial read of 8 bytes. With Twitter, these do not, in practice, occur. The
-        # shortest JSON message starts with '{"limit":{'. Hence, it exceeds in size the edge cases
-        # and eliminates the need to address them.
-        else: # There is more to read in the chunk.
-            chunk[:end] = buf[start:]
-            chunk[end:] = sock.recv(remaining - end)
-            sock.recv(2) # Read the trailing CRLF pair. Throw it away.
-
-        return chunk
-
-    return bytearray()
-
-## recv_chunk_old()
-
-def recv_chunk_new(sock):  # -> bytearray:
-    """
-    Compatible with Python 2.7+.
-    """
     header = sock.recv(8)  # Scan for an up to 16MiB chunk size (0xffffff).
     crlf = header.find(b'\r\n')  # Find the HTTP chunk size.
 
@@ -67,20 +33,17 @@ def recv_chunk_new(sock):  # -> bytearray:
         else:  # There is more to read in the chunk.
             end = len(header) - start
             chunk[:end] = header[start:]
-            buffer = memoryview(chunk)[end:]  # Create a view into the bytearray to hold the rest of the chunk.
-            sock.recv_into(buffer)
+            if python27_3:  # When possible, use less memory by reading directly into the buffer.
+                buffer = memoryview(chunk)[end:]  # Create a view into the bytearray to hold the rest of the chunk.
+                sock.recv_into(buffer)
+            else:  # less efficient for python2.6 compatibility
+                chunk[end:] = sock.recv(max(0, size - end))
             sock.recv(2)  # Read the trailing CRLF pair. Throw it away.
 
         return chunk
 
     return bytearray()
 
-##  recv_chunk_new()
-
-if (sys.version_info.major, sys.version_info.minor) >= (2, 7):
-    recv_chunk = recv_chunk_new
-else:
-    recv_chunk = recv_chunk_old
 
 class TwitterJSONIter(object):
 
@@ -105,23 +68,20 @@ class TwitterJSONIter(object):
                 res, ptr = json_decoder.raw_decode(buf)
                 buf = buf[ptr:]
                 yield wrap_response(res, self.handle.headers)
-                timer = time.time()
                 continue
             except ValueError as e:
                 if self.block: pass
                 else: yield None
             try:
                 buf = buf.lstrip()  # Remove any keep-alive delimiters to detect hangups.
-                if self.timeout:
+                if self.timeout and not buf:  # This is a non-blocking read.
                     ready_to_read = select.select([sock], [], [], self.timeout)
-                    if ready_to_read[0]:
-                        buf += recv_chunk(sock).decode('utf-8')  # This is a non-blocking read.
-                        if time.time() - timer > self.timeout:
-                            yield {'timeout': True}
-                    else: yield {'timeout': True}
-                else:
-                    buf += recv_chunk(sock).decode('utf-8')
-                if not buf and self.block:
+                    if not ready_to_read[0] and time.time() - timer > self.timeout:
+                        yield {'timeout': True}
+                        continue
+                timer = time.time()
+                buf += recv_chunk(sock).decode('utf-8')
+                if not buf:
                     yield {'hangup': True}
                     break
             except SSLError as e:

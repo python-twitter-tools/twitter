@@ -46,7 +46,7 @@ def main():
         stream = TwitterStream(auth=auth, domain='sitestream.twitter.com')
         tweet_iter = stream.site()
     else:
-        stream = TwitterStream(auth=auth, timeout=60.0)
+        stream = TwitterStream(auth=auth)
         tweet_iter = stream.statuses.sample()
 
     # Iterate over the sample stream.
