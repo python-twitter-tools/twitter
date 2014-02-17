@@ -61,6 +61,9 @@ class Timer(object):
         self.time = time.time()
 
     def expired(self):
+        """
+        If expired, reset the timer and return True.
+        """
         if self.timeout is None:
             return True
         elif time.time() - self.time > self.timeout:
@@ -89,18 +92,17 @@ class TwitterJSONIter(object):
         timer = Timer(self.timeout)
         timeout_token = Timeout if self.timeout else None
         while True:
-            buf = buf.lstrip()
+            buf = buf.lstrip() # Remove any keep-alive delimiters to detect hangups.
             try:
                 res, ptr = json_decoder.raw_decode(buf)
                 buf = buf[ptr:]
+            except ValueError:
+                pass
+            else:
                 yield wrap_response(res, self.handle.headers)
                 timer.reset()
                 continue
-            except ValueError as e:
-                if not actually_blocking and timer.expired():
-                    yield timeout_token
             try:
-                buf = buf.lstrip()  # Remove any keep-alive delimiters to detect hangups.
                 if self.timeout and not buf:  # This is a non-blocking read.
                     ready_to_read = select.select([sock], [], [], self.timeout)[0]
                     if not ready_to_read and timer.expired():
@@ -126,11 +128,10 @@ def handle_stream_response(req, uri, arg_data, block, timeout=None):
 
 class TwitterStream(TwitterCall):
     """
-    The TwitterStream object is an interface to the Twitter Stream API
-    (stream.twitter.com). This can be used pretty much the same as the
-    Twitter class except the result of calling a method will be an
-    iterator that yields objects decoded from the stream. For
-    example::
+    The TwitterStream object is an interface to the Twitter Stream
+    API. This can be used pretty much the same as the Twitter class
+    except the result of calling a method will be an iterator that
+    yields objects decoded from the stream. For example::
 
         twitter_stream = TwitterStream(auth=OAuth(...))
         iterator = twitter_stream.statuses.sample()
@@ -138,12 +139,19 @@ class TwitterStream(TwitterCall):
         for tweet in iterator:
             ...do something with this tweet...
 
-    The iterator will yield tweets forever and ever (until the stream
-    breaks at which point it raises a TwitterHTTPError.)
+    The iterator will yield until the TCP connection breaks. When the
+    connection breaks, the iterator yields `{'hangup': True}`, and
+    raises `StopIteration` if iterated again.
 
-    The `block` parameter controls if the stream is blocking. Default
-    is blocking (True). When set to False, the iterator will
-    occasionally yield None when there is no available message.
+    The `timeout` parameter controls the maximum time between
+    yields. If it is nonzero, then the iterator will yield either
+    stream data or `{'timeout': True}`. This is useful if you want
+    your program to do other stuff in between waiting for tweets.
+
+    The `block` parameter sets the stream to be non-blocking. In this
+    mode, the iterator always yields immediately. It returns stream
+    data, or `None`. Note that `timeout` supercedes this argument, so
+    it should also be set `None` to use this mode.
     """
     def __init__(
         self, domain="stream.twitter.com", secure=True, auth=None,

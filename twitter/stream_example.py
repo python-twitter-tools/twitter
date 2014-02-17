@@ -29,6 +29,7 @@ def parse_arguments():
     parser.add_argument('-ss', '--site-stream', action='store_true', help='Connect to the site stream endpoint.')
     parser.add_argument('-to', '--timeout', help='Timeout for the stream (seconds)')
     parser.add_argument('-nb', '--no-block', action='store_true', help='Set stream to non-blocking')
+    parser.add_argument('-tt', '--track', help='Search the stream for specific text')
     return parser.parse_args()
 
 def main():
@@ -48,7 +49,10 @@ def main():
         tweet_iter = stream.site()
     else:
         stream = TwitterStream(auth=auth)
-        tweet_iter = stream.statuses.sample()
+        if args.track:
+            tweet_iter = stream.statuses.filter(track=args.track)
+        else:
+            tweet_iter = stream.statuses.sample()
 
     # Iterate over the sample stream.
     for tweet in tweet_iter:
