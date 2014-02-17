@@ -45,10 +45,10 @@ def main():
         stream = TwitterStream(auth=auth, domain='userstream.twitter.com', timeout=args.timeout, block=not args.no_block)
         tweet_iter = stream.user()
     elif args.site_stream:
-        stream = TwitterStream(auth=auth, domain='sitestream.twitter.com')
+        stream = TwitterStream(auth=auth, domain='sitestream.twitter.com', timeout=args.timeout, block=not args.no_block)
         tweet_iter = stream.site()
     else:
-        stream = TwitterStream(auth=auth)
+        stream = TwitterStream(auth=auth, timeout=args.timeout, block=not args.no_block)
         if args.track:
             tweet_iter = stream.statuses.filter(track=args.track)
         else:
