@@ -12,9 +12,9 @@ import sys, select, time
 
 from .api import TwitterCall, wrap_response, TwitterHTTPError
 
-CRLF = b'\r\n'
-
 PY_3_OR_HIGHER = sys.version_info >= (3, 0)
+
+CRLF = b'\r\n'
 
 Timeout = {'timeout': True}
 Hangup = {'hangup': True}
@@ -25,6 +25,8 @@ class ChunkDecodeError(Exception):
 
 class EndOfStream(Exception):
     pass
+
+range = range if PY_3_OR_HIGHER else xrange
 
 class SocketShim(io.IOBase):
     """
@@ -40,7 +42,7 @@ class SocketShim(io.IOBase):
         return self.sock.recv_into(buf)
 
 def recv_chunk(reader): # -> bytearray:
-    for headerlen in xrange(12):
+    for headerlen in range(12):
         header = reader.peek(headerlen)[:headerlen]
         if header.endswith(CRLF):
             break
@@ -97,7 +99,7 @@ class TwitterJSONIter(object):
 
     def __iter__(self):
         actually_block = self.block and not self.timeout
-        sock_timeout = min(self.timeout, self.heartbeat_timeout) if actually_block else None
+        sock_timeout = min(self.timeout or 1000000, self.heartbeat_timeout) if actually_block else None
         sock = self.handle.fp.raw._sock if PY_3_OR_HIGHER else self.handle.fp._sock.fp._sock
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         sock.setblocking(actually_block)
