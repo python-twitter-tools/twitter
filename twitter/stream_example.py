@@ -40,16 +40,20 @@ def main():
         block=not args.no_block,
         heartbeat_timeout=args.heartbeat_timeout)
 
+    query_args = dict()
+    if args.track_keywords:
+        query_args['track'] = args.track_keywords
+
     if args.user_stream:
         stream = TwitterStream(auth=auth, domain='userstream.twitter.com', **stream_args)
-        tweet_iter = stream.user()
+        tweet_iter = stream.user(**query_args)
     elif args.site_stream:
         stream = TwitterStream(auth=auth, domain='sitestream.twitter.com', **stream_args)
-        tweet_iter = stream.site()
+        tweet_iter = stream.site(**query_args)
     else:
         stream = TwitterStream(auth=auth, **stream_args)
         if args.track_keywords:
-            tweet_iter = stream.statuses.filter(track=args.track_keywords)
+            tweet_iter = stream.statuses.filter(**query_args)
         else:
             tweet_iter = stream.statuses.sample()
 
