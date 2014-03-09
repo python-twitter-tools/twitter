@@ -39,7 +39,13 @@ class SocketShim(io.IOBase):
     def read(self, size):
         return self.sock.read(size)
     def readinto(self, buf):
-        return self.sock.recv_into(buf)
+        while True:
+            try:
+                return self.sock.recv_into(buf)
+            except SSLError as e:
+                # Code 2 is error from a non-blocking read of an empty buffer.
+                if e.errno != 2:
+                    raise
 
 def recv_chunk(reader): # -> bytearray:
     for headerlen in range(12):
@@ -99,7 +105,7 @@ class TwitterJSONIter(object):
 
     def __iter__(self):
         actually_block = self.block and not self.timeout
-        sock_timeout = min(self.timeout or 1000000, self.heartbeat_timeout) if actually_block else None
+        sock_timeout = min(self.timeout or 1000000, self.heartbeat_timeout)
         sock = self.handle.fp.raw._sock if PY_3_OR_HIGHER else self.handle.fp._sock.fp._sock
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         sock.setblocking(actually_block)
@@ -129,10 +135,9 @@ class TwitterJSONIter(object):
                 yield Timeout
 
             try:
-                if sock_timeout:
-                    ready_to_read = select.select([sock], [], [], sock_timeout)[0]
-                    if not ready_to_read:
-                        continue
+                ready_to_read = select.select([sock], [], [], sock_timeout)[0]
+                if not ready_to_read:
+                    continue
                 received = recv_chunk(reader)
                 buf += received.decode('utf-8')
                 if received:
@@ -140,10 +145,6 @@ class TwitterJSONIter(object):
             except (ChunkDecodeError, EndOfStream):
                 yield Hangup
                 break
-            except SSLError as e:
-                # Code 2 is error from a non-blocking read of an empty buffer.
-                if e.errno != 2:
-                    raise
 
 def handle_stream_response(req, uri, arg_data, block, timeout, heartbeat_timeout):
     try:
