@@ -105,7 +105,7 @@ class TwitterJSONIter(object):
 
     def __iter__(self):
         actually_block = self.block and not self.timeout
-        sock_timeout = min(self.timeout or 1000000, self.heartbeat_timeout) if actually_block else None
+        sock_timeout = min(self.timeout or 1000000, self.heartbeat_timeout)
         sock = self.handle.fp.raw._sock if PY_3_OR_HIGHER else self.handle.fp._sock.fp._sock
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         sock.setblocking(actually_block)
@@ -135,10 +135,9 @@ class TwitterJSONIter(object):
                 yield Timeout
 
             try:
-                if sock_timeout:
-                    ready_to_read = select.select([sock], [], [], sock_timeout)[0]
-                    if not ready_to_read:
-                        continue
+                ready_to_read = select.select([sock], [], [], sock_timeout)[0]
+                if not ready_to_read:
+                    continue
                 received = recv_chunk(reader)
                 buf += received.decode('utf-8')
                 if received:
