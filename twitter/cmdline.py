@@ -591,7 +591,6 @@ class TwitterShell(Action):
 class PythonPromptAction(Action):
     def __call__(self, twitter, options):
         try:
-            import pdb; pdb.set_trace()
             while True:
                 smrt_input(globals(), locals())
         except EOFError:

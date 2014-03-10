@@ -16,7 +16,8 @@ import sys, select, time
 from .api import TwitterCall, wrap_response, TwitterHTTPError
 
 CRLF = b'\r\n'
-MIN_TIMEOUT = 0.0  # Apparenty select with zero wait is okay!
+MIN_SOCK_TIMEOUT = 0.0  # Apparenty select with zero wait is okay!
+MAX_SOCK_TIMEOUT = 10.0
 HEARTBEAT_TIMEOUT = 90.0
 
 Timeout = {'timeout': True}
@@ -146,18 +147,20 @@ class TwitterJSONIter(object):
         self.uri = uri
         self.arg_data = arg_data
         self.timeout_token = Timeout
-        self.timeout = HEARTBEAT_TIMEOUT
+        self.timeout = None
         self.heartbeat_timeout = HEARTBEAT_TIMEOUT
         if timeout and timeout > 0:
             self.timeout = float(timeout)
         elif not (block or timeout):
             self.timeout_token = None
-            self.timeout = MIN_TIMEOUT
+            self.timeout = MIN_SOCK_TIMEOUT
         if heartbeat_timeout and heartbeat_timeout > 0:
             self.heartbeat_timeout = float(heartbeat_timeout)
 
     def __iter__(self):
-        sock_timeout = min(self.timeout, self.heartbeat_timeout)
+        timeouts = [t for t in (self.timeout, self.heartbeat_timeout, MAX_SOCK_TIMEOUT)
+                    if t is not None]
+        sock_timeout = min(*timeouts)
         sock = self.handle.fp.raw._sock if PY_3_OR_HIGHER else self.handle.fp._sock.fp._sock
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         headers = self.handle.headers
@@ -172,8 +175,8 @@ class TwitterJSONIter(object):
             # Decode all the things:
             data = sock_reader.read()
             dechunked_data, end_of_stream, decode_error = chunk_decoder.decode(data)
-            utf8_data = utf8_decoder.decode(dechunked_data)
-            json_data = json_decoder.decode(utf8_data)
+            unicode_data = utf8_decoder.decode(dechunked_data)
+            json_data = json_decoder.decode(unicode_data)
 
             # Yield data-like things:
             for json_obj in json_data:
