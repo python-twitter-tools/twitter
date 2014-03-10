@@ -10,13 +10,14 @@ else:
 import json
 from ssl import SSLError
 import socket
-import io
 import codecs
 import sys, select, time
 
 from .api import TwitterCall, wrap_response, TwitterHTTPError
 
 CRLF = b'\r\n'
+MIN_TIMEOUT = 0.0  # Apparenty select with zero wait is okay!
+HEARTBEAT_TIMEOUT = 90.0
 
 Timeout = {'timeout': True}
 Hangup = {'hangup': True}
@@ -144,16 +145,21 @@ class TwitterJSONIter(object):
         self.handle = handle
         self.uri = uri
         self.arg_data = arg_data
-        self.block = block
-        self.timeout = float(timeout) if timeout else None
-        self.heartbeat_timeout = float(heartbeat_timeout) if heartbeat_timeout else None
+        self.timeout_token = Timeout
+        self.timeout = HEARTBEAT_TIMEOUT
+        self.heartbeat_timeout = HEARTBEAT_TIMEOUT
+        if timeout and timeout > 0:
+            self.timeout = float(timeout)
+        elif not (block or timeout):
+            self.timeout_token = None
+            self.timeout = MIN_TIMEOUT
+        if heartbeat_timeout and heartbeat_timeout > 0:
+            self.heartbeat_timeout = float(heartbeat_timeout)
 
     def __iter__(self):
-        actually_block = self.block and not self.timeout
-        sock_timeout = min(self.timeout or 1000000, self.heartbeat_timeout)
+        sock_timeout = min(self.timeout, self.heartbeat_timeout)
         sock = self.handle.fp.raw._sock if PY_3_OR_HIGHER else self.handle.fp._sock.fp._sock
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-        sock.setblocking(actually_block)
         headers = self.handle.headers
         sock_reader = SockReader(sock, sock_timeout)
         chunk_decoder = HttpChunkDecoder()
@@ -190,9 +196,7 @@ class TwitterJSONIter(object):
                 yield HeartbeatTimeout
                 break
             if timer.expired():
-                yield Timeout
-            if not self.block and not self.timeout:
-                yield None
+                yield self.timeout_token
 
 
 def handle_stream_response(req, uri, arg_data, block, timeout, heartbeat_timeout):
