@@ -25,8 +25,6 @@ Hangup = {'hangup': True}
 DecodeError = {'hangup': True, 'decode_error': True}
 HeartbeatTimeout = {'hangup': True, 'heartbeat_timeout': True}
 
-range = range if PY_3_OR_HIGHER else xrange
-
 
 class HttpChunkDecoder(object):
 
