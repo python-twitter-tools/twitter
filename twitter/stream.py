@@ -1,18 +1,20 @@
-try:
+import sys
+PY_3_OR_HIGHER = sys.version_info >= (3, 0)
+
+if PY_3_OR_HIGHER:
     import urllib.request as urllib_request
     import urllib.error as urllib_error
-except ImportError:
+else:
     import urllib2 as urllib_request
     import urllib2 as urllib_error
-import io
 import json
 from ssl import SSLError
 import socket
+import io
+import codecs
 import sys, select, time
 
 from .api import TwitterCall, wrap_response, TwitterHTTPError
-
-PY_3_OR_HIGHER = sys.version_info >= (3, 0)
 
 CRLF = b'\r\n'
 
@@ -28,41 +30,66 @@ class EndOfStream(Exception):
 
 range = range if PY_3_OR_HIGHER else xrange
 
-class SocketShim(io.IOBase):
-    """
-    Adapts a raw socket to fit the IO protocol.
-    """
-    def __init__(self, sock):
-        self.sock = sock
-    def readable(self):
-        return True
-    def read(self, size):
-        return self.sock.read(size)
-    def readinto(self, buf):
-        return self.sock.recv_into(buf)
 
-def recv_chunk(reader): # -> bytearray:
-    for headerlen in range(12):
-        header = reader.peek(headerlen)[:headerlen]
-        if header.endswith(CRLF):
-            break
-    else:
-        raise ChunkDecodeError()
+class HttpDeChunker(object):
 
-    size = int(header, 16) # Decode the chunk size
-    reader.read(headerlen) # Ditch the header
+    def __init__(self):
+        self.buf = bytearray()
 
-    if size == 0:
-        raise EndOfStream()
+    def extend(self, data):
+        self.buf.extend(data)
 
-    chunk = bytearray()
-    while len(chunk) < size:
-        remainder = size - len(chunk)
-        chunk.extend(reader.read(remainder))
+    def read_chunks(self):  # -> [bytearray]
+        chunks = []
+        buf = self.buf
+        while True:
+            header_end_pos = buf.find(CRLF)
+            if header_end_pos == -1:
+                break
 
-    reader.read(2) # Ditch remaining CRLF
+            header = buf[:header_end_pos]
+            data_start_pos = header_end_pos + 2
+            try:
+                chunk_len = int(header.decode('ascii'), 16)
+            except ValueError:
+                raise ChunkDecodeError()
 
-    return chunk
+            if chunk_len == 0:
+                raise EndOfStream()
+
+            data_end_pos = data_start_pos + chunk_len
+
+            if len(buf) > data_end_pos + 2:
+                chunks.append(buf[data_start_pos:data_end_pos])
+                buf = buf[data_end_pos + 2:]
+            else:
+                break
+        self.buf = buf
+        return chunks
+
+
+class JsonDeChunker(object):
+
+    def __init__(self):
+        self.buf = u""
+        self.raw_decode = json.JSONDecoder().raw_decode
+
+    def extend(self, data):
+        self.buf += data
+
+    def read_json_chunks(self):
+        chunks = []
+        buf = self.buf
+        while True:
+            try:
+                buf = buf.lstrip()
+                res, ptr = self.raw_decode(buf)
+                buf = buf[ptr:]
+                chunks.append(res)
+            except ValueError:
+                break
+        self.buf = buf
+        return chunks
 
 
 class Timer(object):
@@ -99,29 +126,26 @@ class TwitterJSONIter(object):
 
     def __iter__(self):
         actually_block = self.block and not self.timeout
-        sock_timeout = min(self.timeout or 1000000, self.heartbeat_timeout) if actually_block else None
+        sock_timeout = min(self.timeout or 1000000, self.heartbeat_timeout)
         sock = self.handle.fp.raw._sock if PY_3_OR_HIGHER else self.handle.fp._sock.fp._sock
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         sock.setblocking(actually_block)
-        reader = io.BufferedReader(SocketShim(sock))
-        buf = ''
-        raw_decode = json.JSONDecoder().raw_decode
+        headers = self.handle.headers
+        dechunker = HttpDeChunker()
+        utf8decoder = codecs.getincrementaldecoder("utf-8")()
+        json_dechunker = JsonDeChunker()
         timer = Timer(self.timeout)
         heartbeat_timer = Timer(self.heartbeat_timeout)
         while True:
-            buf = buf.lstrip() # Remove any keep-alive delimiters
-            try:
-                res, ptr = raw_decode(buf)
-                buf = buf[ptr:]
-            except ValueError:
-                if not self.block and not self.timeout:
-                    yield None
-            else:
-                yield wrap_response(res, self.handle.headers)
+            json_chunks = json_dechunker.read_json_chunks()
+            for json in json_chunks:
+                yield wrap_response(json, headers)
+            if json_chunks:
                 timer.reset()
                 heartbeat_timer.reset()
-                continue
 
+            if not self.block and not self.timeout:
+                yield None
             if heartbeat_timer.expired():
                 yield HeartbeatTimeout
                 break
@@ -129,21 +153,29 @@ class TwitterJSONIter(object):
                 yield Timeout
 
             try:
-                if sock_timeout:
-                    ready_to_read = select.select([sock], [], [], sock_timeout)[0]
-                    if not ready_to_read:
-                        continue
-                received = recv_chunk(reader)
-                buf += received.decode('utf-8')
-                if received:
-                    heartbeat_timer.reset()
-            except (ChunkDecodeError, EndOfStream):
-                yield Hangup
-                break
+                ready_to_read = select.select([sock], [], [], sock_timeout)[0]
+                if not ready_to_read:
+                    continue
+                data = sock.read()
             except SSLError as e:
                 # Code 2 is error from a non-blocking read of an empty buffer.
                 if e.errno != 2:
                     raise
+                continue
+
+            dechunker.extend(data)
+
+            try:
+                chunks = dechunker.read_chunks()
+            except (ChunkDecodeError, EndOfStream):
+                yield Hangup
+                break
+
+            for chunk in chunks:
+                if chunk:
+                    json_dechunker.extend(utf8decoder.decode(chunk))
+            if chunks:
+                heartbeat_timer.reset()
 
 def handle_stream_response(req, uri, arg_data, block, timeout, heartbeat_timeout):
     try:
