@@ -369,7 +369,7 @@ class Action(object):
 
     def ask(self, subject='perform this action', careful=False):
         '''
-        Requests fromt he user using `raw_input` if `subject` should be
+        Requests from the user using `raw_input` if `subject` should be
         performed. When `careful`, the default answer is NO, otherwise YES.
         Returns the user answer in the form `True` or `False`.
         '''
