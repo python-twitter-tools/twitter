@@ -91,10 +91,7 @@ t = Twitter(
 t.statuses.home_timeline()
 
 # Get a particular friend's timeline
-t.statuses.friends_timeline(id="billybob")
-
-# Also supported (but totally weird)
-t.statuses.friends_timeline.billybob()
+t.statuses.user_timeline(screen_name="billybob")
 
 # to pass in GET/POST parameters, such as `count`
 t.statuses.home_timeline(count=5)
