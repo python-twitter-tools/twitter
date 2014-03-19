@@ -606,7 +606,7 @@ class DoNothingAction(Action):
 
 class RateLimitStatus(Action):
     def __call__(self, twitter, options):
-        rate = twitter.account.rate_limit_status()
+        rate = twitter.application.rate_limit_status()
         print("Remaining API requests: %s / %s (hourly limit)" % (rate['remaining_hits'], rate['hourly_limit']))
         print("Next reset in %ss (%s)" % (int(rate['reset_time_in_seconds'] - time.time()),
                                           time.asctime(time.localtime(rate['reset_time_in_seconds']))))
