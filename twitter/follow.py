@@ -83,7 +83,7 @@ def lookup(twitter, user_ids):
             except TwitterError as e:
                 if e.e.code == 400:
                     err("Fail: %i API rate limit exceeded" % e.e.code)
-                    rate = twitter.account.rate_limit_status()
+                    rate = twitter.application.rate_limit_status()
                     reset = rate['reset_time_in_seconds']
                     reset = time.asctime(time.localtime(reset))
                     delay = int(rate['reset_time_in_seconds']
@@ -141,7 +141,7 @@ def follow(twitter, screen_name, followers=True):
                 break
             elif e.e.code == 400:
                 err("Fail: %i API rate limit exceeded" % e.e.code)
-                rate = twitter.account.rate_limit_status()
+                rate = twitter.application.rate_limit_status()
                 reset = rate['reset_time_in_seconds']
                 reset = time.asctime(time.localtime(reset))
                 delay = int(rate['reset_time_in_seconds']
@@ -180,7 +180,7 @@ def follow(twitter, screen_name, followers=True):
 
 def rate_limit_status(twitter):
     """Print current Twitter API rate limit status."""
-    r = twitter.account.rate_limit_status()
+    r = twitter.application.rate_limit_status()
     print("Remaining API requests: %i/%i (hourly limit)"
           % (r['remaining_hits'], r['hourly_limit']))
     print("Next reset in %is (%s)"
@@ -241,7 +241,7 @@ def main(args=sys.argv[1:]):
                 print(str(uid) + "\t" + users[uid].encode("utf-8"))
               except KeyError:
                 pass
-            
+
             else:
               try:
                 print(users[uid].encode("utf-8"))

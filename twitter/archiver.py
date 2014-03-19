@@ -244,7 +244,7 @@ def statuses(twitter, screen_name, tweets, mentions=False, favorites=False, rece
                 break
             elif e.e.code == 400:
                 err("Fail: %i API rate limit exceeded" % e.e.code)
-                rate = twitter.account.rate_limit_status()
+                rate = twitter.application.rate_limit_status()
                 reset = rate['reset_time_in_seconds']
                 reset = time.asctime(time.localtime(reset))
                 delay = int(rate['reset_time_in_seconds']
@@ -285,7 +285,7 @@ def statuses(twitter, screen_name, tweets, mentions=False, favorites=False, rece
 
 def rate_limit_status(twitter):
     """Print current Twitter API rate limit status."""
-    r = twitter.account.rate_limit_status()
+    r = twitter.application.rate_limit_status()
     print("Remaining API requests: %i/%i (hourly limit)"
           % (r['remaining_hits'], r['hourly_limit']))
     print("Next reset in %is (%s)"
