@@ -242,15 +242,15 @@ def statuses(twitter, screen_name, tweets, mentions=False, favorites=False, rece
                 err("Fail: %i Unauthorized (tweets of that user are protected)"
                     % e.e.code)
                 break
-            elif e.e.code == 400:
+            elif e.e.code == 429:
                 err("Fail: %i API rate limit exceeded" % e.e.code)
-                rate = twitter.application.rate_limit_status()
-                reset = rate['reset_time_in_seconds']
-                reset = time.asctime(time.localtime(reset))
-                delay = int(rate['reset_time_in_seconds']
-                            - time.time()) + 5 # avoid race
-                err("Hourly limit of %i requests reached, next reset on %s: "
-                    "going to sleep for %i secs" % (rate['hourly_limit'],
+                rls = twitter.application.rate_limit_status()
+                reset = rls.rate_limit_reset
+                reset = _time.asctime(_time.localtime(reset))
+                delay = int(rls.rate_limit_reset
+                            - _time.time()) + 5 # avoid race
+                err("Interval limit of %i requests reached, next reset on %s: "
+                    "going to sleep for %i secs" % (rls.rate_limit_limit,
                                                     reset, delay))
                 fail.wait(delay)
                 continue
@@ -285,12 +285,12 @@ def statuses(twitter, screen_name, tweets, mentions=False, favorites=False, rece
 
 def rate_limit_status(twitter):
     """Print current Twitter API rate limit status."""
-    r = twitter.application.rate_limit_status()
-    print("Remaining API requests: %i/%i (hourly limit)"
-          % (r['remaining_hits'], r['hourly_limit']))
+    rls = twitter.application.rate_limit_status()
+    print("Remaining API requests: %i/%i (interval limit)"
+          % (rls.rate_limit_remaining, rls.rate_limit_limit))
     print("Next reset in %is (%s)"
-          % (int(r['reset_time_in_seconds'] - time.time()),
-             time.asctime(time.localtime(r['reset_time_in_seconds']))))
+          % (int(rls.rate_limit_reset - _time.time()),
+             _time.asctime(_time.localtime(rls.rate_limit_reset))))
 
 def main(args=sys.argv[1:]):
     options = {
