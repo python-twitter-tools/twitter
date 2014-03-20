@@ -81,16 +81,16 @@ def lookup(twitter, user_ids):
             try:
                 portion = lookup_portion(twitter, user_ids[i:][:api_limit])
             except TwitterError as e:
-                if e.e.code == 400:
+                if e.e.code == 429:
                     err("Fail: %i API rate limit exceeded" % e.e.code)
-                    rate = twitter.application.rate_limit_status()
-                    reset = rate['reset_time_in_seconds']
+                    rls = twitter.application.rate_limit_status()
+                    reset = rls.rate_limit_reset
                     reset = time.asctime(time.localtime(reset))
-                    delay = int(rate['reset_time_in_seconds']
+                    delay = int(rls.rate_limit_reset
                                 - time.time()) + 5 # avoid race
-                    err("Hourly limit of %i requests reached, next reset on "
+                    err("Interval limit of %i requests reached, next reset on "
                         "%s: going to sleep for %i secs"
-                        % (rate['hourly_limit'], reset, delay))
+                        % (rls.rate_limit_limit, reset, delay))
                     fail.wait(delay)
                     continue
                 elif e.e.code == 502:
@@ -139,15 +139,15 @@ def follow(twitter, screen_name, followers=True):
                           % ("ers" if followers else "ing"))
                 err("Fail: %i Unauthorized (%s)" % (e.e.code, reason))
                 break
-            elif e.e.code == 400:
+            elif e.e.code == 429:
                 err("Fail: %i API rate limit exceeded" % e.e.code)
-                rate = twitter.application.rate_limit_status()
-                reset = rate['reset_time_in_seconds']
+                rls = twitter.application.rate_limit_status()
+                reset = rls.rate_limit_reset
                 reset = time.asctime(time.localtime(reset))
-                delay = int(rate['reset_time_in_seconds']
+                delay = int(rls.rate_limit_reset
                             - time.time()) + 5 # avoid race
-                err("Hourly limit of %i requests reached, next reset on %s: "
-                    "going to sleep for %i secs" % (rate['hourly_limit'],
+                err("Interval limit of %i requests reached, next reset on %s: "
+                    "going to sleep for %i secs" % (rls.rate_limit_limit,
                                                     reset, delay))
                 fail.wait(delay)
                 continue
@@ -180,12 +180,12 @@ def follow(twitter, screen_name, followers=True):
 
 def rate_limit_status(twitter):
     """Print current Twitter API rate limit status."""
-    r = twitter.application.rate_limit_status()
-    print("Remaining API requests: %i/%i (hourly limit)"
-          % (r['remaining_hits'], r['hourly_limit']))
+    rls = twitter.application.rate_limit_status()
+    print("Remaining API requests: %i/%i (interval limit)"
+          % (rls.rate_limit_remaining, rls.rate_limit_limit))
     print("Next reset in %is (%s)"
-          % (int(r['reset_time_in_seconds'] - time.time()),
-             time.asctime(time.localtime(r['reset_time_in_seconds']))))
+          % (int(rls.rate_limit_reset - time.time()),
+             time.asctime(time.localtime(rls.rate_limit_reset))))
 
 def main(args=sys.argv[1:]):
     options = {
