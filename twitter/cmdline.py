@@ -217,12 +217,10 @@ class AnsiStatusFormatter(object):
 
     def __call__(self, status, options):
         colour = self._colourMap.colourFor(status['user']['screen_name'])
-        ret = "%s%s% 16s%s " %(
+        return ("%s%s% 16s%s %s " % (
             get_time_string(status, options),
-            ansi.cmdColour(colour), status['user']['screen_name'],
-            ansi.cmdReset())
-        ret += "%s" % align_text(status['text'])
-        return ret
+            ansiFormatter.cmdColour(colour), status['user']['screen_name'],
+            ansiFormatter.cmdReset(), align_text(replaceInStatus(status['text']))))
 
 class VerboseStatusFormatter(object):
     def __call__(self, status, options):
