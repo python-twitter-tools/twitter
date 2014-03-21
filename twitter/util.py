@@ -11,6 +11,7 @@ import contextlib
 import re
 import sys
 import time
+import socket
 
 try:
     from html.entities import name2codepoint
@@ -116,9 +117,9 @@ def follow_redirects(link, sites= None):
     req = urllib2.Request(link)
     req.get_method = lambda : 'HEAD'
     try:
-        with contextlib.closing(opener.open(req)) as site:
+        with contextlib.closing(opener.open(req,timeout=1)) as site:
             return site.url
-    except (urllib2.HTTPError, urllib2.URLError):
+    except (urllib2.HTTPError, urllib2.URLError, socket.timeout):
         return redirect_handler.last_url if redirect_handler.last_url else link
 
 def expand_line(line, sites):
