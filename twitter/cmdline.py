@@ -65,7 +65,7 @@ prompt: <twitter_shell_prompt e.g. '[cyan]twitter[R]> '>
 from __future__ import print_function
 
 try:
-    input = __builtins__['raw_input']
+    input = __builtins__.raw_input
 except (AttributeError, KeyError):
     pass
 
@@ -103,7 +103,7 @@ from .api import Twitter, TwitterError
 from .oauth import OAuth, write_token_file, read_token_file
 from .oauth_dance import oauth_dance
 from . import ansi
-from .util import smrt_input, printNicely
+from .util import smrt_input, printNicely, align_text
 
 OPTIONS = {
     'action': 'friends',
@@ -217,10 +217,10 @@ class AnsiStatusFormatter(object):
 
     def __call__(self, status, options):
         colour = self._colourMap.colourFor(status['user']['screen_name'])
-        return ("%s%s%s%s %s" % (
+        return ("%s%s% 16s%s %s " % (
             get_time_string(status, options),
             ansiFormatter.cmdColour(colour), status['user']['screen_name'],
-            ansiFormatter.cmdReset(), replaceInStatus(status['text'])))
+            ansiFormatter.cmdReset(), align_text(replaceInStatus(status['text']))))
 
 class VerboseStatusFormatter(object):
     def __call__(self, status, options):
