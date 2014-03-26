@@ -119,15 +119,22 @@ def follow_redirects(link, sites= None):
     try:
         with contextlib.closing(opener.open(req,timeout=1)) as site:
             return site.url
-    except (urllib2.HTTPError, urllib2.URLError, socket.timeout):
+    except:
         return redirect_handler.last_url if redirect_handler.last_url else link
 
 def expand_line(line, sites):
     """Expand the links in the line for the given sites."""
-    l = line.strip()
-    msg_format, links = find_links(l)
-    args = tuple(follow_redirects(l, sites) for l in links)
-    return msg_format % args
+    try:
+        l = line.strip()
+        msg_format, links = find_links(l)
+        args = tuple(follow_redirects(l, sites) for l in links)
+        line = msg_format % args
+    except Exception as e:
+        try:
+            err("expanding line %s failed due to %s" % (line, unicode(e)))
+        except:
+            pass
+    return line
 
 def parse_host_list(list_of_hosts):
     """Parse the comma separated list of hosts."""
