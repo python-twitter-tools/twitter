@@ -81,7 +81,10 @@ class HttpChunkDecoder(object):
 class JsonDecoder(object):
 
     def __init__(self):
-        self.buf = u""
+        if PY_3_OR_HIGHER:
+            self.buf = ""
+        else:
+            self.buf = u""
         self.raw_decode = json.JSONDecoder().raw_decode
 
     def decode(self, data):
