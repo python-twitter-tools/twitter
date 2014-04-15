@@ -15,7 +15,6 @@ ACTIONS:
                     tweets from that list
  mylist         get list of your lists; give a list name to get tweets
                     from that list
- public         get latest public tweets
  pyprompt       start a Python prompt for interacting with the twitter
                     object directly
  replies        get latest replies to you
@@ -44,6 +43,7 @@ FORMATS for the --format option
 
  default         one line per status
  verbose         multiple lines per status, more verbose status info
+ json            raw json data from the api on each line
  urls            nothing but URLs
  ansi            ansi colour (rainbow mode)
 
@@ -65,7 +65,7 @@ prompt: <twitter_shell_prompt e.g. '[cyan]twitter[R]> '>
 from __future__ import print_function
 
 try:
-    input = __builtins__['raw_input']
+    input = __builtins__.raw_input
 except (AttributeError, KeyError):
     pass
 
@@ -73,14 +73,15 @@ except (AttributeError, KeyError):
 CONSUMER_KEY = 'uS6hO2sV6tDKIOeVjhnFnQ'
 CONSUMER_SECRET = 'MEYTOS97VvlHX7K1rwHPEqVpTSqZ71HtvoK4sVuYk'
 
-import sys
-import time
 from getopt import gnu_getopt as getopt, GetoptError
 from getpass import getpass
-import re
-import os.path
+import json
 import locale
+import os.path
+import re
 import string
+import sys
+import time
 
 try:
     from ConfigParser import SafeConfigParser
@@ -102,7 +103,7 @@ from .api import Twitter, TwitterError
 from .oauth import OAuth, write_token_file, read_token_file
 from .oauth_dance import oauth_dance
 from . import ansi
-from .util import smrt_input, printNicely
+from .util import smrt_input, printNicely, align_text
 
 OPTIONS = {
     'action': 'friends',
@@ -216,10 +217,10 @@ class AnsiStatusFormatter(object):
 
     def __call__(self, status, options):
         colour = self._colourMap.colourFor(status['user']['screen_name'])
-        return ("%s%s%s%s %s" % (
+        return ("%s%s% 16s%s %s " % (
             get_time_string(status, options),
             ansiFormatter.cmdColour(colour), status['user']['screen_name'],
-            ansiFormatter.cmdReset(), replaceInStatus(status['text'])))
+            ansiFormatter.cmdReset(), align_text(replaceInStatus(status['text']))))
 
 class VerboseStatusFormatter(object):
     def __call__(self, status, options):
@@ -228,6 +229,11 @@ class VerboseStatusFormatter(object):
             status['user']['location'],
             status['created_at'],
             gHtmlParser.unescape(status['text'])))
+
+class JSONStatusFormatter(object):
+    def __call__(self, status, options):
+         status['text'] = gHtmlParser.unescape(status['text'])
+         return json.dumps(status)
 
 class URLStatusFormatter(object):
     urlmatch = re.compile(r'https?://\S+')
@@ -317,6 +323,7 @@ formatters = {}
 status_formatters = {
     'default': StatusFormatter,
     'verbose': VerboseStatusFormatter,
+    'json': JSONStatusFormatter,
     'urls': URLStatusFormatter,
     'ansi': AnsiStatusFormatter
 }
@@ -362,7 +369,7 @@ class Action(object):
 
     def ask(self, subject='perform this action', careful=False):
         '''
-        Requests fromt he user using `raw_input` if `subject` should be
+        Requests from the user using `raw_input` if `subject` should be
         performed. When `careful`, the default answer is NO, otherwise YES.
         Returns the user answer in the form `True` or `False`.
         '''
@@ -464,7 +471,7 @@ class ListsAction(StatusAction):
         screen_name = options['extra_args'][0]
 
         if not options['extra_args'][1:]:
-            lists = twitter.user.lists(user=screen_name)['lists']
+            lists = twitter.lists.list(screen_name=screen_name)
             if not lists:
                 printNicely("This user has no lists.")
             for list in lists:
@@ -485,23 +492,19 @@ class MyListsAction(ListsAction):
 
 class FriendsAction(StatusAction):
     def getStatuses(self, twitter, options):
-        return reversed(twitter.statuses.friends_timeline(count=options["length"]))
-
-class PublicAction(StatusAction):
-    def getStatuses(self, twitter, options):
-        return reversed(twitter.statuses.public_timeline(count=options["length"]))
+        return reversed(twitter.statuses.home_timeline(count=options["length"]))
 
 class RepliesAction(StatusAction):
     def getStatuses(self, twitter, options):
-        return reversed(twitter.statuses.replies(count=options["length"]))
+        return reversed(twitter.statuses.mentions_timeline(count=options["length"]))
 
 class FollowAction(AdminAction):
     def getUser(self, twitter, user):
-        return twitter.friendships.create(id=user)
+        return twitter.friendships.create(screen_name=user)
 
 class LeaveAction(AdminAction):
     def getUser(self, twitter, user):
-        return twitter.friendships.destroy(id=user)
+        return twitter.friendships.destroy(screen_name=user)
 
 class SetStatusAction(Action):
     def __call__(self, twitter, options):
@@ -603,7 +606,7 @@ class DoNothingAction(Action):
 
 class RateLimitStatus(Action):
     def __call__(self, twitter, options):
-        rate = twitter.account.rate_limit_status()
+        rate = twitter.application.rate_limit_status()
         print("Remaining API requests: %s / %s (hourly limit)" % (rate['remaining_hits'], rate['hourly_limit']))
         print("Next reset in %ss (%s)" % (int(rate['reset_time_in_seconds'] - time.time()),
                                           time.asctime(time.localtime(rate['reset_time_in_seconds']))))
@@ -616,7 +619,6 @@ actions = {
     'mylist'    : MyListsAction,
     'help'      : HelpAction,
     'leave'     : LeaveAction,
-    'public'    : PublicAction,
     'pyprompt'  : PythonPromptAction,
     'replies'   : RepliesAction,
     'search'    : SearchAction,
@@ -661,11 +663,11 @@ def main(args=sys.argv[1:]):
             if v: options[k] = v
 
     if options['refresh'] and options['action'] not in (
-        'friends', 'public', 'replies'):
-        print("You can only refresh the friends, public, or replies actions.", file=sys.stderr)
+        'friends', 'replies'):
+        print("You can only refresh the friends or replies actions.", file=sys.stderr)
         print("Use 'twitter -h' for help.", file=sys.stderr)
         return 1
-    
+
     oauth_filename = os.path.expanduser(options['oauth_filename'])
 
     if (options['action'] == 'authorize'
@@ -673,7 +675,7 @@ def main(args=sys.argv[1:]):
         oauth_dance(
             "the Command-Line Tool", CONSUMER_KEY, CONSUMER_SECRET,
             options['oauth_filename'])
-        
+
     global ansiFormatter
     ansiFormatter = ansi.AnsiCmd(options["force-ansi"])
 
@@ -683,7 +685,7 @@ def main(args=sys.argv[1:]):
         auth=OAuth(
             oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET),
         secure=options['secure'],
-        api_version='1',
+        api_version='1.1',
         domain='api.twitter.com')
 
     try:

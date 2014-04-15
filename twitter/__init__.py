@@ -12,29 +12,30 @@ from .api import Twitter, TwitterError, TwitterHTTPError, TwitterResponse
 from .auth import NoAuth, UserPassAuth
 from .oauth import (OAuth, read_token_file, write_token_file,
                     __doc__ as oauth_doc)
+from .oauth2 import OAuth2
 from .stream import TwitterStream
 from .oauth_dance import oauth_dance
 
-# Who needs Sphinx? Not me!
+__doc__ = __doc__ or ""
 
 __doc__ += """
 The Twitter class
 -----------------
 """
-__doc__ += dedent(Twitter.__doc__)
+__doc__ += dedent(Twitter.__doc__ or "")
 
 __doc__ += """
 The TwitterStream class
 -----------------------
 """
-__doc__ += dedent(TwitterStream.__doc__)
+__doc__ += dedent(TwitterStream.__doc__ or "")
 
 
 __doc__ += """
 Twitter Response Objects
 ------------------------
 """
-__doc__ += dedent(TwitterResponse.__doc__)
+__doc__ += dedent(TwitterResponse.__doc__ or "")
 
 
 __doc__ += """
@@ -51,8 +52,8 @@ Working with OAuth
 ------------------
 """
 
-__doc__ += dedent(oauth_doc)
+__doc__ += dedent(oauth_doc or "")
 
 __all__ = ["Twitter", "TwitterStream", "TwitterResponse", "TwitterError",
            "TwitterHTTPError", "NoAuth", "OAuth", "UserPassAuth",
-           "read_token_file", "write_token_file", "oauth_dance"]
+           "read_token_file", "write_token_file", "oauth_dance", "OAuth2"]

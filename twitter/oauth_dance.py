@@ -1,4 +1,3 @@
-
 from __future__ import print_function
 
 import webbrowser
@@ -38,7 +37,7 @@ In the web browser window that opens please choose to Allow
 access. Copy the PIN number that appears on the next page and paste or
 type it here:
 """)
-    oauth_url = ('http://api.twitter.com/oauth/authorize?oauth_token=' +
+    oauth_url = ('https://api.twitter.com/oauth/authorize?oauth_token=' +
                  oauth_token)
     print("Opening: %s\n" % oauth_url)
 
