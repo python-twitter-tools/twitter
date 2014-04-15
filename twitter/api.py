@@ -207,7 +207,7 @@ class TwitterCall(object):
                 return handle
             try:
                 data = handle.read()
-            except httplib.IncompleteRead, e:
+            except httplib.IncompleteRead as e:
                 # Even if we don't get all the bytes we should have there
                 # may be a complete response in e.partial
                 data = e.partial
