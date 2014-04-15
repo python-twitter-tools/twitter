@@ -22,8 +22,10 @@ try:
 except ImportError:
     import simplejson as json
 
+
 class _DEFAULT(object):
     pass
+
 
 class TwitterError(Exception):
     """
@@ -31,6 +33,7 @@ class TwitterError(Exception):
     general error interacting with the API.
     """
     pass
+
 
 class TwitterHTTPError(TwitterError):
     """
@@ -53,9 +56,10 @@ class TwitterHTTPError(TwitterError):
         fmt = ("." + self.format) if self.format else ""
         return (
             "Twitter sent status %i for URL: %s%s using parameters: "
-            "(%s)\ndetails: %s" %(
+            "(%s)\ndetails: %s" % (
                 self.e.code, self.uri, fmt, self.uriparts,
                 self.response_data))
+
 
 class TwitterResponse(object):
     """
@@ -104,19 +108,18 @@ def wrap_response(response, headers):
         def __init__(self, response, headers):
             response_typ.__init__(self, response)
             TwitterResponse.__init__(self, headers)
+
         def __new__(cls, response, headers):
             return response_typ.__new__(cls, response)
 
-
     return WrappedTwitterResponse(response, headers)
-
 
 
 class TwitterCall(object):
 
     def __init__(
-        self, auth, format, domain, callable_cls, uri="",
-        uriparts=None, secure=True):
+            self, auth, format, domain, callable_cls, uri="",
+            uriparts=None, secure=True):
         self.auth = auth
         self.format = format
         self.domain = domain
@@ -132,8 +135,8 @@ class TwitterCall(object):
             def extend_call(arg):
                 return self.callable_cls(
                     auth=self.auth, format=self.format, domain=self.domain,
-                    callable_cls=self.callable_cls, uriparts=self.uriparts \
-                        + (arg,),
+                    callable_cls=self.callable_cls, uriparts=self.uriparts
+                    + (arg,),
                     secure=self.secure)
             if k == "_":
                 return extend_call
@@ -161,7 +164,7 @@ class TwitterCall(object):
         # the list of uriparts, assume the id goes at the end.
         id = kwargs.pop('id', None)
         if id:
-            uri += "/%s" %(id)
+            uri += "/%s" % (id)
 
         # If an _id kwarg is present, this is treated as id as a CGI
         # param.
@@ -178,8 +181,8 @@ class TwitterCall(object):
         dot = ""
         if self.format:
             dot = "."
-        uriBase = "http%s://%s/%s%s%s" %(
-                    secure_str, self.domain, uri, dot, self.format)
+        uriBase = "http%s://%s/%s%s%s" % (
+            secure_str, self.domain, uri, dot, self.format)
 
         headers = {'Accept-Encoding': 'gzip'}
         if self.auth:
@@ -224,6 +227,7 @@ class TwitterCall(object):
                 return []
             else:
                 raise TwitterHTTPError(e, uri, self.format, arg_data)
+
 
 class Twitter(TwitterCall):
     """
@@ -310,9 +314,9 @@ class Twitter(TwitterCall):
 
     """
     def __init__(
-        self, format="json",
-        domain="api.twitter.com", secure=True, auth=None,
-        api_version=_DEFAULT):
+            self, format="json",
+            domain="api.twitter.com", secure=True, auth=None,
+            api_version=_DEFAULT):
         """
         Create a new twitter API connector.
 
@@ -325,20 +329,19 @@ class Twitter(TwitterCall):
 
 
         `domain` lets you change the domain you are connecting. By
-        default it's `api.twitter.com` but `search.twitter.com` may be
-        useful too.
+        default it's `api.twitter.com`.
 
         If `secure` is False you will connect with HTTP instead of
         HTTPS.
 
         `api_version` is used to set the base uri. By default it's
-        '1'. If you are using "search.twitter.com" set this to None.
+        '1.1'.
         """
         if not auth:
             auth = NoAuth()
 
         if (format not in ("json", "xml", "")):
-            raise ValueError("Unknown data format '%s'" %(format))
+            raise ValueError("Unknown data format '%s'" % (format))
 
         if api_version is _DEFAULT:
             if domain == 'api.twitter.com':

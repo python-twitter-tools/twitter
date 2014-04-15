@@ -10,6 +10,13 @@ python:
 
 script: nosetests
 
+after_success:
+  - pip install pep8 pyflakes
+  - pep8 twitter/*.py
+  - pyflakes twitter/*.py
+  - pep8 tests/*.py
+  - pyflakes tests/*.py
+
 matrix:
   allow_failures:
     - python: "2.6"
