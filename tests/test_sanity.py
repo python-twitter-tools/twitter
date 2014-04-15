@@ -66,7 +66,7 @@ def test_API_set_unicode_tweet():
 def test_search():
     # In 1.1, search works on api.twitter.com not search.twitter.com
     # and requires authorisation
-    results = twitter11.search(q='foo')
+    results = twitter11.search.tweets(q='foo')
     assert results
 
 
