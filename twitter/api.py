@@ -15,7 +15,11 @@ from twitter.auth import NoAuth
 
 import re
 import gzip
-import httplib
+
+try:
+    import httplib
+except ImportError:
+    import http.client as httplib
 
 try:
     import json
