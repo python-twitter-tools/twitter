@@ -73,7 +73,7 @@ def test_search():
 def test_get_trends():
     # This is one method of inserting parameters, using named
     # underscore params.
-    world_trends = twitter11.trends._woeid(_woeid=1)
+    world_trends = twitter11.trends.available(_woeid=1)
     assert world_trends
 
 
