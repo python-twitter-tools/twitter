@@ -30,12 +30,14 @@ except ImportError:
 class _DEFAULT(object):
     pass
 
+
 class TwitterError(Exception):
     """
     Base Exception thrown by the Twitter object when there is a
     general error interacting with the API.
     """
     pass
+
 
 class TwitterHTTPError(TwitterError):
     """
@@ -65,9 +67,10 @@ class TwitterHTTPError(TwitterError):
         fmt = ("." + self.format) if self.format else ""
         return (
             "Twitter sent status %i for URL: %s%s using parameters: "
-            "(%s)\ndetails: %s" %(
+            "(%s)\ndetails: %s" % (
                 self.e.code, self.uri, fmt, self.uriparts,
                 self.response_data))
+
 
 class TwitterResponse(object):
     """
@@ -126,8 +129,8 @@ def wrap_response(response, headers):
 class TwitterCall(object):
 
     def __init__(
-        self, auth, format, domain, callable_cls, uri="",
-        uriparts=None, secure=True, timeout=None, gzip=False):
+            self, auth, format, domain, callable_cls, uri="",
+            uriparts=None, secure=True, timeout=None, gzip=False):
         self.auth = auth
         self.format = format
         self.domain = domain
@@ -174,7 +177,7 @@ class TwitterCall(object):
         # the list of uriparts, assume the id goes at the end.
         id = kwargs.pop('id', None)
         if id:
-            uri += "/%s" %(id)
+            uri += "/%s" % (id)
 
         # If an _id kwarg is present, this is treated as id as a CGI
         # param.
@@ -191,8 +194,8 @@ class TwitterCall(object):
         dot = ""
         if self.format:
             dot = "."
-        uriBase = "http%s://%s/%s%s%s" %(
-                    secure_str, self.domain, uri, dot, self.format)
+        uriBase = "http%s://%s/%s%s%s" % (
+            secure_str, self.domain, uri, dot, self.format)
 
         # Catch media arguments to handle oauth query differently for multipart
         media = None
@@ -203,13 +206,14 @@ class TwitterCall(object):
                 break
 
         headers = {'Accept-Encoding': 'gzip'} if self.gzip else dict()
-        body = None; arg_data = None
+        body = None
+        arg_data = None
         if self.auth:
             headers.update(self.auth.generate_headers())
             # Use urlencoded oauth args with no params when sending media
             # via multipart and send it directly via uri even for post
-            arg_data = self.auth.encode_params(uriBase, method,
-                {} if media else kwargs )
+            arg_data = self.auth.encode_params(
+                uriBase, method, {} if media else kwargs)
             if method == 'GET' or media:
                 uriBase += '?' + arg_data
             else:
@@ -220,8 +224,8 @@ class TwitterCall(object):
             BOUNDARY = "###Python-Twitter###"
             bod = []
             bod.append('--' + BOUNDARY)
-            bod.append('Content-Disposition: form-data; name="%s"' %
-                mediafield)
+            bod.append(
+                'Content-Disposition: form-data; name="%s"' % mediafield)
             bod.append('')
             bod.append(media)
             for k, v in kwargs.items():
@@ -231,7 +235,8 @@ class TwitterCall(object):
                 bod.append(v)
             bod.append('--' + BOUNDARY + '--')
             body = '\r\n'.join(bod)
-            headers['Content-Type'] = 'multipart/form-data; boundary=%s' % BOUNDARY
+            headers['Content-Type'] = \
+                'multipart/form-data; boundary=%s' % BOUNDARY
 
         req = urllib_request.Request(uriBase, body, headers)
         return self._handle_response(req, uri, arg_data, _timeout)
@@ -266,6 +271,7 @@ class TwitterCall(object):
                 return []
             else:
                 raise TwitterHTTPError(e, uri, self.format, arg_data)
+
 
 class Twitter(TwitterCall):
     """
@@ -349,9 +355,9 @@ class Twitter(TwitterCall):
 
     """
     def __init__(
-        self, format="json",
-        domain="api.twitter.com", secure=True, auth=None,
-        api_version=_DEFAULT):
+            self, format="json",
+            domain="api.twitter.com", secure=True, auth=None,
+            api_version=_DEFAULT):
         """
         Create a new twitter API connector.
 
@@ -364,20 +370,19 @@ class Twitter(TwitterCall):
 
 
         `domain` lets you change the domain you are connecting. By
-        default it's `api.twitter.com` but `search.twitter.com` may be
-        useful too.
+        default it's `api.twitter.com`.
 
         If `secure` is False you will connect with HTTP instead of
         HTTPS.
 
         `api_version` is used to set the base uri. By default it's
-        '1'. If you are using "search.twitter.com" set this to None.
+        '1.1'.
         """
         if not auth:
             auth = NoAuth()
 
         if (format not in ("json", "xml", "")):
-            raise ValueError("Unknown data format '%s'" %(format))
+            raise ValueError("Unknown data format '%s'" % (format))
 
         if api_version is _DEFAULT:
             api_version = '1.1'

@@ -1,6 +1,8 @@
 Python Twitter Tools
 ====================
 
+[![Build Status](https://travis-ci.org/sixohsix/twitter.svg)](https://travis-ci.org/sixohsix/twitter)
+
 The Minimalist Twitter API for Python is a Python API for Twitter,
 everyone's favorite Web 2.0 Facebook-style status updater for people
 on the go.
@@ -116,8 +118,8 @@ t._("tamtar")._("things-that-are-rad").members()
 t.user.list.members(user="tamtar", list="things-that-are-rad")
 
 # An *optional* `_timeout` parameter can also be used for API
-# calls which take much more time than normal or twitter stops
-# responding for some reasone
+# calls which take much more time than normal or Twitter stops
+# responding for some reason
 t.users.lookup(screen_name=','.join(A_LIST_OF_100_SCREEN_NAMES), _timeout=1)
 
 # Overriding Method: GET/POST
@@ -204,7 +206,7 @@ access these streams. E.g. for direct messages your
 [application](https://dev.twitter.com/apps) needs the "Read, Write & Direct
 Messages" permission.
 
-The following example demonstrates how to retreive all new direct messages
+The following example demonstrates how to retrieve all new direct messages
 from the user stream:
 
 ```python
@@ -223,7 +225,7 @@ for msg in twitter_userstream.user():
 Twitter Response Objects
 ------------------------
 
-Response from a twitter request. Behaves like a list or a string
+Response from a Twitter request. Behaves like a list or a string
 (depending on requested format) but it has a few other interesting
 attributes.
 
@@ -250,7 +252,7 @@ Visit the Twitter developer page and create a new application:
 This will get you a CONSUMER_KEY and CONSUMER_SECRET.
 
 When users run your application they have to authenticate your app
-with their Twitter account. A few HTTP calls to twitter are required
+with their Twitter account. A few HTTP calls to Twitter are required
 to do this. Please see the twitter.oauth_dance module to see how this
 is done. If you are making a command-line app, you can use the
 oauth_dance() function directly.
