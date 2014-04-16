@@ -10,7 +10,9 @@ from __future__ import print_function
 import contextlib
 import re
 import sys
+import textwrap
 import time
+import socket
 
 try:
     from html.entities import name2codepoint
@@ -116,17 +118,24 @@ def follow_redirects(link, sites= None):
     req = urllib2.Request(link)
     req.get_method = lambda : 'HEAD'
     try:
-        with contextlib.closing(opener.open(req)) as site:
+        with contextlib.closing(opener.open(req,timeout=1)) as site:
             return site.url
-    except (urllib2.HTTPError, urllib2.URLError):
+    except:
         return redirect_handler.last_url if redirect_handler.last_url else link
 
 def expand_line(line, sites):
     """Expand the links in the line for the given sites."""
-    l = line.strip()
-    msg_format, links = find_links(l)
-    args = tuple(follow_redirects(l, sites) for l in links)
-    return msg_format % args
+    try:
+        l = line.strip()
+        msg_format, links = find_links(l)
+        args = tuple(follow_redirects(l, sites) for l in links)
+        line = msg_format % args
+    except Exception as e:
+        try:
+            err("expanding line %s failed due to %s" % (line, unicode(e)))
+        except:
+            pass
+    return line
 
 def parse_host_list(list_of_hosts):
     """Parse the comma separated list of hosts."""
@@ -134,3 +143,12 @@ def parse_host_list(list_of_hosts):
         m.group(1) for m in re.finditer("\s*([^,\s]+)\s*,?\s*", list_of_hosts))
     return p
 
+
+def align_text(text, left_margin=17, max_width=160):
+    lines = []
+    for line in text.split('\n'):
+        temp_lines = textwrap.wrap(line, max_width - left_margin)
+        temp_lines = [(' ' * left_margin + line) for line in temp_lines]
+        lines.append('\n'.join(temp_lines))
+    ret = '\n'.join(lines)
+    return ret.lstrip()

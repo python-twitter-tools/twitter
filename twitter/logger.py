@@ -31,8 +31,14 @@ from time import sleep
 from .api import Twitter, TwitterError
 from .cmdline import CONSUMER_KEY, CONSUMER_SECRET
 from .auth import NoAuth
+from .oauth import OAuth, write_token_file, read_token_file
+from .oauth_dance import oauth_dance
 from .util import printNicely
 
+# Registered by @sixohsix
+CONSUMER_KEY = "OifqLIQIufeY9znQCkbvg"
+CONSUMER_SECRET = "IedFvi0JitR9yaYw9HwcCCEy4KYaLxf4p4rHRqGgX80"
+OAUTH_FILENAME = os.environ.get('HOME', os.environ.get('USERPROFILE', '')) + os.sep + '.twitter_log_oauth'
 
 def log_debug(msg):
     print(msg, file=sys.stderr)
@@ -62,14 +68,21 @@ def get_tweets(twitter, screen_name, max_id=None):
     return n_tweets, max_id
 
 def main(args=sys.argv[1:]):
-    twitter = Twitter(
-        auth=NoAuth(),
-        api_version='1',
-        domain='api.twitter.com')
-
     if not args:
         print(__doc__)
         return 1
+
+    if not os.path.exists(OAUTH_FILENAME):
+        oauth_dance(
+            "the Python Twitter Logger", CONSUMER_KEY, CONSUMER_SECRET,
+            OAUTH_FILENAME)
+
+    oauth_token, oauth_token_secret = read_token_file(OAUTH_FILENAME)
+
+    twitter = Twitter(
+        auth=OAuth(
+            oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET),
+        domain='api.twitter.com')
 
     screen_name = args[0]
 
@@ -85,7 +98,7 @@ def main(args=sys.argv[1:]):
             n_tweets += tweets_processed
             log_debug("Processed %i tweets (max_id %s)" %(n_tweets, max_id))
             if tweets_processed == 0:
-                log_debug("That's it, we got all the tweets. Done.")
+                log_debug("That's it, we got all the tweets we could. Done.")
                 break
         except TwitterError as e:
             log_debug("Twitter bailed out. I'm going to sleep a bit then try again")

@@ -10,12 +10,16 @@ try:
 except ImportError:
     from io import BytesIO as StringIO
 
-from twitter.twitter_globals import POST_ACTIONS
-from twitter.auth import NoAuth
+from .twitter_globals import POST_ACTIONS
+from .auth import NoAuth
 
 import re
 import gzip
-import httplib
+
+try:
+    import http.client as http_client
+except ImportError:
+    import httplib as http_client
 
 try:
     import json
@@ -45,12 +49,19 @@ class TwitterHTTPError(TwitterError):
         self.uri = uri
         self.format = format
         self.uriparts = uriparts
-        if self.e.headers['Content-Encoding'] == 'gzip':
-            buf = StringIO(self.e.fp.read())
+        try:
+            data = self.e.fp.read()
+        except http_client.IncompleteRead as e:
+            # can't read the error text
+            # let's try some of it
+            data = e.partial
+        if self.e.headers.get('Content-Encoding') == 'gzip':
+            buf = StringIO(data)
             f = gzip.GzipFile(fileobj=buf)
             self.response_data = f.read()
         else:
-            self.response_data = self.e.fp.read()
+            self.response_data = data
+        super(TwitterHTTPError, self).__init__(str(self))
 
     def __str__(self):
         fmt = ("." + self.format) if self.format else ""
@@ -71,8 +82,6 @@ class TwitterResponse(object):
     httplib.HTTPHeaders instance. You can do
     `response.headers.get('h')` to retrieve a header.
     """
-    def __init__(self, headers):
-        self.headers = headers
 
     @property
     def rate_limit_remaining(self):
@@ -96,30 +105,32 @@ class TwitterResponse(object):
         return int(self.headers.get('X-Rate-Limit-Reset', "0"))
 
 
+class TwitterDictResponse(dict, TwitterResponse):
+    pass
+
+
+class TwitterListResponse(list, TwitterResponse):
+    pass
+
+
 def wrap_response(response, headers):
     response_typ = type(response)
-    if response_typ is bool:
-        # HURF DURF MY NAME IS PYTHON AND I CAN'T SUBCLASS bool.
-        response_typ = int
-
-    class WrappedTwitterResponse(response_typ, TwitterResponse):
-        __doc__ = TwitterResponse.__doc__
-
-        def __init__(self, response, headers):
-            response_typ.__init__(self, response)
-            TwitterResponse.__init__(self, headers)
-
-        def __new__(cls, response, headers):
-            return response_typ.__new__(cls, response)
-
-    return WrappedTwitterResponse(response, headers)
+    if response_typ is dict:
+        res = TwitterDictResponse(response)
+        res.headers = headers
+    elif response_typ is list:
+        res = TwitterListResponse(response)
+        res.headers = headers
+    else:
+        res = response
+    return res
 
 
 class TwitterCall(object):
 
     def __init__(
             self, auth, format, domain, callable_cls, uri="",
-            uriparts=None, secure=True):
+            uriparts=None, secure=True, timeout=None, gzip=False):
         self.auth = auth
         self.format = format
         self.domain = domain
@@ -127,6 +138,8 @@ class TwitterCall(object):
         self.uri = uri
         self.uriparts = uriparts
         self.secure = secure
+        self.timeout = timeout
+        self.gzip = gzip
 
     def __getattr__(self, k):
         try:
@@ -135,9 +148,9 @@ class TwitterCall(object):
             def extend_call(arg):
                 return self.callable_cls(
                     auth=self.auth, format=self.format, domain=self.domain,
-                    callable_cls=self.callable_cls, uriparts=self.uriparts
-                    + (arg,),
-                    secure=self.secure)
+                    callable_cls=self.callable_cls, timeout=self.timeout,
+                    secure=self.secure, gzip=self.gzip,
+                    uriparts=self.uriparts + (arg,))
             if k == "_":
                 return extend_call
             else:
@@ -184,15 +197,46 @@ class TwitterCall(object):
         uriBase = "http%s://%s/%s%s%s" % (
             secure_str, self.domain, uri, dot, self.format)
 
-        headers = {'Accept-Encoding': 'gzip'}
+        # Catch media arguments to handle oauth query differently for multipart
+        media = None
+        for arg in ['media[]', 'banner', 'image']:
+            if arg in kwargs:
+                media = kwargs.pop(arg)
+                mediafield = arg
+                break
+
+        headers = {'Accept-Encoding': 'gzip'} if self.gzip else dict()
+        body = None
+        arg_data = None
         if self.auth:
             headers.update(self.auth.generate_headers())
-            arg_data = self.auth.encode_params(uriBase, method, kwargs)
-            if method == 'GET':
+            # Use urlencoded oauth args with no params when sending media
+            # via multipart and send it directly via uri even for post
+            arg_data = self.auth.encode_params(
+                uriBase, method, {} if media else kwargs)
+            if method == 'GET' or media:
                 uriBase += '?' + arg_data
-                body = None
             else:
                 body = arg_data.encode('utf8')
+
+        # Handle query as multipart when sending media
+        if media:
+            BOUNDARY = "###Python-Twitter###"
+            bod = []
+            bod.append('--' + BOUNDARY)
+            bod.append(
+                'Content-Disposition: form-data; name="%s"' % mediafield)
+            bod.append('')
+            bod.append(media)
+            for k, v in kwargs.items():
+                bod.append('--' + BOUNDARY)
+                bod.append('Content-Disposition: form-data; name="%s"' % k)
+                bod.append('')
+                bod.append(v)
+            bod.append('--' + BOUNDARY + '--')
+            body = '\r\n'.join(bod)
+            headers['Content-Type'] = \
+                'multipart/form-data; boundary=%s' % BOUNDARY
 
         req = urllib_request.Request(uriBase, body, headers)
         return self._handle_response(req, uri, arg_data, _timeout)
@@ -207,7 +251,7 @@ class TwitterCall(object):
                 return handle
             try:
                 data = handle.read()
-            except httplib.IncompleteRead, e:
+            except http_client.IncompleteRead as e:
                 # Even if we don't get all the bytes we should have there
                 # may be a complete response in e.partial
                 data = e.partial
@@ -249,11 +293,8 @@ class Twitter(TwitterCall):
         # Get your "home" timeline
         t.statuses.home_timeline()
 
-        # Get a particular friend's timeline
-        t.statuses.friends_timeline(id="billybob")
-
-        # Also supported (but totally weird)
-        t.statuses.friends_timeline.billybob()
+        # Get a particular friend's tweets
+        t.statuses.user_timeline(user_id="billybob")
 
         # Update your status
         t.statuses.update(
@@ -344,10 +385,7 @@ class Twitter(TwitterCall):
             raise ValueError("Unknown data format '%s'" % (format))
 
         if api_version is _DEFAULT:
-            if domain == 'api.twitter.com':
-                api_version = '1.1'
-            else:
-                api_version = None
+            api_version = '1.1'
 
         uriparts = ()
         if api_version:
