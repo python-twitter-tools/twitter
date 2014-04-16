@@ -97,8 +97,11 @@ def load_tweets(filename):
 
     tweets = {}
     for line in archive.readlines():
-        tid, text = line.strip().split(" ", 1)
-        tweets[int(tid)] = text.decode("utf-8")
+        try:
+            tid, text = line.strip().split(" ", 1)
+            tweets[int(tid)] = text.decode("utf-8")
+        except Exception as e:
+            err("loading tweet %s failed due to %s" % (line, unicode(e)))
 
     archive.close()
     return tweets
@@ -125,7 +128,10 @@ def save_tweets(filename, tweets):
         return
 
     for k in sorted(tweets.keys()):
-        archive.write("%i %s\n" % (k, tweets[k].encode('utf-8')))
+        try:
+            archive.write("%i %s\n" % (k, tweets[k].encode('utf-8')))
+        except Exception as ex:
+            err("archiving tweet %s failed due to %s" % (k, unicode(ex)))
 
     archive.close()
 
