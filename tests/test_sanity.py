@@ -28,6 +28,13 @@ def get_random_str():
     return ''.join(choice(AZaz) for _ in range(10))
 
 
+def tweet_in_recent(tweet, recent_tweets):
+    for recent in recent_tweets:
+        if tweet == recent[0]['text']:
+            return True
+    return False
+
+
 def test_API_set_tweet():
     random_tweet = "A random tweet " + get_random_str()
     twitter11.statuses.update(status=random_tweet)
@@ -36,7 +43,7 @@ def test_API_set_tweet():
     assert recent
     assert isinstance(recent.rate_limit_remaining, int)
     assert isinstance(recent.rate_limit_reset, int)
-    assert random_tweet == recent[0]['text']
+    assert tweet_in_recent(random_tweet, recent)
 
 
 def test_API_set_unicode_tweet():
@@ -45,7 +52,7 @@ def test_API_set_unicode_tweet():
 
     recent = twitter11.statuses.home_timeline()
     assert recent
-    assert random_tweet == recent[0]['text']
+    assert tweet_in_recent(random_tweet, recent)
 
 
 def test_search():
