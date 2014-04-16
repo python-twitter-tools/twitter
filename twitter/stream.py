@@ -1,3 +1,6 @@
+# encoding: utf-8
+from __future__ import unicode_literals
+
 import sys
 PY_3_OR_HIGHER = sys.version_info >= (3, 0)
 
@@ -81,7 +84,7 @@ class HttpChunkDecoder(object):
 class JsonDecoder(object):
 
     def __init__(self):
-        self.buf = u""
+        self.buf = ""
         self.raw_decode = json.JSONDecoder().raw_decode
 
     def decode(self, data):

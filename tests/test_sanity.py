@@ -1,4 +1,5 @@
-# encoding: utf8
+# encoding: utf-8
+from __future__ import unicode_literals
 
 from random import choice
 import time
@@ -31,21 +32,23 @@ def get_random_str():
 def test_API_set_tweet():
     random_tweet = "A random tweet " + get_random_str()
     twitter11.statuses.update(status=random_tweet)
-    time.sleep(2)
+    time.sleep(5)
     recent = twitter11.statuses.home_timeline()
     assert recent
     assert isinstance(recent.rate_limit_remaining, int)
     assert isinstance(recent.rate_limit_reset, int)
-    assert random_tweet == recent[0]['text']
+    texts = [tweet['text'] for tweet in recent]
+    assert random_tweet in texts
 
 
 def test_API_set_unicode_tweet():
-    random_tweet = u"A random tweet with unicode üøπ" + get_random_str()
+    random_tweet = "A random tweet with unicode üøπ" + get_random_str()
     twitter11.statuses.update(status=random_tweet)
-
+    time.sleep(5)
     recent = twitter11.statuses.home_timeline()
     assert recent
-    assert random_tweet == recent[0]['text']
+    texts = [tweet['text'] for tweet in recent]
+    assert random_tweet in texts
 
 
 def test_search():
@@ -109,5 +112,3 @@ def test_jsonifability():
     res2 = json.loads(p)
     assert res == res2
     assert res2[2] == 3
-
-# End of file
