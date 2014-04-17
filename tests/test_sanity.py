@@ -29,13 +29,6 @@ def get_random_str():
     return ''.join(choice(AZaz) for _ in range(10))
 
 
-def tweet_in_recent(tweet, recent_tweets):
-    for recent in recent_tweets:
-        if tweet == recent['text']:
-            return True
-    return False
-
-
 def test_API_set_tweet():
     random_tweet = "A random tweet " + get_random_str()
     twitter11.statuses.update(status=random_tweet)
