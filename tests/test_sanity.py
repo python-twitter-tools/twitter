@@ -30,7 +30,7 @@ def get_random_str():
 
 def tweet_in_recent(tweet, recent_tweets):
     for recent in recent_tweets:
-        if tweet == recent[0]['text']:
+        if tweet == recent['text']:
             return True
     return False
 
