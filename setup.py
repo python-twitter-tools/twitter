@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '1.14.2'
+version = '1.14.3'
 
 install_requires = [
     # -*- Extra requirements: -*-
@@ -20,6 +20,7 @@ setup(name='twitter',
           "Operating System :: OS Independent",
           "Programming Language :: Python :: 2.6",
           "Programming Language :: Python :: 2.7",
+          "Programming Language :: Python :: 3.2",
           "Programming Language :: Python :: 3.3",
           "Programming Language :: Python :: 3.4",
           "Topic :: Communications :: Chat :: Internet Relay Chat",

@@ -1,3 +1,6 @@
+# encoding: utf-8
+from __future__ import unicode_literals
+
 try:
     import urllib.request as urllib_request
     import urllib.error as urllib_error
