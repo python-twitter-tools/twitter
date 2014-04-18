@@ -8,10 +8,13 @@ python:
 - "3.4"
 - "pypy"
 
+install:
+  - pip install coveralls
 
-script: nosetests
+script: nosetests --with-coverage --cover-package=twitter
 
 after_success:
+  - coveralls
   - pip install pep8 pyflakes
   - pep8 twitter/*.py
   - pyflakes twitter/*.py
