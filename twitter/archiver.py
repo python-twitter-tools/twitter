@@ -328,8 +328,11 @@ def main(args=sys.argv[1:]):
 
     # authenticate using OAuth, asking for token if necessary
     if options['oauth']:
-        oauth_filename = (os.getenv("HOME", "") + os.sep
-                          + ".twitter-archiver_oauth")
+        oauth_filename = (os.environ.get('HOME', 
+                          os.environ.get('USERPROFILE', '')) 
+                          + os.sep
+                          + '.twitter-archiver_oauth')
+        
         if not os.path.exists(oauth_filename):
             oauth_dance("Twitter-Archiver", CONSUMER_KEY, CONSUMER_SECRET,
                         oauth_filename)
