@@ -101,6 +101,7 @@ class OAuth(Auth):
         params['oauth_version'] = '1.0'
         params['oauth_timestamp'] = str(int(time()))
         params['oauth_nonce'] = str(getrandbits(64))
+        params['oauth_callback'] = 'oob'
 
         enc_params = urlencode_noplus(sorted(params.items()))
 
