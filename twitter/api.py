@@ -205,6 +205,13 @@ class TwitterCall(object):
         for arg in ['media[]', 'banner', 'image']:
             if arg in kwargs:
                 media = kwargs.pop(arg)
+                # Check if argument tells whether img is already base64 encoded
+                b64_convert = True
+                if "_base64" in kwargs:
+                    b64_convert = not kwargs.pop("_base64")
+                if b64_convert:
+                    import base64
+                    media = base64.b64encode(media)
                 mediafield = arg
                 break
 
@@ -229,6 +236,7 @@ class TwitterCall(object):
             bod.append('--' + BOUNDARY)
             bod.append(
                 'Content-Disposition: form-data; name="%s"' % mediafield)
+            bod.append('Content-Transfer-Encoding: base64')
             bod.append('')
             bod.append(media)
             for k, v in kwargs.items():
