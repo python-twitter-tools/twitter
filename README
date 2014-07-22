@@ -127,6 +127,15 @@ t.users.lookup(screen_name=','.join(A_LIST_OF_100_SCREEN_NAMES), _timeout=1)
 # detects whether GET or POST should be used, Nevertheless
 # to force a particular method, use `_method`
 t.statuses.oembed(_id=1234567890, _method='GET')
+
+# Send a tweet with an image included (or set your banner or logo similarily)
+# - by just reading your image from the web or a file in a string:
+with open("example.png", "rb") as imagefile:
+    params = {"media[]": imagefile.read(), "status": "PTT"}
+t.statuses.update_with_media(**params)
+# - or by sending a base64 encoded image:
+params = {"media[]": base64_image, "status": "PTT", "_base64": True}
+t.statuses.update_with_media(**params)
 ```
 
 Searching Twitter::
