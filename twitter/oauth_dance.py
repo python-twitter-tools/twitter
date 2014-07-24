@@ -2,9 +2,11 @@ from __future__ import print_function
 
 import webbrowser
 import time
+import json
 
-from .api import Twitter
+from .api import Twitter, json
 from .oauth import OAuth, write_token_file
+from .oauth2 import OAuth2, write_bearer_token_file
 
 try:
     _input = raw_input
@@ -12,6 +14,23 @@ except NameError:
     _input = input
 
 
+def oauth2_dance(consumer_key, consumer_secret, token_filename=None):
+    """
+    Perform the OAuth2 dance to transform a consumer key and secret into a
+    bearer token.
+
+    If a token_filename is given, the bearer token will be written to
+    the file.
+    """
+    twitter = Twitter(
+        auth=OAuth2(consumer_key=consumer_key, consumer_secret=consumer_secret),
+        format="",
+        api_version="")
+    token = json.loads(twitter.oauth2.token(grant_type="client_credentials")
+        .encode("utf8"))["access_token"]
+    if token_filename:
+        write_bearer_token_file(token)
+    return token
 
 def oauth_dance(app_name, consumer_key, consumer_secret, token_filename=None):
     """

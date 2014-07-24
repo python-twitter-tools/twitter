@@ -10,11 +10,14 @@ from textwrap import dedent
 
 from .api import Twitter, TwitterError, TwitterHTTPError, TwitterResponse
 from .auth import NoAuth, UserPassAuth
-from .oauth import (OAuth, read_token_file, write_token_file,
-                    __doc__ as oauth_doc)
-from .oauth2 import OAuth2
+from .oauth import (
+    OAuth, read_token_file, write_token_file,
+    __doc__ as oauth_doc)
+from .oauth2 import (
+    OAuth2, read_bearer_token_file, write_bearer_token_file,
+    __doc__ as oauth2_doc)
 from .stream import TwitterStream
-from .oauth_dance import oauth_dance
+from .oauth_dance import oauth_dance, oauth2_dance
 
 __doc__ = __doc__ or ""
 
@@ -43,9 +46,9 @@ Authentication
 --------------
 
 You can authenticate with Twitter in three ways: NoAuth, OAuth, or
-UserPassAuth. Get help() on these classes to learn how to use them.
+OAuth2 (app-only). Get help() on these classes to learn how to use them.
 
-OAuth is probably the most useful.
+OAuth and OAuth2 are probably the most useful.
 
 
 Working with OAuth
@@ -54,6 +57,27 @@ Working with OAuth
 
 __doc__ += dedent(oauth_doc or "")
 
-__all__ = ["Twitter", "TwitterStream", "TwitterResponse", "TwitterError",
-           "TwitterHTTPError", "NoAuth", "OAuth", "UserPassAuth",
-           "read_token_file", "write_token_file", "oauth_dance", "OAuth2"]
+__doc__ += """
+Working with OAuth2
+-------------------
+"""
+
+__doc__ += dedent(oauth2_doc or "")
+
+__all__ = [
+    "NoAuth",
+    "OAuth",
+    "OAuth2",
+    "oauth2_dance",
+    "oauth_dance",
+    "read_bearer_token_file",
+    "read_token_file",
+    "Twitter",
+    "TwitterError",
+    "TwitterHTTPError",
+    "TwitterResponse",
+    "TwitterStream",
+    "UserPassAuth",
+    "write_bearer_token_file",
+    "write_token_file",
+    ]

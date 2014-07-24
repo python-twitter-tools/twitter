@@ -9,8 +9,8 @@ import argparse
 
 from twitter.stream import TwitterStream, Timeout, HeartbeatTimeout, Hangup
 from twitter.oauth import OAuth
+from twitter.oauth2 import OAuth2, read_bearer_token_file
 from twitter.util import printNicely
-
 
 def parse_arguments():
 
