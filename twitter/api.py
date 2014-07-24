@@ -298,14 +298,22 @@ class Twitter(TwitterCall):
 
     Examples::
 
+        from twitter import *
+
         t = Twitter(
             auth=OAuth(token, token_key, con_secret, con_secret_key)))
 
         # Get your "home" timeline
         t.statuses.home_timeline()
 
-        # Get a particular friend's tweets
-        t.statuses.user_timeline(user_id="billybob")
+        # Get a particular friend's timeline
+        t.statuses.user_timeline(screen_name="billybob")
+
+        # to pass in GET/POST parameters, such as `count`
+        t.statuses.home_timeline(count=5)
+
+        # to pass in the GET/POST parameter `id` you need to use `_id`
+        t.statuses.oembed(_id=1234567890)
 
         # Update your status
         t.statuses.update(
@@ -325,7 +333,7 @@ class Twitter(TwitterCall):
 
         # An *optional* `_timeout` parameter can also be used for API
         # calls which take much more time than normal or twitter stops
-        # responding for some reasone
+        # responding for some reason:
         t.users.lookup(
             screen_name=','.join(A_LIST_OF_100_SCREEN_NAMES), \
             _timeout=1)
@@ -337,14 +345,14 @@ class Twitter(TwitterCall):
         t.statuses.oembed(_id=1234567890, _method='GET')
 
         # Send a tweet with an image included (or set your banner or logo similarily)
-        # By just reading your image from the web or a file in a string:
+        # by just reading your image from the web or a file in a string:
         with open("example.png", "rb") as imagefile:
             params = {"media[]": imagefile.read(), "status": "PTT"}
         t.statuses.update_with_media(**params)
+
         # Or by sending a base64 encoded image:
         params = {"media[]": base64_image, "status": "PTT", "_base64": True}
         t.statuses.update_with_media(**params)
-
 
 
     Searching Twitter::

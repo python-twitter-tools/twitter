@@ -22,6 +22,8 @@ strings in the file. Not terribly exciting.
 Finally, you can use the OAuth authenticator to connect to Twitter. In
 code it all goes like this::
 
+    from twitter import *
+
     MY_TWITTER_CREDS = os.path.expanduser('~/.my_app_credentials')
     if not os.path.exists(MY_TWITTER_CREDS):
         oauth_dance("My App Name", CONSUMER_KEY, CONSUMER_SECRET,

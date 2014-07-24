@@ -60,7 +60,6 @@ followers of a user (or all the users that user follows).
 Programming with the Twitter api classes
 ========================================
 
-
 The Twitter and TwitterStream classes are the key to building your own
 Twitter-enabled applications.
 
@@ -77,17 +76,12 @@ The Twitter API is documented at:
 
 **[http://dev.twitter.com/doc](http://dev.twitter.com/doc)**
 
-
-Examples::
-
+Examples:
 ```python
 from twitter import *
 
-# see "Authentication" section below for tokens and keys
 t = Twitter(
-            auth=OAuth(OAUTH_TOKEN, OAUTH_SECRET,
-                       CONSUMER_KEY, CONSUMER_SECRET)
-           )
+    auth=OAuth(token, token_key, con_secret, con_secret_key)))
 
 # Get your "home" timeline
 t.statuses.home_timeline()
@@ -118,9 +112,10 @@ t._("tamtar")._("things-that-are-rad").members()
 t.user.list.members(user="tamtar", list="things-that-are-rad")
 
 # An *optional* `_timeout` parameter can also be used for API
-# calls which take much more time than normal or Twitter stops
-# responding for some reason
-t.users.lookup(screen_name=','.join(A_LIST_OF_100_SCREEN_NAMES), _timeout=1)
+# calls which take much more time than normal or twitter stops
+# responding for some reason:
+t.users.lookup(
+    screen_name=','.join(A_LIST_OF_100_SCREEN_NAMES), _timeout=1)
 
 # Overriding Method: GET/POST
 # you should not need to use this method as this library properly
@@ -129,18 +124,19 @@ t.users.lookup(screen_name=','.join(A_LIST_OF_100_SCREEN_NAMES), _timeout=1)
 t.statuses.oembed(_id=1234567890, _method='GET')
 
 # Send a tweet with an image included (or set your banner or logo similarily)
-# - by just reading your image from the web or a file in a string:
+# by just reading your image from the web or a file in a string:
 with open("example.png", "rb") as imagefile:
     params = {"media[]": imagefile.read(), "status": "PTT"}
 t.statuses.update_with_media(**params)
-# - or by sending a base64 encoded image:
+
+# Or by sending a base64 encoded image:
 params = {"media[]": base64_image, "status": "PTT", "_base64": True}
 t.statuses.update_with_media(**params)
 ```
 
-Searching Twitter::
 
-``` python
+Searching Twitter:
+```python
 # Search for the latest tweets about #pycon
 t.search.tweets(q="#pycon")
 ```
@@ -149,7 +145,7 @@ Using the data returned
 -----------------------
 
 Twitter API calls return decoded JSON. This is converted into
-a bunch of Python lists, dicts, ints, and strings. For example::
+a bunch of Python lists, dicts, ints, and strings. For example:
 
 ```python
 x = twitter.statuses.home_timeline()
@@ -165,7 +161,7 @@ Getting raw XML data
 --------------------
 
 If you prefer to get your Twitter data in XML format, pass
-format="xml" to the Twitter object when you instantiate it::
+format="xml" to the Twitter object when you instantiate it:
 
 ```python
 twitter = Twitter(format="xml")
@@ -178,26 +174,18 @@ of XML.
 The TwitterStream class
 -----------------------
 
-The TwitterStream object is an interface to the Twitter Stream API
-(stream.twitter.com). This can be used pretty much the same as the
-Twitter class except the result of calling a method will be an
-iterator that yields objects decoded from the stream. For
-example::
+The TwitterStream object is an interface to the Twitter Stream
+API. This can be used pretty much the same as the Twitter class
+except the result of calling a method will be an iterator that
+yields objects decoded from the stream. For example::
 
 ```python
-twitter_stream = TwitterStream(auth=UserPassAuth('joe', 'joespassword'))
+twitter_stream = TwitterStream(auth=OAuth(...))
 iterator = twitter_stream.statuses.sample()
 
 for tweet in iterator:
-    # ...do something with this tweet...
+    ...do something with this tweet...
 ```
-
-The iterator will yield tweets forever and ever (until the stream
-breaks at which point it raises a TwitterHTTPError.)
-
-The `block` parameter controls if the stream is blocking. Default
-is blocking (True). When set to False, the iterator will
-occasionally yield None when there is no available message.
 
 Per default the ``TwitterStream`` object uses
 [public streams](https://dev.twitter.com/docs/streaming-apis/streams/public).
@@ -231,24 +219,44 @@ for msg in twitter_userstream.user():
         print msg['direct_message']['text']
 ```
 
+The iterator will yield until the TCP connection breaks. When the
+connection breaks, the iterator yields `{'hangup': True}`, and
+raises `StopIteration` if iterated again.
+
+Similarly, if the stream does not produce heartbeats for more than
+90 seconds, the iterator yields `{'hangup': True,
+'heartbeat_timeout': True}`, and raises `StopIteration` if
+iterated again.
+
+The `timeout` parameter controls the maximum time between
+yields. If it is nonzero, then the iterator will yield either
+stream data or `{'timeout': True}` within the timeout period. This
+is useful if you want your program to do other stuff in between
+waiting for tweets.
+
+The `block` parameter sets the stream to be fully non-blocking. In
+this mode, the iterator always yields immediately. It returns
+stream data, or `None`. Note that `timeout` supercedes this
+argument, so it should also be set `None` to use this mode.
+
 Twitter Response Objects
 ------------------------
 
-Response from a Twitter request. Behaves like a list or a string
+Response from a twitter request. Behaves like a list or a string
 (depending on requested format) but it has a few other interesting
 attributes.
 
 `headers` gives you access to the response headers as an
 httplib.HTTPHeaders instance. You can do
-`response.headers.getheader('h')` to retrieve a header.
+`response.headers.get('h')` to retrieve a header.
 
 Authentication
 --------------
 
 You can authenticate with Twitter in three ways: NoAuth, OAuth, or
-UserPassAuth. Get help() on these classes to learn how to use them.
+OAuth2 (app-only). Get help() on these classes to learn how to use them.
 
-OAuth is probably the most useful.
+OAuth and OAuth2 are probably the most useful.
 
 
 Working with OAuth
@@ -261,12 +269,12 @@ Visit the Twitter developer page and create a new application:
 This will get you a CONSUMER_KEY and CONSUMER_SECRET.
 
 When users run your application they have to authenticate your app
-with their Twitter account. A few HTTP calls to Twitter are required
+with their Twitter account. A few HTTP calls to twitter are required
 to do this. Please see the twitter.oauth_dance module to see how this
 is done. If you are making a command-line app, you can use the
 oauth_dance() function directly.
 
-Performing the "oauth dance" gets you an oauth token and oauth secret
+Performing the "oauth dance" gets you an ouath token and oauth secret
 that authenticate the user with Twitter. You should save these for
 later so that the user doesn't have to do the oauth dance again.
 
@@ -275,7 +283,7 @@ write OAuth token and secret key values. The values are stored as
 strings in the file. Not terribly exciting.
 
 Finally, you can use the OAuth authenticator to connect to Twitter. In
-code it all goes like this::
+code it all goes like this:
 
 ```python
 from twitter import *
@@ -288,12 +296,38 @@ if not os.path.exists(MY_TWITTER_CREDS):
 oauth_token, oauth_secret = read_token_file(MY_TWITTER_CREDS)
 
 twitter = Twitter(auth=OAuth(
-    oauth_token, oauth_secret, CONSUMER_KEY, CONSUMER_SECRET))
+    oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET))
 
 # Now work with Twitter
 twitter.statuses.update(status='Hello, world!')
 ```
 
+Working with OAuth2
+-------------------
+
+Twitter only supports the application-only flow of OAuth2 for certain
+API endpoints. This OAuth2 authenticator only supports the application-only
+flow right now.
+
+To authenticate with OAuth2, visit the Twitter developer page and create a new
+application:
+
+**[https://dev.twitter.com/apps/new](https://dev.twitter.com/apps/new)**
+
+This will get you a CONSUMER_KEY and CONSUMER_SECRET.
+
+Exchange your CONSUMER_KEY and CONSUMER_SECRET for a bearer token using the
+oauth2_dance function.
+
+Finally, you can use the OAuth2 authenticator and your bearer token to connect
+to Twitter. In code it goes like this::
+
+```python
+twitter = Twitter(auth=OAuth2(bearer_token=BEARER_TOKEN))
+
+# Now work with Twitter
+twitter.search.tweets(q='keyword')
+```
 
 License
 =======
