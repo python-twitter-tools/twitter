@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import webbrowser
 import time
-import json
 
 from .api import Twitter, json
 from .oauth import OAuth, write_token_file
