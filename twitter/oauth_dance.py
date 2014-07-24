@@ -49,7 +49,7 @@ def oauth_dance(app_name, consumer_key, consumer_secret, token_filename=None):
         auth=OAuth('', '', consumer_key, consumer_secret),
         format='', api_version=None)
     oauth_token, oauth_token_secret = parse_oauth_tokens(
-        twitter.oauth.request_token())
+        twitter.oauth.request_token(oauth_callback="oob"))
     print("""
 In the web browser window that opens please choose to Allow
 access. Copy the PIN number that appears on the next page and paste or
