@@ -479,8 +479,8 @@ class ListsAction(StatusAction):
                 printNicely(lf(list))
             return []
         else:
-            return reversed(twitter.user.lists.list.statuses(
-                    user=screen_name, list=options['extra_args'][1]))
+            return reversed(twitter.lists.statuses(
+                    owner_screen_name=screen_name, slug=options['extra_args'][1]))
 
 
 class MyListsAction(ListsAction):
