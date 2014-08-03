@@ -6,6 +6,8 @@ version = '1.14.3'
 install_requires = [
     # -*- Extra requirements: -*-
     ]
+if sys.version_info < (2,7):
+    install_requires.append('argparse')
 
 setup(name='twitter',
       version=version,
