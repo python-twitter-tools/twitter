@@ -128,6 +128,13 @@ def wrap_response(response, headers):
         res = response
     return res
 
+def method_for_uri(uri):
+    method = "GET"
+    for action in POST_ACTIONS:
+        if re.search("%s(/\d+)?$" % action, uri):
+            method = "POST"
+            break
+    return method
 
 class TwitterCall(object):
 
@@ -168,13 +175,7 @@ class TwitterCall(object):
             uriparts.append(str(kwargs.pop(uripart, uripart)))
         uri = '/'.join(uriparts)
 
-        method = kwargs.pop('_method', None)
-        if not method:
-            method = "GET"
-            for action in POST_ACTIONS:
-                if re.search("%s(/\d+)?$" % action, uri):
-                    method = "POST"
-                    break
+        method = kwargs.pop('_method', None) or method_for_uri(uri)
 
         # If an id kwarg is present and there is no id to fill in in
         # the list of uriparts, assume the id goes at the end.

@@ -8,7 +8,7 @@
 POST_ACTIONS = [
 
     # Status Methods
-    'update', 'retweet', 'update_with_media',
+    'update', 'retweet', 'update_with_media', 'statuses/lookup',
 
     # Direct Message Methods
     'new',
@@ -30,7 +30,7 @@ POST_ACTIONS = [
     'create', 'create_all',
 
     # Users Methods
-    'lookup', 'report_spam',
+    'users/lookup', 'report_spam',
 
     # Streaming Methods
     'filter', 'user', 'site',
