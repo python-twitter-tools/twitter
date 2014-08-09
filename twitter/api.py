@@ -201,20 +201,29 @@ class TwitterCall(object):
         uriBase = "http%s://%s/%s%s%s" % (
             secure_str, self.domain, uri, dot, self.format)
 
+        # Check if argument tells whether img is already base64 encoded
+        b64_convert = True
+        if "_base64" in kwargs:
+            b64_convert = not kwargs.pop("_base64")
+        if b64_convert:
+            import base64
+
         # Catch media arguments to handle oauth query differently for multipart
         media = None
-        for arg in ['media[]', 'banner', 'image']:
+        for arg in ['media[]', 'image']:
             if arg in kwargs:
                 media = kwargs.pop(arg)
-                # Check if argument tells whether img is already base64 encoded
-                b64_convert = True
-                if "_base64" in kwargs:
-                    b64_convert = not kwargs.pop("_base64")
                 if b64_convert:
-                    import base64
                     media = base64.b64encode(media)
                 mediafield = arg
                 break
+
+        # Catch media arguments that are not accepted through multipart
+        # and are not yet base64 encoded
+        if b64_convert:
+            for arg in ['banner']:
+                if arg in kwargs:
+                    kwargs[arg] = base64.b64encode(kwargs[arg])
 
         headers = {'Accept-Encoding': 'gzip'} if self.gzip else dict()
         body = None
@@ -246,7 +255,7 @@ class TwitterCall(object):
                 bod.append('')
                 bod.append(v)
             bod.append('--' + BOUNDARY + '--')
-            body = '\r\n'.join(bod)
+            body = '\r\n'.join(bod).encode('utf8')
             headers['Content-Type'] = \
                 'multipart/form-data; boundary=%s' % BOUNDARY
 
@@ -272,7 +281,9 @@ class TwitterCall(object):
                 buf = StringIO(data)
                 f = gzip.GzipFile(fileobj=buf)
                 data = f.read()
-            if "json" == self.format:
+            if len(data) == 0:
+                return wrap_response({}, handle.headers)
+            elif "json" == self.format:
                 res = json.loads(data.decode('utf8'))
                 return wrap_response(res, handle.headers)
             else:
