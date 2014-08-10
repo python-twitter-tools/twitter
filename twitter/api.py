@@ -17,6 +17,7 @@ from .twitter_globals import POST_ACTIONS
 from .auth import NoAuth
 
 import re
+import sys
 import gzip
 
 try:
@@ -215,6 +216,8 @@ class TwitterCall(object):
                 media = kwargs.pop(arg)
                 if b64_convert:
                     media = base64.b64encode(media)
+                if sys.version_info >= (3, 0):
+                    media = str(media, 'utf8')
                 mediafield = arg
                 break
 
