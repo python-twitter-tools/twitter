@@ -210,7 +210,7 @@ class TwitterCall(object):
 
         # Catch media arguments to handle oauth query differently for multipart
         media = None
-        for arg in ['media[]', 'image']:
+        for arg in ['media[]']:
             if arg in kwargs:
                 media = kwargs.pop(arg)
                 if b64_convert:
@@ -221,7 +221,7 @@ class TwitterCall(object):
         # Catch media arguments that are not accepted through multipart
         # and are not yet base64 encoded
         if b64_convert:
-            for arg in ['banner']:
+            for arg in ['banner', 'image']:
                 if arg in kwargs:
                     kwargs[arg] = base64.b64encode(kwargs[arg])
 
