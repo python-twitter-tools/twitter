@@ -237,7 +237,8 @@ waiting for tweets.
 The `block` parameter sets the stream to be fully non-blocking. In
 this mode, the iterator always yields immediately. It returns
 stream data, or `None`. Note that `timeout` supercedes this
-argument, so it should also be set `None` to use this mode.
+argument, so it should also be set `None` to use this mode, 
+and non-blocking can potentially lead to 100% CPU usage.
 
 Twitter Response Objects
 ------------------------
