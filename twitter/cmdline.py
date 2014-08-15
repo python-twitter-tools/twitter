@@ -421,10 +421,18 @@ class StatusAction(Action):
     def __call__(self, twitter, options):
         statuses = self.getStatuses(twitter, options)
         sf = get_formatter('status', options)
-        for status in statuses:
-            statusStr = sf(status, options)
-            if statusStr.strip():
-                printNicely(statusStr)
+        if(options['format'] == "json"):
+            printNicely("[")
+            for status in statuses[:-1]:
+                statusStr = sf(status, options)
+                if statusStr.strip():
+                    printNicely(statusStr+",")
+            printNicely(sf(statuses[-1], options)+"]")
+        else:
+            for status in statuses:
+                statusStr = sf(status, options)
+                if statusStr.strip():
+                    printNicely(statusStr)
 
 class SearchAction(Action):
     def __call__(self, twitter, options):
@@ -479,8 +487,8 @@ class ListsAction(StatusAction):
                 printNicely(lf(list))
             return []
         else:
-            return reversed(twitter.lists.statuses(
-                    owner_screen_name=screen_name, slug=options['extra_args'][1]))
+            return list(reversed(twitter.lists.statuses(
+                    owner_screen_name=screen_name, slug=options['extra_args'][1])))
 
 
 class MyListsAction(ListsAction):
@@ -492,11 +500,11 @@ class MyListsAction(ListsAction):
 
 class FriendsAction(StatusAction):
     def getStatuses(self, twitter, options):
-        return reversed(twitter.statuses.home_timeline(count=options["length"]))
+        return list(reversed(twitter.statuses.home_timeline(count=options["length"])))
 
 class RepliesAction(StatusAction):
     def getStatuses(self, twitter, options):
-        return reversed(twitter.statuses.mentions_timeline(count=options["length"]))
+        return list(reversed(twitter.statuses.mentions_timeline(count=options["length"])))
 
 class FollowAction(AdminAction):
     def getUser(self, twitter, user):
