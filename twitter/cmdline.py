@@ -204,12 +204,17 @@ def replaceInStatus(status):
     txt = re.sub(hashtagRe, reRepl, txt)
     txt = re.sub(profileRe, reRepl, txt)
     return txt
+def correctRTStatus(status):
+    if('retweeted_status' in status):
+        return "RT " + status['retweeted_status']['user']['screen_name'] + " " + status['retweeted_status']['text']
+    else:
+        return status['text']
 
 class StatusFormatter(object):
     def __call__(self, status, options):
         return ("%s%s %s" % (
             get_time_string(status, options),
-            status['user']['screen_name'], gHtmlParser.unescape(status['text'])))
+            status['user']['screen_name'], gHtmlParser.unescape(correctRTStatus(status))))
 
 class AnsiStatusFormatter(object):
     def __init__(self):
@@ -220,7 +225,7 @@ class AnsiStatusFormatter(object):
         return ("%s%s% 16s%s %s " % (
             get_time_string(status, options),
             ansiFormatter.cmdColour(colour), status['user']['screen_name'],
-            ansiFormatter.cmdReset(), align_text(replaceInStatus(status['text']))))
+            ansiFormatter.cmdReset(), align_text(replaceInStatus(correctRTStatus(status)))))
 
 class VerboseStatusFormatter(object):
     def __call__(self, status, options):
@@ -228,17 +233,17 @@ class VerboseStatusFormatter(object):
             status['user']['screen_name'],
             status['user']['location'],
             status['created_at'],
-            gHtmlParser.unescape(status['text'])))
+            gHtmlParser.unescape(correctRTStatus(status))))
 
 class JSONStatusFormatter(object):
     def __call__(self, status, options):
-         status['text'] = gHtmlParser.unescape(status['text'])
+         status['text'] = gHtmlParser.unescape(correctRTStatus(status))
          return json.dumps(status)
 
 class URLStatusFormatter(object):
     urlmatch = re.compile(r'https?://\S+')
     def __call__(self, status, options):
-        urls = self.urlmatch.findall(status['text'])
+        urls = self.urlmatch.findall(correctRTStatus(status))
         return '\n'.join(urls) if urls else ""
 
 
