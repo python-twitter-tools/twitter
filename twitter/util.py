@@ -49,6 +49,8 @@ def printNicely(string):
     if hasattr(sys.stdout, 'buffer'):
         sys.stdout.buffer.write(string.encode('utf8'))
         print()
+        sys.stdout.buffer.flush()
+        sys.stdout.flush()
     else:
         print(string.encode('utf8'))
 

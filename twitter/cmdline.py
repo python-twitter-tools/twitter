@@ -204,12 +204,17 @@ def replaceInStatus(status):
     txt = re.sub(hashtagRe, reRepl, txt)
     txt = re.sub(profileRe, reRepl, txt)
     return txt
+def correctRTStatus(status):
+    if('retweeted_status' in status):
+        return "RT " + status['retweeted_status']['user']['screen_name'] + " " + status['retweeted_status']['text']
+    else:
+        return status['text']
 
 class StatusFormatter(object):
     def __call__(self, status, options):
         return ("%s%s %s" % (
             get_time_string(status, options),
-            status['user']['screen_name'], gHtmlParser.unescape(status['text'])))
+            status['user']['screen_name'], gHtmlParser.unescape(correctRTStatus(status))))
 
 class AnsiStatusFormatter(object):
     def __init__(self):
@@ -220,7 +225,7 @@ class AnsiStatusFormatter(object):
         return ("%s%s% 16s%s %s " % (
             get_time_string(status, options),
             ansiFormatter.cmdColour(colour), status['user']['screen_name'],
-            ansiFormatter.cmdReset(), align_text(replaceInStatus(status['text']))))
+            ansiFormatter.cmdReset(), align_text(replaceInStatus(correctRTStatus(status)))))
 
 class VerboseStatusFormatter(object):
     def __call__(self, status, options):
@@ -228,7 +233,7 @@ class VerboseStatusFormatter(object):
             status['user']['screen_name'],
             status['user']['location'],
             status['created_at'],
-            gHtmlParser.unescape(status['text'])))
+            gHtmlParser.unescape(correctRTStatus(status))))
 
 class JSONStatusFormatter(object):
     def __call__(self, status, options):
@@ -238,7 +243,7 @@ class JSONStatusFormatter(object):
 class URLStatusFormatter(object):
     urlmatch = re.compile(r'https?://\S+')
     def __call__(self, status, options):
-        urls = self.urlmatch.findall(status['text'])
+        urls = self.urlmatch.findall(correctRTStatus(status))
         return '\n'.join(urls) if urls else ""
 
 
@@ -421,10 +426,18 @@ class StatusAction(Action):
     def __call__(self, twitter, options):
         statuses = self.getStatuses(twitter, options)
         sf = get_formatter('status', options)
-        for status in statuses:
-            statusStr = sf(status, options)
-            if statusStr.strip():
-                printNicely(statusStr)
+        if(options['format'] == "json"):
+            printNicely("[")
+            for status in statuses[:-1]:
+                statusStr = sf(status, options)
+                if statusStr.strip():
+                    printNicely(statusStr+",")
+            printNicely(sf(statuses[-1], options)+"]")
+        else:
+            for status in statuses:
+                statusStr = sf(status, options)
+                if statusStr.strip():
+                    printNicely(statusStr)
 
 class SearchAction(Action):
     def __call__(self, twitter, options):
@@ -479,8 +492,8 @@ class ListsAction(StatusAction):
                 printNicely(lf(list))
             return []
         else:
-            return reversed(twitter.lists.statuses(
-                    owner_screen_name=screen_name, slug=options['extra_args'][1]))
+            return list(reversed(twitter.lists.statuses(
+                    owner_screen_name=screen_name, slug=options['extra_args'][1])))
 
 
 class MyListsAction(ListsAction):
@@ -492,11 +505,11 @@ class MyListsAction(ListsAction):
 
 class FriendsAction(StatusAction):
     def getStatuses(self, twitter, options):
-        return reversed(twitter.statuses.home_timeline(count=options["length"]))
+        return list(reversed(twitter.statuses.home_timeline(count=options["length"])))
 
 class RepliesAction(StatusAction):
     def getStatuses(self, twitter, options):
-        return reversed(twitter.statuses.mentions_timeline(count=options["length"]))
+        return list(reversed(twitter.statuses.mentions_timeline(count=options["length"])))
 
 class FollowAction(AdminAction):
     def getUser(self, twitter, user):
