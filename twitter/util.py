@@ -48,6 +48,8 @@ def smrt_input(globals_, locals_, ps1=">>> ", ps2="... "):
 def printNicely(string):
     if hasattr(sys.stdout, 'buffer'):
         sys.stdout.buffer.write(string.encode('utf8'))
+        sys.stdout.buffer.flush()
+        sys.stdout.flush()
         print()
     else:
         print(string.encode('utf8'))
