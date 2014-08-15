@@ -237,7 +237,7 @@ class VerboseStatusFormatter(object):
 
 class JSONStatusFormatter(object):
     def __call__(self, status, options):
-         status['text'] = gHtmlParser.unescape(correctRTStatus(status))
+         status['text'] = gHtmlParser.unescape(status['text'])
          return json.dumps(status)
 
 class URLStatusFormatter(object):
