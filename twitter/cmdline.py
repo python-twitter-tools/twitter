@@ -212,7 +212,7 @@ def correctRTStatus(status):
 
 class StatusFormatter(object):
     def __call__(self, status, options):
-        return ("%s%s %s" % (
+        return ("%s@%s %s" % (
             get_time_string(status, options),
             status['user']['screen_name'], gHtmlParser.unescape(correctRTStatus(status))))
 
