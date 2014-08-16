@@ -206,7 +206,7 @@ def replaceInStatus(status):
     return txt
 def correctRTStatus(status):
     if('retweeted_status' in status):
-        return "RT " + status['retweeted_status']['user']['screen_name'] + " " + status['retweeted_status']['text']
+        return "RT @" + status['retweeted_status']['user']['screen_name'] + " " + status['retweeted_status']['text']
     else:
         return status['text']
 
@@ -543,7 +543,7 @@ class SetStatusAction(Action):
         while statusTxt:
             limit = 140 - len(replies)
             if len(statusTxt) > limit:
-                end = string.rfind(statusTxt, ' ', 0, limit)
+                end = str.rfind(statusTxt, ' ', 0, limit)
             else:
                 end = limit
             splitted.append(" ".join((replies, statusTxt[:end])))
