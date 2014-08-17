@@ -111,8 +111,12 @@ OPTIONS = {
     'refresh_rate': 600,
     'format': 'default',
     'prompt': '[cyan]twitter[R]> ',
-    'config_filename': os.environ.get('HOME', os.environ.get('USERPROFILE', '')) + os.sep + '.twitter',
-    'oauth_filename': os.environ.get('HOME', os.environ.get('USERPROFILE', '')) + os.sep + '.twitter_oauth',
+    'config_filename': os.environ.get('HOME',
+                                      os.environ.get('USERPROFILE', ''))
+                       + os.sep + '.twitter',
+    'oauth_filename': os.environ.get('HOME',
+                                     os.environ.get('USERPROFILE', ''))
+                      + os.sep + '.twitter_oauth',
     'length': 20,
     'timestamp': False,
     'datestamp': False,
@@ -170,7 +174,7 @@ def get_time_string(status, options, format="%a %b %d %H:%M:%S +0000 %Y"):
     datestamp = options["datestamp"]
     t = time.strptime(status['created_at'], format)
     i_hate_timezones = time.timezone
-    if (time.daylight):
+    if time.daylight:
         i_hate_timezones = time.altzone
     dt = datetime.datetime(*t[:-3]) - datetime.timedelta(
         seconds=i_hate_timezones)
@@ -185,10 +189,10 @@ def get_time_string(status, options, format="%a %b %d %H:%M:%S +0000 %Y"):
 
 def reRepl(m):
     ansiTypes = {
-          'clear':   ansiFormatter.cmdReset(),
-          'hashtag': ansiFormatter.cmdBold(),
-          'profile': ansiFormatter.cmdUnderline(),
-          }
+        'clear':   ansiFormatter.cmdReset(),
+        'hashtag': ansiFormatter.cmdBold(),
+        'profile': ansiFormatter.cmdUnderline(),
+        }
 
     s = None
     try:
@@ -205,8 +209,9 @@ def replaceInStatus(status):
     txt = re.sub(profileRe, reRepl, txt)
     return txt
 def correctRTStatus(status):
-    if('retweeted_status' in status):
-        return "RT @" + status['retweeted_status']['user']['screen_name'] + " " + status['retweeted_status']['text']
+    if 'retweeted_status' in status:
+        return ("RT @" + status['retweeted_status']['user']['screen_name']
+                + " " + status['retweeted_status']['text'])
     else:
         return status['text']
 
@@ -214,7 +219,8 @@ class StatusFormatter(object):
     def __call__(self, status, options):
         return ("%s@%s %s" % (
             get_time_string(status, options),
-            status['user']['screen_name'], gHtmlParser.unescape(correctRTStatus(status))))
+            status['user']['screen_name'],
+            gHtmlParser.unescape(correctRTStatus(status))))
 
 class AnsiStatusFormatter(object):
     def __init__(self):
@@ -225,7 +231,8 @@ class AnsiStatusFormatter(object):
         return ("%s%s% 16s%s %s " % (
             get_time_string(status, options),
             ansiFormatter.cmdColour(colour), status['user']['screen_name'],
-            ansiFormatter.cmdReset(), align_text(replaceInStatus(correctRTStatus(status)))))
+            ansiFormatter.cmdReset(),
+            align_text(replaceInStatus(correctRTStatus(status)))))
 
 class VerboseStatusFormatter(object):
     def __call__(self, status, options):
@@ -237,8 +244,8 @@ class VerboseStatusFormatter(object):
 
 class JSONStatusFormatter(object):
     def __call__(self, status, options):
-         status['text'] = gHtmlParser.unescape(status['text'])
-         return json.dumps(status)
+        status['text'] = gHtmlParser.unescape(status['text'])
+        return json.dumps(status)
 
 class URLStatusFormatter(object):
     urlmatch = re.compile(r'https?://\S+')
@@ -257,7 +264,9 @@ class ListsFormatter(object):
 
 class ListsVerboseFormatter(object):
     def __call__(self, list):
-        list_str = "%-30s\n description: %s\n members: %s\n mode:%s\n" % (list['name'], list['description'], list['member_count'], list['mode'])
+        list_str = "%-30s\n description: %s\n members: %s\n mode:%s\n" % (
+            list['name'], list['description'],
+            list['member_count'], list['mode'])
         return list_str
 
 class AnsiListsFormatter(object):
@@ -360,12 +369,12 @@ formatters['lists'] = lists_formatters
 
 def get_formatter(action_type, options):
     formatters_dict = formatters.get(action_type)
-    if (not formatters_dict):
+    if not formatters_dict:
         raise TwitterError(
             "There was an error finding a class of formatters for your type (%s)"
             % (action_type))
     f = formatters_dict.get(options['format'])
-    if (not f):
+    if not f:
         raise TwitterError(
             "Unknown formatter '%s' for status actions" % (options['format']))
     return f()
@@ -403,8 +412,8 @@ class Action(object):
     def __call__(self, twitter, options):
         action = actions.get(options['action'], NoSuchAction)()
         try:
-            doAction = lambda : action(twitter, options)
-            if (options['refresh'] and isinstance(action, StatusAction)):
+            doAction = lambda: action(twitter, options)
+            if options['refresh'] and isinstance(action, StatusAction):
                 while True:
                     doAction()
                     sys.stdout.flush()
@@ -426,7 +435,7 @@ class StatusAction(Action):
     def __call__(self, twitter, options):
         statuses = self.getStatuses(twitter, options)
         sf = get_formatter('status', options)
-        if(options['format'] == "json"):
+        if options['format'] == "json":
             printNicely("[")
             for status in statuses[:-1]:
                 statusStr = sf(status, options)
@@ -493,7 +502,8 @@ class ListsAction(StatusAction):
             return []
         else:
             return list(reversed(twitter.lists.statuses(
-                    owner_screen_name=screen_name, slug=options['extra_args'][1])))
+                owner_screen_name=screen_name,
+                slug=options['extra_args'][1])))
 
 
 class MyListsAction(ListsAction):
@@ -505,11 +515,13 @@ class MyListsAction(ListsAction):
 
 class FriendsAction(StatusAction):
     def getStatuses(self, twitter, options):
-        return list(reversed(twitter.statuses.home_timeline(count=options["length"])))
+        return list(reversed(
+            twitter.statuses.home_timeline(count=options["length"])))
 
 class RepliesAction(StatusAction):
     def getStatuses(self, twitter, options):
-        return list(reversed(twitter.statuses.mentions_timeline(count=options["length"])))
+        return list(reversed(
+            twitter.statuses.mentions_timeline(count=options["length"])))
 
 class FollowAction(AdminAction):
     def getUser(self, twitter, user):
@@ -620,9 +632,11 @@ class DoNothingAction(Action):
 class RateLimitStatus(Action):
     def __call__(self, twitter, options):
         rate = twitter.application.rate_limit_status()
-        print("Remaining API requests: %s / %s (hourly limit)" % (rate['remaining_hits'], rate['hourly_limit']))
-        print("Next reset in %ss (%s)" % (int(rate['reset_time_in_seconds'] - time.time()),
-                                          time.asctime(time.localtime(rate['reset_time_in_seconds']))))
+        print("Remaining API requests: %s / %s (hourly limit)" % (
+            rate['remaining_hits'], rate['hourly_limit']))
+        print("Next reset in %ss (%s)" % (
+            int(rate['reset_time_in_seconds'] - time.time()),
+            time.asctime(time.localtime(rate['reset_time_in_seconds']))))
 
 actions = {
     'authorize' : DoNothingAction,
@@ -675,16 +689,15 @@ def main(args=sys.argv[1:]):
         for k, v in list(d.items()):
             if v: options[k] = v
 
-    if options['refresh'] and options['action'] not in (
-        'friends', 'replies'):
-        print("You can only refresh the friends or replies actions.", file=sys.stderr)
+    if options['refresh'] and options['action'] not in ('friends', 'replies'):
+        print("You can only refresh the friends or replies actions.",
+              file=sys.stderr)
         print("Use 'twitter -h' for help.", file=sys.stderr)
         return 1
 
     oauth_filename = os.path.expanduser(options['oauth_filename'])
 
-    if (options['action'] == 'authorize'
-        or not os.path.exists(oauth_filename)):
+    if options['action'] == 'authorize' or not os.path.exists(oauth_filename):
         oauth_dance(
             "the Command-Line Tool", CONSUMER_KEY, CONSUMER_SECRET,
             options['oauth_filename'])
