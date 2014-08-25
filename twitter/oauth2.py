@@ -88,7 +88,6 @@ class OAuth2(Auth):
                     ).decode('utf8')
                 ).encode('utf8')
             }
-        print(headers)
         return headers
 
 
