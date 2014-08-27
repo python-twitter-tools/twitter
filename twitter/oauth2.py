@@ -81,8 +81,8 @@ class OAuth2(Auth):
             headers = {
                 b'Content-Type': (b'application/x-www-form-urlencoded;'
                                   b'charset=UTF-8'),
-                b'Authorization': 'Basic {}'.format(
-                    b64encode('{}:{}'.format(
+                b'Authorization': 'Basic {0}'.format(
+                    b64encode('{0}:{1}'.format(
                         quote(self.consumer_key),
                         quote(self.consumer_secret)).encode('utf8')
                     ).decode('utf8')
