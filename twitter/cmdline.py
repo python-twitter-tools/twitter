@@ -435,10 +435,18 @@ class StatusAction(Action):
     def __call__(self, twitter, options):
         statuses = self.getStatuses(twitter, options)
         sf = get_formatter('status', options)
-        for status in statuses:
-            statusStr = sf(status, options)
-            if statusStr.strip():
-                printNicely(statusStr)
+        if options['format'] == "json":
+            printNicely("[")
+            for status in statuses[:-1]:
+                statusStr = sf(status, options)
+                if statusStr.strip():
+                    printNicely(statusStr+",")
+            printNicely(sf(statuses[-1], options)+"]")
+        else:
+            for status in statuses:
+                statusStr = sf(status, options)
+                if statusStr.strip():
+                    printNicely(statusStr)
 
 class SearchAction(Action):
     def __call__(self, twitter, options):
