@@ -1,0 +1,6 @@
+[report]
+omit =
+    */python?.?/*
+    */pypy/*
+    */site-packages/nose/*
+    tests/*
