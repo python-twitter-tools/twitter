@@ -1,5 +1,5 @@
 # encoding: utf-8
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 try:
     import urllib.request as urllib_request
@@ -19,6 +19,7 @@ from .auth import NoAuth
 import re
 import sys
 import gzip
+from time import sleep, time
 
 try:
     import http.client as http_client
@@ -141,7 +142,7 @@ class TwitterCall(object):
 
     def __init__(
             self, auth, format, domain, callable_cls, uri="",
-            uriparts=None, secure=True, timeout=None, gzip=False):
+            uriparts=None, secure=True, timeout=None, gzip=False, retry=False):
         self.auth = auth
         self.format = format
         self.domain = domain
@@ -151,6 +152,7 @@ class TwitterCall(object):
         self.secure = secure
         self.timeout = timeout
         self.gzip = gzip
+        self.retry = retry
 
     def __getattr__(self, k):
         try:
@@ -160,7 +162,7 @@ class TwitterCall(object):
                 return self.callable_cls(
                     auth=self.auth, format=self.format, domain=self.domain,
                     callable_cls=self.callable_cls, timeout=self.timeout,
-                    secure=self.secure, gzip=self.gzip,
+                    secure=self.secure, gzip=self.gzip, retry=self.retry,
                     uriparts=self.uriparts + (arg,))
             if k == "_":
                 return extend_call
@@ -263,7 +265,10 @@ class TwitterCall(object):
                 'multipart/form-data; boundary=%s' % BOUNDARY
 
         req = urllib_request.Request(uriBase, body, headers)
-        return self._handle_response(req, uri, arg_data, _timeout)
+        if self.retry:
+            return self._handle_response_with_retry(req, uri, arg_data, _timeout)
+        else:
+            return self._handle_response(req, uri, arg_data, _timeout)
 
     def _handle_response(self, req, uri, arg_data, _timeout=None):
         kwargs = {}
@@ -297,6 +302,23 @@ class TwitterCall(object):
                 return []
             else:
                 raise TwitterHTTPError(e, uri, self.format, arg_data)
+
+    def _handle_response_with_retry(self, req, uri, arg_data, _timeout=None):
+        while True:
+            try:
+                return self._handle_response(req, uri, arg_data, _timeout)
+            except TwitterHTTPError as e:
+                if e.e.code == 429:
+                    # API rate limit reached
+                    reset = int(e.e.headers.get('X-Rate-Limit-Reset', time() + 30))
+                    delay = int(reset - time() + 2)  # add some extra margin
+                    print("API rate limit reached; waiting for %ds..." % delay, file=sys.stderr)
+                elif e.e.code in (502, 503, 504):
+                    delay = 30
+                    print("Service unavailable; waiting for %ds..." % delay, file=sys.stderr)
+                else:
+                    raise
+                sleep(delay)
 
 
 class Twitter(TwitterCall):
@@ -406,7 +428,7 @@ class Twitter(TwitterCall):
     def __init__(
             self, format="json",
             domain="api.twitter.com", secure=True, auth=None,
-            api_version=_DEFAULT):
+            api_version=_DEFAULT, retry=False):
         """
         Create a new twitter API connector.
 
@@ -426,6 +448,10 @@ class Twitter(TwitterCall):
 
         `api_version` is used to set the base uri. By default it's
         '1.1'.
+
+        If `retry` is True, API rate limits will automatically be
+        handled by waiting until the next reset, as indicated by
+        the X-Rate-Limit-Reset HTTP header.
         """
         if not auth:
             auth = NoAuth()
@@ -443,7 +469,7 @@ class Twitter(TwitterCall):
         TwitterCall.__init__(
             self, auth=auth, format=format, domain=domain,
             callable_cls=TwitterCall,
-            secure=secure, uriparts=uriparts)
+            secure=secure, uriparts=uriparts, retry=retry)
 
 
 __all__ = ["Twitter", "TwitterError", "TwitterHTTPError", "TwitterResponse"]
