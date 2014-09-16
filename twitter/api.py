@@ -140,6 +140,8 @@ def method_for_uri(uri):
 
 class TwitterCall(object):
 
+    TWITTER_UNAVAILABLE_WAIT = 30  # delay after HTTP codes 502, 503 or 504
+
     def __init__(
             self, auth, format, domain, callable_cls, uri="",
             uriparts=None, secure=True, timeout=None, gzip=False, retry=False):
@@ -314,7 +316,7 @@ class TwitterCall(object):
                     delay = int(reset - time() + 2)  # add some extra margin
                     print("API rate limit reached; waiting for %ds..." % delay, file=sys.stderr)
                 elif e.e.code in (502, 503, 504):
-                    delay = 30
+                    delay = self.TWITTER_UNAVAILABLE_WAIT
                     print("Service unavailable; waiting for %ds..." % delay, file=sys.stderr)
                 else:
                     raise
