@@ -134,12 +134,19 @@ params = {"media[]": base64_image, "status": "PTT", "_base64": True}
 t.statuses.update_with_media(**params)
 ```
 
-
 Searching Twitter:
 ```python
 # Search for the latest tweets about #pycon
 t.search.tweets(q="#pycon")
 ```
+
+
+Retrying after reaching the API rate limit
+------------------------------------------
+
+Simply create the `Twitter` instance with the argument `retry=True`, then the
+HTTP error codes 429, 502, 503 and 504 will cause a retry of the last request.
+
 
 Using the data returned
 -----------------------
