@@ -306,7 +306,8 @@ class TwitterCall(object):
                 raise TwitterHTTPError(e, uri, self.format, arg_data)
 
     def _handle_response_with_retry(self, req, uri, arg_data, _timeout=None):
-        while True:
+        retry = self.retry
+        while retry:
             try:
                 return self._handle_response(req, uri, arg_data, _timeout)
             except TwitterHTTPError as e:
@@ -320,6 +321,10 @@ class TwitterCall(object):
                     print("Service unavailable; waiting for %ds..." % delay, file=sys.stderr)
                 else:
                     raise
+                if isinstance(retry, int):
+                    if retry <= 0:
+                        raise
+                    retry -= 1
                 sleep(delay)
 
 
@@ -453,7 +458,8 @@ class Twitter(TwitterCall):
 
         If `retry` is True, API rate limits will automatically be
         handled by waiting until the next reset, as indicated by
-        the X-Rate-Limit-Reset HTTP header.
+        the X-Rate-Limit-Reset HTTP header. If retry is an integer,
+        it defines the number of retries attempted.
         """
         if not auth:
             auth = NoAuth()

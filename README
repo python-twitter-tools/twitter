@@ -146,6 +146,7 @@ Retrying after reaching the API rate limit
 
 Simply create the `Twitter` instance with the argument `retry=True`, then the
 HTTP error codes 429, 502, 503 and 504 will cause a retry of the last request.
+If retry is an integer, it defines the number of retries attempted.
 
 
 Using the data returned
