@@ -262,6 +262,11 @@ class TwitterCall(object):
             headers['Content-Type'] = \
                 'multipart/form-data; boundary=%s' % BOUNDARY
 
+        if sys.version_info[:2] == (2, 7):
+            uriBase = uriBase.encode("utf-8")
+            for k in headers:
+                headers[k.encode('utf-8')] = headers.pop(k)
+
         req = urllib_request.Request(uriBase, body, headers)
         return self._handle_response(req, uri, arg_data, _timeout)
 
