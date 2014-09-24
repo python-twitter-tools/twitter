@@ -135,3 +135,12 @@ def test_parse_host_config():
     assert set(["1", "2"]) == parse_host_list("1,2")
     assert set(["1", "2"]) == parse_host_list(" 1 , 2 ")
 
+
+def run_tests(glob):
+    for name, value in glob.items():
+        if name.startswith('test_') and callable(value):
+            print "Running %s()" % name
+            value()
+
+if __name__ == '__main__':
+    run_tests(globals())

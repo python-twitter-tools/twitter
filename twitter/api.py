@@ -129,13 +129,13 @@ def wrap_response(response, headers):
         res = response
     return res
 
+
+POST_ACTIONS_RE = re.compile('(' + '|'.join(POST_ACTIONS) + r')(/\d+)?$')
+
 def method_for_uri(uri):
-    method = "GET"
-    for action in POST_ACTIONS:
-        if re.search("%s(/\d+)?$" % action, uri):
-            method = "POST"
-            break
-    return method
+    if POST_ACTIONS_RE.search(uri):
+        return "POST"
+    return "GET"
 
 class TwitterCall(object):
 
