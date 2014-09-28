@@ -30,8 +30,9 @@ def get_random_str():
     return ''.join(choice(AZaz) for _ in range(10))
 
 
-def test_API_set_tweet():
-    random_tweet = "A random tweet " + get_random_str()
+def test_API_set_tweet(unicod=False):
+    random_tweet = "A random tweet %s" % \
+        ("with unicode üøπ" if unicod else "") + get_random_str()
     twitter11.statuses.update(status=random_tweet)
     time.sleep(5)
     recent = twitter11.statuses.home_timeline()
@@ -41,15 +42,8 @@ def test_API_set_tweet():
     texts = [tweet['text'] for tweet in recent]
     assert random_tweet in texts
 
-
 def test_API_set_unicode_tweet():
-    random_tweet = "A random tweet with unicode üøπ" + get_random_str()
-    twitter11.statuses.update(status=random_tweet)
-    time.sleep(5)
-    recent = twitter11.statuses.home_timeline()
-    assert recent
-    texts = [tweet['text'] for tweet in recent]
-    assert random_tweet in texts
+    test_API_set_tweet(unicod=True)
 
 
 def clean_link(text):
