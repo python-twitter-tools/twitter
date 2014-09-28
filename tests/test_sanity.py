@@ -1,6 +1,7 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 
+import os
 from random import choice
 import time
 import pickle
@@ -49,6 +50,37 @@ def test_API_set_unicode_tweet():
     assert recent
     texts = [tweet['text'] for tweet in recent]
     assert random_tweet in texts
+
+
+def clean_link(text):
+    pos = text.find(" http://t.co")
+    if pos != -1:
+        return text[:pos]
+    return text
+
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
+def test_API_set_unicode_twitpic(base64=False):
+    random_tweet = "A random twitpic from %s with unicode üøπ" % \
+                    ("base64" if base64 else "file") + get_random_str()
+    if base64:
+        img = b"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB94JFhMBAJv5kaUAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAA4UlEQVQoz7WSIZLGIAxG6c5OFZjianBcIOfgPkju1DsEBWfAUEcNGGpY8Xe7dDoVFRvHfO8NJGRorZE39UVe1nd/WNfVObcsi3OOEAIASikAmOf5D2q/FWPUWgshKKWfiFIqhNBaxxhPjPQ05/z+Bs557xw9hBC89ymlu5BS8t6HEC5NW2sR8alRRLTWXoRSSinlSejT12M9BAAAgCeoTw9BSimlfBIu6WdYtVZEVErdaaUUItZaL/9wOsaY83YAMMb0dGtt6Jdv3/ec87ZtOWdCCGNsmibG2DiOJzP8+7b+AAOmsiPxyHWCAAAAAElFTkSuQmCC"
+    else:
+        with open(os.path.join(__location__, "test.png"), "rb") as f:
+            img = f.read()
+    params = {"status": random_tweet, "media[]": img}
+    if base64:
+        params["_base64"] = True
+    twitter11.statuses.update_with_media(**params)
+    time.sleep(5)
+    recent = twitter11.statuses.home_timeline()
+    assert recent
+    texts = [clean_link(tweet['text']) for tweet in recent]
+    assert random_tweet in texts
+
+def test_API_set_unicode_twitpic_base64():
+    test_API_set_unicode_twitpic(base64=True)
 
 
 def test_search():
