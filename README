@@ -125,8 +125,7 @@ t.statuses.oembed(_id=1234567890, _method='GET')
 
 # Send a tweet with an image included (or set your banner or logo similarily)
 # by just reading your image from the web or a file in a string:
-# Note that the text sent as status along with the picture must be unicode.
-status = u"PTT ★"       # or with python 3: status = "PTT ★"
+status = "PTT ★"
 with open("example.png", "rb") as imagefile:
     params = {"media[]": imagefile.read(), "status": status}
 t.statuses.update_with_media(**params)

@@ -256,13 +256,18 @@ class TwitterCall(object):
                 bod.append('--' + BOUNDARY)
                 bod.append('Content-Disposition: form-data; name="%s"' % k)
                 bod.append('')
+                if sys.version_info[:2] <= (2, 7):
+                    try:
+                        v = v.decode("utf-8")
+                    except:
+                        pass
                 bod.append(v)
             bod.append('--' + BOUNDARY + '--')
             body = '\r\n'.join(bod).encode('utf8')
             headers['Content-Type'] = \
                 'multipart/form-data; boundary=%s' % BOUNDARY
 
-            if sys.version_info[:2] == (2, 7):
+            if sys.version_info[:2] <= (2, 7):
                 uriBase = uriBase.encode("utf-8")
                 for k in headers:
                     headers[k.encode('utf-8')] = headers.pop(k)
@@ -366,8 +371,7 @@ class Twitter(TwitterCall):
 
         # Send a tweet with an image included (or set your banner or logo similarily)
         # by just reading your image from the web or a file in a string:
-        # Note that the text sent as status along with the picture must be unicode.
-        status = u"PTT ★"       # or with python 3: status = "PTT ★"
+        status = "PTT ★"
         with open("example.png", "rb") as imagefile:
             params = {"media[]": imagefile.read(), "status": status}
         t.statuses.update_with_media(**params)
