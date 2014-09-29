@@ -35,7 +35,7 @@ def test_API_set_tweet(unicod=False):
         ("with unicode üøπ" if unicod else "") + get_random_str()
     twitter11.statuses.update(status=random_tweet)
     time.sleep(5)
-    recent = twitter11.statuses.home_timeline()
+    recent = twitter11.statuses.user_timeline()
     assert recent
     assert isinstance(recent.rate_limit_remaining, int)
     assert isinstance(recent.rate_limit_reset, int)
@@ -68,7 +68,7 @@ def test_API_set_unicode_twitpic(base64=False):
         params["_base64"] = True
     twitter11.statuses.update_with_media(**params)
     time.sleep(5)
-    recent = twitter11.statuses.home_timeline()
+    recent = twitter11.statuses.user_timeline()
     assert recent
     texts = [clean_link(tweet['text']) for tweet in recent]
     assert random_tweet in texts
