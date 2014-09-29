@@ -8,7 +8,7 @@ import pickle
 import json
 
 from twitter import Twitter, NoAuth, OAuth, read_token_file, TwitterHTTPError
-from twitter.api import TwitterDictResponse, TwitterListResponse
+from twitter.api import TwitterDictResponse, TwitterListResponse, POST_ACTIONS, method_for_uri
 from twitter.cmdline import CONSUMER_KEY, CONSUMER_SECRET
 
 noauth = NoAuth()
@@ -138,3 +138,9 @@ def test_jsonifability():
     res2 = json.loads(p)
     assert res == res2
     assert res2[2] == 3
+
+
+def test_method_for_uri():
+    for action in POST_ACTIONS:
+        assert method_for_uri(get_random_str() + '/' + action) == 'POST'
+    assert method_for_uri('statuses/timeline') == 'GET'
