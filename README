@@ -74,7 +74,7 @@ is decoded python objects (lists and dicts).
 
 The Twitter API is documented at:
 
-**[http://dev.twitter.com/doc](http://dev.twitter.com/doc)**
+**[https://dev.twitter.com/overview/documentation](https://dev.twitter.com/overview/documentation)**
 
 Examples:
 ```python
