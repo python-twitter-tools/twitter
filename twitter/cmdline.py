@@ -22,7 +22,8 @@ ACTIONS:
  set            set your twitter status
  shell          login to the twitter shell
  rate           get your current rate limit status (remaining API reqs)
-
+ repl           begin a Read-Eval-Print-Loop with a configured twitter
+                    object
 
 OPTIONS:
 
@@ -73,6 +74,7 @@ except (AttributeError, KeyError):
 CONSUMER_KEY = 'uS6hO2sV6tDKIOeVjhnFnQ'
 CONSUMER_SECRET = 'MEYTOS97VvlHX7K1rwHPEqVpTSqZ71HtvoK4sVuYk'
 
+import code
 from getopt import gnu_getopt as getopt, GetoptError
 import json
 import locale
@@ -673,6 +675,25 @@ class RateLimitStatus(Action):
                 print("Next reset in %ss (%s)\n" % (int(reset - time.time()),
                       time.asctime(time.localtime(reset))))
 
+
+class ReplAction(Action):
+    def __call__(self, twitter, options):
+        upload = Twitter(
+            auth=twitter.auth,
+            domain="upload.twitter.com")
+        printNicely(
+            "\nUse the 'twitter' object to interact with"
+            " the Twitter REST API.\n"
+            "Use twitter_upload to interact with "
+            "upload.twitter.com\n\n")
+        code.interact(local={
+            "twitter": twitter,
+            "t": twitter,
+            "twitter_upload": upload,
+            "u": upload
+            })
+
+
 actions = {
     'authorize' : DoNothingAction,
     'follow'    : FollowAction,
@@ -687,6 +708,7 @@ actions = {
     'set'       : SetStatusAction,
     'shell'     : TwitterShell,
     'rate'      : RateLimitStatus,
+    'repl'      : ReplAction,
 }
 
 
