@@ -175,9 +175,13 @@ class TwitterCall(object):
         # Build the uri.
         uriparts = []
         for uripart in self.uriparts:
-            # If this part matches a keyword argument, use the
-            # supplied value otherwise, just use the part.
-            uriparts.append(str(kwargs.pop(uripart, uripart)))
+            # If this part matches a keyword argument (starting with _), use
+            # the supplied value. Otherwise, just use the part.
+            if uripart.startswith("_"):
+                part = (str(kwargs.pop(uripart, uripart)))
+            else:
+                part = uripart
+            uriparts.append(uripart)
         uri = '/'.join(uriparts)
 
         method = kwargs.pop('_method', None) or method_for_uri(uri)
@@ -207,23 +211,22 @@ class TwitterCall(object):
             secure_str, self.domain, uri, dot, self.format)
 
         # Check if argument tells whether img is already base64 encoded
-        b64_convert = True
-        if "_base64" in kwargs:
-            b64_convert = not kwargs.pop("_base64")
+        b64_convert = not kwargs.pop("_base64", False)
         if b64_convert:
             import base64
 
         # Catch media arguments to handle oauth query differently for multipart
         media = None
-        for arg in ['media[]']:
-            if arg in kwargs:
-                media = kwargs.pop(arg)
-                if b64_convert:
-                    media = base64.b64encode(media)
-                if sys.version_info >= (3, 0):
-                    media = str(media, 'utf8')
-                mediafield = arg
-                break
+        if 'media' in kwargs:
+            mediafield = 'media'
+            media = kwargs.pop('media')
+        elif 'media[]' in kwargs:
+            mediafield = 'media[]'
+            media = kwargs.pop('media[]')
+            if b64_convert:
+                media = base64.b64encode(media)
+            if sys.version_info >= (3, 0):
+                media = str(media, 'utf8')
 
         # Catch media arguments that are not accepted through multipart
         # and are not yet base64 encoded
@@ -248,30 +251,28 @@ class TwitterCall(object):
 
         # Handle query as multipart when sending media
         if media:
-            BOUNDARY = "###Python-Twitter###"
+            BOUNDARY = b"###Python-Twitter###"
             bod = []
-            bod.append('--' + BOUNDARY)
+            bod.append(b'--' + BOUNDARY)
             bod.append(
-                'Content-Disposition: form-data; name="%s"' % mediafield)
-            bod.append('Content-Transfer-Encoding: base64')
-            bod.append('')
+                b'Content-Disposition: form-data; name="%s"' % mediafield.encode('utf-8'))
+            bod.append(b'Content-Transfer-Encoding: base64')
+            bod.append(b'')
             bod.append(media)
             for k, v in kwargs.items():
-                bod.append('--' + BOUNDARY)
-                bod.append('Content-Disposition: form-data; name="%s"' % k)
-                bod.append('')
-                if sys.version_info[:2] <= (2, 7):
-                    try:
-                        v = v.decode("utf-8")
-                    except:
-                        pass
+                if sys.version_info < (3, 0):
+                    k = k.encode("utf-8")
+                    v = v.encode("utf-8")
+                bod.append(b'--' + BOUNDARY)
+                bod.append(b'Content-Disposition: form-data; name="%s"' % k)
+                bod.append(b'')
                 bod.append(v)
-            bod.append('--' + BOUNDARY + '--')
-            body = '\r\n'.join(bod).encode('utf8')
+            bod.append(b'--' + BOUNDARY + b'--')
+            body = b'\r\n'.join(bod)
             headers['Content-Type'] = \
                 'multipart/form-data; boundary=%s' % BOUNDARY
 
-            if sys.version_info[:2] <= (2, 7):
+            if sys.version_info < (3, 0):
                 uriBase = uriBase.encode("utf-8")
                 for k in headers:
                     headers[k.encode('utf-8')] = headers.pop(k)

@@ -19,6 +19,9 @@ twitter11 = Twitter(domain='api.twitter.com',
                     auth=oauth,
                     api_version='1.1')
 
+twitter_upl = Twitter(domain='upload.twitter.com',
+                      auth=oauth)
+
 twitter11_na = Twitter(domain='api.twitter.com',
                        auth=noauth,
                        api_version='1.1')
@@ -55,14 +58,16 @@ def clean_link(text):
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
+def _img_data():
+    return open(os.path.join(__location__, "test.png"), "rb").read()
+
 def test_API_set_unicode_twitpic(base64=False):
     random_tweet = "A random twitpic from %s with unicode üøπ" % \
                     ("base64" if base64 else "file") + get_random_str()
     if base64:
         img = b"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB94JFhMBAJv5kaUAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAA4UlEQVQoz7WSIZLGIAxG6c5OFZjianBcIOfgPkju1DsEBWfAUEcNGGpY8Xe7dDoVFRvHfO8NJGRorZE39UVe1nd/WNfVObcsi3OOEAIASikAmOf5D2q/FWPUWgshKKWfiFIqhNBaxxhPjPQ05/z+Bs557xw9hBC89ymlu5BS8t6HEC5NW2sR8alRRLTWXoRSSinlSejT12M9BAAAgCeoTw9BSimlfBIu6WdYtVZEVErdaaUUItZaL/9wOsaY83YAMMb0dGtt6Jdv3/ec87ZtOWdCCGNsmibG2DiOJzP8+7b+AAOmsiPxyHWCAAAAAElFTkSuQmCC"
     else:
-        with open(os.path.join(__location__, "test.png"), "rb") as f:
-            img = f.read()
+        img = _img_data()
     params = {"status": random_tweet, "media[]": img}
     if base64:
         params["_base64"] = True
@@ -76,6 +81,10 @@ def test_API_set_unicode_twitpic(base64=False):
 def test_API_set_unicode_twitpic_base64():
     test_API_set_unicode_twitpic(base64=True)
 
+def test_upload_media():
+    res = twitter_upl.media.upload(media=_img_data())
+    assert res
+    assert res["media_id"]
 
 def test_search():
     # In 1.1, search works on api.twitter.com not search.twitter.com

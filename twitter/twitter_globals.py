@@ -38,4 +38,7 @@ POST_ACTIONS = [
     # OAuth Methods
     'token', 'access_token',
     'request_token', 'invalidate_token',
+
+    # Upload Methods
+    'media/upload',
 ]
