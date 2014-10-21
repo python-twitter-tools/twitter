@@ -138,6 +138,31 @@ def method_for_uri(uri):
         return "POST"
     return "GET"
 
+
+def build_uri(orig_uriparts, kwargs):
+    """
+    Build the URI from the original uriparts and kwargs. Modifies kwargs.
+    """
+    uriparts = []
+    for uripart in orig_uriparts:
+        # If this part matches a keyword argument (starting with _), use
+        # the supplied value. Otherwise, just use the part.
+        if uripart.startswith("_"):
+            part = (str(kwargs.pop(uripart, uripart)))
+        else:
+            part = uripart
+        uriparts.append(part)
+    uri = '/'.join(uriparts)
+
+    # If an id kwarg is present and there is no id to fill in in
+    # the list of uriparts, assume the id goes at the end.
+    id = kwargs.pop('id', None)
+    if id:
+        uri += "/%s" % (id)
+
+    return uri
+
+
 class TwitterCall(object):
 
     TWITTER_UNAVAILABLE_WAIT = 30  # delay after HTTP codes 502, 503 or 504
@@ -172,25 +197,9 @@ class TwitterCall(object):
                 return extend_call(k)
 
     def __call__(self, **kwargs):
-        # Build the uri.
-        uriparts = []
-        for uripart in self.uriparts:
-            # If this part matches a keyword argument (starting with _), use
-            # the supplied value. Otherwise, just use the part.
-            if uripart.startswith("_"):
-                part = (str(kwargs.pop(uripart, uripart)))
-            else:
-                part = uripart
-            uriparts.append(part)
-        uri = '/'.join(uriparts)
-
+        kwargs = dict(kwargs)
+        uri = build_uri(self.uriparts, kwargs)
         method = kwargs.pop('_method', None) or method_for_uri(uri)
-
-        # If an id kwarg is present and there is no id to fill in in
-        # the list of uriparts, assume the id goes at the end.
-        id = kwargs.pop('id', None)
-        if id:
-            uri += "/%s" % (id)
 
         # If an _id kwarg is present, this is treated as id as a CGI
         # param.
