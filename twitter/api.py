@@ -181,7 +181,7 @@ class TwitterCall(object):
                 part = (str(kwargs.pop(uripart, uripart)))
             else:
                 part = uripart
-            uriparts.append(uripart)
+            uriparts.append(part)
         uri = '/'.join(uriparts)
 
         method = kwargs.pop('_method', None) or method_for_uri(uri)
