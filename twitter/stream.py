@@ -1,8 +1,7 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 
-import sys
-PY_3_OR_HIGHER = sys.version_info >= (3, 0)
+from .util import PY_3_OR_HIGHER
 
 if PY_3_OR_HIGHER:
     import urllib.request as urllib_request

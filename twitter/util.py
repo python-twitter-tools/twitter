@@ -14,6 +14,8 @@ import textwrap
 import time
 import socket
 
+PY_3_OR_HIGHER = sys.version_info >= (3, 0)
+
 try:
     from html.entities import name2codepoint
     unichr = chr
@@ -54,10 +56,26 @@ def printNicely(string):
     else:
         print(string.encode('utf8'))
 
-__all__ = ["htmlentitydecode", "smrt_input"]
+def actually_bytes(stringy):
+    if PY_3_OR_HIGHER:
+        if type(stringy) == bytes:
+            pass
+        elif type(stringy) != str:
+            stringy = str(stringy)
+        if type(stringy) == str:
+            stringy = stringy.encode("utf-8")
+    else:
+        if type(stringy) == str:
+            pass
+        elif type(stringy) != unicode:
+            stringy = str(stringy)
+        if type(stringy) == unicode:
+            stringy = stringy.encode("utf-8")
+    return stringy
 
 def err(msg=""):
     print(msg, file=sys.stderr)
+
 
 class Fail(object):
     """A class to count fails during a repetitive task.
@@ -154,3 +172,6 @@ def align_text(text, left_margin=17, max_width=160):
         lines.append('\n'.join(temp_lines))
     ret = '\n'.join(lines)
     return ret.lstrip()
+
+
+__all__ = ["htmlentitydecode", "smrt_input"]

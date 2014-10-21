@@ -1,6 +1,8 @@
 # encoding: utf-8
 from __future__ import unicode_literals, print_function
 
+from .util import PY_3_OR_HIGHER, actually_bytes
+
 try:
     import urllib.request as urllib_request
     import urllib.error as urllib_error
@@ -200,6 +202,7 @@ class TwitterCall(object):
         kwargs = dict(kwargs)
         uri = build_uri(self.uriparts, kwargs)
         method = kwargs.pop('_method', None) or method_for_uri(uri)
+        domain = self.domain
 
         # If an _id kwarg is present, this is treated as id as a CGI
         # param.
@@ -216,8 +219,8 @@ class TwitterCall(object):
         dot = ""
         if self.format:
             dot = "."
-        uriBase = "http%s://%s/%s%s%s" % (
-            secure_str, self.domain, uri, dot, self.format)
+        url_base = "http%s://%s/%s%s%s" % (
+            secure_str, domain, uri, dot, self.format)
 
         # Check if argument tells whether img is already base64 encoded
         b64_convert = not kwargs.pop("_base64", False)
@@ -229,13 +232,13 @@ class TwitterCall(object):
         if 'media' in kwargs:
             mediafield = 'media'
             media = kwargs.pop('media')
+            media_raw = True
         elif 'media[]' in kwargs:
             mediafield = 'media[]'
             media = kwargs.pop('media[]')
             if b64_convert:
                 media = base64.b64encode(media)
-            if sys.version_info >= (3, 0):
-                media = str(media, 'utf8')
+            media_raw = False
 
         # Catch media arguments that are not accepted through multipart
         # and are not yet base64 encoded
@@ -252,11 +255,11 @@ class TwitterCall(object):
             # Use urlencoded oauth args with no params when sending media
             # via multipart and send it directly via uri even for post
             arg_data = self.auth.encode_params(
-                uriBase, method, {} if media else kwargs)
+                url_base, method, {} if media else kwargs)
             if method == 'GET' or media:
-                uriBase += '?' + arg_data
+                url_base += '?' + arg_data
             else:
-                body = arg_data.encode('utf8')
+                body = arg_data.encode('utf-8')
 
         # Handle query as multipart when sending media
         if media:
@@ -264,29 +267,38 @@ class TwitterCall(object):
             bod = []
             bod.append(b'--' + BOUNDARY)
             bod.append(
-                b'Content-Disposition: form-data; name="%s"' % mediafield.encode('utf-8'))
-            bod.append(b'Content-Transfer-Encoding: base64')
+                b'Content-Disposition: form-data; name="'
+                + actually_bytes(mediafield)
+                + b'"')
+            bod.append(b'Content-Type: application/octet-stream')
+            if not media_raw:
+                bod.append(b'Content-Transfer-Encoding: base64')
             bod.append(b'')
-            bod.append(media)
+            bod.append(actually_bytes(media))
             for k, v in kwargs.items():
-                if sys.version_info < (3, 0):
-                    k = k.encode("utf-8")
-                    v = v.encode("utf-8")
+                k = actually_bytes(k)
+                v = actually_bytes(v)
                 bod.append(b'--' + BOUNDARY)
-                bod.append(b'Content-Disposition: form-data; name="%s"' % k)
+                bod.append(b'Content-Disposition: form-data; name="' + k + b'"')
+                bod.append(b'Content-Type: text/plain;charset=utf-8')
                 bod.append(b'')
                 bod.append(v)
             bod.append(b'--' + BOUNDARY + b'--')
+            bod.append(b'')
+            bod.append(b'')
             body = b'\r\n'.join(bod)
-            headers['Content-Type'] = \
-                'multipart/form-data; boundary=%s' % BOUNDARY
+            # print(body.decode('utf-8', errors='ignore'))
+            headers[b'Content-Type'] = \
+                b'multipart/form-data; boundary=' + BOUNDARY
 
-            if sys.version_info < (3, 0):
-                uriBase = uriBase.encode("utf-8")
-                for k in headers:
-                    headers[k.encode('utf-8')] = headers.pop(k)
+            for k in headers:
+                headers[actually_bytes(k)] = actually_bytes(headers.pop(k))
+            # print(headers)
 
-        req = urllib_request.Request(uriBase, body, headers)
+            if not PY_3_OR_HIGHER:
+                url_base = url_base.encode("utf-8")
+
+        req = urllib_request.Request(url_base, data=body, headers=headers)
         if self.retry:
             return self._handle_response_with_retry(req, uri, arg_data, _timeout)
         else:

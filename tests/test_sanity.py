@@ -28,6 +28,7 @@ twitter11_na = Twitter(domain='api.twitter.com',
 
 AZaz = "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+b64_image_data = b"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB94JFhMBAJv5kaUAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAA4UlEQVQoz7WSIZLGIAxG6c5OFZjianBcIOfgPkju1DsEBWfAUEcNGGpY8Xe7dDoVFRvHfO8NJGRorZE39UVe1nd/WNfVObcsi3OOEAIASikAmOf5D2q/FWPUWgshKKWfiFIqhNBaxxhPjPQ05/z+Bs557xw9hBC89ymlu5BS8t6HEC5NW2sR8alRRLTWXoRSSinlSejT12M9BAAAgCeoTw9BSimlfBIu6WdYtVZEVErdaaUUItZaL/9wOsaY83YAMMb0dGtt6Jdv3/ec87ZtOWdCCGNsmibG2DiOJzP8+7b+AAOmsiPxyHWCAAAAAElFTkSuQmCC"
 
 def get_random_str():
     return ''.join(choice(AZaz) for _ in range(10))
@@ -61,16 +62,11 @@ __location__ = os.path.realpath(
 def _img_data():
     return open(os.path.join(__location__, "test.png"), "rb").read()
 
-def test_API_set_unicode_twitpic(base64=False):
-    random_tweet = "A random twitpic from %s with unicode üøπ" % \
-                    ("base64" if base64 else "file") + get_random_str()
-    if base64:
-        img = b"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB94JFhMBAJv5kaUAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAA4UlEQVQoz7WSIZLGIAxG6c5OFZjianBcIOfgPkju1DsEBWfAUEcNGGpY8Xe7dDoVFRvHfO8NJGRorZE39UVe1nd/WNfVObcsi3OOEAIASikAmOf5D2q/FWPUWgshKKWfiFIqhNBaxxhPjPQ05/z+Bs557xw9hBC89ymlu5BS8t6HEC5NW2sR8alRRLTWXoRSSinlSejT12M9BAAAgCeoTw9BSimlfBIu6WdYtVZEVErdaaUUItZaL/9wOsaY83YAMMb0dGtt6Jdv3/ec87ZtOWdCCGNsmibG2DiOJzP8+7b+AAOmsiPxyHWCAAAAAElFTkSuQmCC"
-    else:
-        img = _img_data()
-    params = {"status": random_tweet, "media[]": img}
-    if base64:
-        params["_base64"] = True
+def _test_API_old_media(img, _base64):
+    random_tweet = (
+        "A random twitpic with unicode üøπ"
+        + get_random_str())
+    params = {"status": random_tweet, "media[]": img, "_base64": _base64}
     twitter11.statuses.update_with_media(**params)
     time.sleep(5)
     recent = twitter11.statuses.user_timeline()
@@ -79,7 +75,13 @@ def test_API_set_unicode_twitpic(base64=False):
     assert random_tweet in texts
 
 def test_API_set_unicode_twitpic_base64():
-    test_API_set_unicode_twitpic(base64=True)
+    _test_API_old_media(b64_image_data, True)
+
+def test_API_set_unicode_twitpic_base64_string():
+    _test_API_old_media(b64_image_data.decode('utf-8'), True)
+
+def test_API_set_unicode_twitpic_auto_base64_convert():
+    _test_API_old_media(_img_data(), False)
 
 def test_upload_media():
     res = twitter_upl.media.upload(media=_img_data())
