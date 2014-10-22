@@ -8,14 +8,15 @@ USAGE:
 DESCRIPTION:
 
     Produce a complete archive in text form of a user's tweets. The
-    archive format is:
+    archive format is in YAML:
 
-        screen_name <tweet_id>
-        Date: <tweet_time>
-        [In-Reply-To: a_tweet_id]
-
-            Tweet text possibly spanning multiple lines with
-            each line indented by four spaces.
+        screen_name:
+         - ID: <tweet_id>
+           Date: <tweet_time>
+           [In-Reply-To: a_tweet_id]
+           Tweet: >
+             Tweet text possibly spanning multiple lines with
+             each line indented by four spaces.
 
 
     Each tweet is separated by two blank lines.
@@ -41,7 +42,7 @@ CONSUMER_SECRET = "IedFvi0JitR9yaYw9HwcCCEy4KYaLxf4p4rHRqGgX80"
 OAUTH_FILENAME = os.environ.get('HOME', os.environ.get('USERPROFILE', '')) + os.sep + '.twitter_log_oauth'
 
 def log_debug(msg):
-    print(msg, file=sys.stderr)
+    print("# %s" % msg, file=sys.stderr)
 
 def get_tweets(twitter, screen_name, max_id=None):
     kwargs = dict(count=3200, screen_name=screen_name)
@@ -53,16 +54,13 @@ def get_tweets(twitter, screen_name, max_id=None):
     for tweet in tweets:
         if tweet['id'] == max_id:
             continue
-        print("%s %s\nDate: %s" % (tweet['user']['screen_name'],
-                                   tweet['id'],
-                                   tweet['created_at']))
+        print(" - ID: %s"% tweet['id'])
+        print("   Date: %s" % tweet['created_at'])
         if tweet.get('in_reply_to_status_id'):
-            print("In-Reply-To: %s" % tweet['in_reply_to_status_id'])
-        print()
+            print("   In-Reply-To: %s" % tweet['in_reply_to_status_id'])
+        print("   Tweet: |")
         for line in tweet['text'].splitlines():
-            printNicely('    ' + line + '\n')
-        print()
-        print()
+            printNicely('     ' + line)
         max_id = tweet['id']
         n_tweets += 1
     return n_tweets, max_id
@@ -92,6 +90,7 @@ def main(args=sys.argv[1:]):
         max_id = None
 
     n_tweets = 0
+    print("%s:" % screen_name)
     while True:
         try:
             tweets_processed, max_id = get_tweets(twitter, screen_name, max_id)
