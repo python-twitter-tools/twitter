@@ -41,17 +41,18 @@ code it all goes like this::
 
 from __future__ import print_function
 
-from time import time
 from random import getrandbits
+import sys
+from time import time
+
+PY3 = sys.version_info[0] == 3
 
 try:
     import urllib.parse as urllib_parse
     from urllib.parse import urlencode
-    PY3 = True
 except ImportError:
     import urllib2 as urllib_parse
     from urllib import urlencode
-    PY3 = False
 
 import hashlib
 import hmac
