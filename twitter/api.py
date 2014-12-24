@@ -377,7 +377,7 @@ class Twitter(TwitterCall):
         from twitter import *
 
         t = Twitter(
-            auth=OAuth(token, token_key, con_secret, con_secret_key)))
+            auth=OAuth(token, token_key, con_secret, con_secret_key))
 
         # Get your "home" timeline
         t.statuses.home_timeline()
