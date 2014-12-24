@@ -42,10 +42,9 @@ code it all goes like this::
 from __future__ import print_function
 
 from random import getrandbits
-import sys
 from time import time
 
-PY3 = sys.version_info[0] == 3
+from .util import PY_3_OR_HIGHER
 
 try:
     import urllib.parse as urllib_parse
@@ -126,7 +125,7 @@ class OAuth(Auth):
 # So here is a specialized version which does exactly that.
 # In Python2, since there is no safe option for urlencode, we force it by hand
 def urlencode_noplus(query):
-    if not PY3:
+    if not PY_3_OR_HIGHER:
         new_query = []
         TILDE = '____TILDE-PYTHON-TWITTER____'
         for k,v in query:
