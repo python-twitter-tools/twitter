@@ -288,15 +288,13 @@ class TwitterCall(object):
             bod.append(b'')
             body = b'\r\n'.join(bod)
             # print(body.decode('utf-8', errors='ignore'))
-            headers[b'Content-Type'] = \
+            headers['Content-Type'] = \
                 b'multipart/form-data; boundary=' + BOUNDARY
-
-            for k in headers:
-                headers[actually_bytes(k)] = actually_bytes(headers.pop(k))
-            # print(headers)
 
             if not PY_3_OR_HIGHER:
                 url_base = url_base.encode("utf-8")
+                for k in headers:
+                    headers[actually_bytes(k)] = actually_bytes(headers.pop(k))
 
         req = urllib_request.Request(url_base, data=body, headers=headers)
         if self.retry:
