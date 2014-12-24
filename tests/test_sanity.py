@@ -83,10 +83,24 @@ def test_API_set_unicode_twitpic_base64_string():
 def test_API_set_unicode_twitpic_auto_base64_convert():
     _test_API_old_media(_img_data(), False)
 
-def test_upload_media():
+def _test_upload_media():
     res = twitter_upl.media.upload(media=_img_data())
     assert res
     assert res["media_id"]
+    return str(res["media_id"])
+
+def test_multitwitpic():
+    pics = [_test_upload_media(), _test_upload_media(), _test_upload_media()]
+    random_tweet = ("I can even tweet multiple pictures at once now! ★  "
+        + get_random_str())
+    res = twitter11.statuses.update(status=random_tweet, media_ids=",".join(pics))
+    assert res
+    assert res["extended_entities"]
+    assert len(res["extended_entities"]["media"]) == len(pics)
+    recent = twitter11.statuses.user_timeline()
+    assert recent
+    texts = [clean_link(t['text']) for t in recent]
+    assert random_tweet in texts
 
 def test_search():
     # In 1.1, search works on api.twitter.com not search.twitter.com
