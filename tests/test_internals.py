@@ -26,5 +26,5 @@ def test_actually_bytes():
     out_type = str
     if PY_3_OR_HIGHER:
         out_type = bytes
-    for inp in [b"asdf", "asdf", u"asdfüü", 1234]:
+    for inp in [b"asdf", "asdf", "asdfüü", 1234]:
         assert type(actually_bytes(inp)) == out_type
