@@ -351,7 +351,7 @@ class TwitterCall(object):
                     print("Service unavailable; waiting for %ds..." % delay, file=sys.stderr)
                 else:
                     raise
-                if isinstance(retry, int):
+                if isinstance(retry, int) and not isinstance(retry, bool):
                     if retry <= 0:
                         raise
                     retry -= 1
