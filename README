@@ -105,11 +105,7 @@ t.direct_messages.new(
     text="I think yer swell!")
 
 # Get the members of tamtar's list "Things That Are Rad"
-t._("tamtar")._("things-that-are-rad").members()
-
-# Note how the magic `_` method can be used to insert data
-# into the middle of a call. You can also use replacement:
-t.user.list.members(user="tamtar", list="things-that-are-rad")
+t.lists.members(owner_screen_name="tamtar", slug="things-that-are-rad")
 
 # An *optional* `_timeout` parameter can also be used for API
 # calls which take much more time than normal or twitter stops
