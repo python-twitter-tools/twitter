@@ -65,9 +65,14 @@ class TwitterHTTPError(TwitterError):
         if self.e.headers.get('Content-Encoding') == 'gzip':
             buf = StringIO(data)
             f = gzip.GzipFile(fileobj=buf)
-            self.response_data = f.read()
+            data = f.read()
+        if len(data) == 0:
+            data = {}
+        elif "json" == self.format:
+            data = json.loads(data.decode('utf8'))
         else:
-            self.response_data = data
+            data = data.decode('utf8')
+        self.response_data = data
         super(TwitterHTTPError, self).__init__(str(self))
 
     def __str__(self):
