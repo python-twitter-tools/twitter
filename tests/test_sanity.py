@@ -20,7 +20,8 @@ twitter11 = Twitter(domain='api.twitter.com',
                     api_version='1.1')
 
 twitter_upl = Twitter(domain='upload.twitter.com',
-                      auth=oauth)
+                      auth=oauth,
+                      api_version='1.1')
 
 twitter11_na = Twitter(domain='api.twitter.com',
                        auth=noauth,
