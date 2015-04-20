@@ -34,7 +34,7 @@ def start_server(*resp):
     """HTTP server replying with the given responses to the expected
     requests."""
     def url(port, path):
-        return 'http://%s:%s%s' % (socket.gethostname(), port, path)
+        return 'http://%s:%s%s' % (socket.gethostname().lower(), port, path)
 
     responses = list(reversed(resp))
 
@@ -106,7 +106,7 @@ def test_follow_redirects_filtered_by_site_after_redirect():
     with start_server(
         Response(link, 301, {"Location": redirected}),
         Response(redirected, 301, {"Location": filtered})) as url:
-        hosts = [socket.gethostname()]
+        hosts = [socket.gethostname().lower()]
         assert filtered == follow_redirects(url(link), hosts)
 
 def test_follow_redirects_filtered_by_site_allowed():
@@ -115,7 +115,7 @@ def test_follow_redirects_filtered_by_site_allowed():
     with start_server(
         Response(link, 301, {"Location": redirected}),
         Response(redirected, 200, {})) as url:
-        hosts = [socket.gethostname()]
+        hosts = [socket.gethostname().lower()]
         assert url(redirected) == follow_redirects(url(link), hosts)
 
 def test_expand_line():

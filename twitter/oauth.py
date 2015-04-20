@@ -57,7 +57,7 @@ import hashlib
 import hmac
 import base64
 
-from .auth import Auth
+from .auth import Auth, MissingCredentialsError
 
 
 def write_token_file(filename, oauth_token, oauth_token_secret):
@@ -91,6 +91,10 @@ class OAuth(Auth):
         self.token_secret = token_secret
         self.consumer_key = consumer_key
         self.consumer_secret = consumer_secret
+
+        if token_secret is None or consumer_secret is None:
+            raise MissingCredentialsError(
+                'You must supply strings for token_secret and consumer_secret, not None.')
 
     def encode_params(self, base_url, method, params):
         params = params.copy()
