@@ -5,6 +5,7 @@ except ImportError:
     import urllib as urllib_parse
     from base64 import encodestring as encodebytes
 
+
 class Auth(object):
     """
     ABC for Authenticator objects.
@@ -20,6 +21,7 @@ class Auth(object):
         """Generates headers which should be added to the request if required
         by the authentication scheme in use."""
         raise NotImplementedError()
+
 
 class UserPassAuth(Auth):
     """
@@ -41,6 +43,7 @@ class UserPassAuth(Auth):
                 .encode('utf8')).strip(b'\n')
                 }
 
+
 class NoAuth(Auth):
     """
     No authentication authenticator.
@@ -53,3 +56,7 @@ class NoAuth(Auth):
 
     def generate_headers(self):
         return {}
+
+
+class MissingCredentialsError(Exception):
+    pass

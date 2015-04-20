@@ -31,7 +31,7 @@ except ImportError:
     from urllib import quote, urlencode
 
 from base64 import b64encode
-from .auth import Auth
+from .auth import Auth, MissingCredentialsError
 
 def write_bearer_token_file(filename, oauth2_bearer_token):
     """
@@ -89,7 +89,3 @@ class OAuth2(Auth):
                 ).encode('utf8')
             }
         return headers
-
-
-class MissingCredentialsError(Exception):
-    pass
