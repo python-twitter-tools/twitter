@@ -127,8 +127,8 @@ with open("example.png", "rb") as imagefile:
 #   and collect each one's id:
 t_up = Twitter(domain='upload.twitter.com',
     auth=OAuth(token, token_key, con_secret, con_secret_key))
-id_img1 = str(t_up.media.upload(media=imagedata)["media_id"])
-id_img2 = str(t_up.media.upload(media=imagedata)["media_id"])
+id_img1 = t_up.media.upload(media=imagedata)["media_id_string"]
+id_img2 = t_up.media.upload(media=imagedata)["media_id_string"]
 # - finally send your tweet with the list of media ids:
 t.statuses.update(status="PTT ★", media_ids=",".join([id_img1, id_img2]))
 
