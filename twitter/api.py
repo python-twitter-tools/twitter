@@ -68,10 +68,14 @@ class TwitterHTTPError(TwitterError):
             data = f.read()
         if len(data) == 0:
             data = {}
-        elif "json" == self.format:
-            data = json.loads(data.decode('utf8'))
         else:
             data = data.decode('utf8')
+            if "json" == self.format:
+                try:
+                    data = json.loads(data)
+                except ValueError:
+                    # We try to load the response as json as a nicety; if it fails, carry on.
+                    pass
         self.response_data = data
         super(TwitterHTTPError, self).__init__(str(self))
 
