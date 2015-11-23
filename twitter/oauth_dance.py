@@ -27,7 +27,7 @@ def oauth2_dance(consumer_key, consumer_secret, token_filename=None):
         api_version="")
     token = json.loads(twitter.oauth2.token(grant_type="client_credentials"))["access_token"]
     if token_filename:
-        write_bearer_token_file(token)
+        write_bearer_token_file(token_filename, token)
     return token
 
 def oauth_dance(app_name, consumer_key, consumer_secret, token_filename=None):
