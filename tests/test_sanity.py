@@ -52,7 +52,7 @@ def test_API_set_unicode_tweet():
 
 
 def clean_link(text):
-    pos = text.find(" http://t.co")
+    pos = text.find(" https://t.co")
     if pos != -1:
         return text[:pos]
     return text
