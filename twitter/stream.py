@@ -173,7 +173,11 @@ class TwitterJSONIter(object):
 
         while True:
             # Decode all the things:
-            data = sock_reader.read()
+            try:
+                data = sock_reader.read()
+            except SSLError:
+                yield Hangup
+                break
             dechunked_data, end_of_stream, decode_error = chunk_decoder.decode(data)
             unicode_data = utf8_decoder.decode(dechunked_data)
             json_data = json_decoder.decode(unicode_data)
