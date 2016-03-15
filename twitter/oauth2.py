@@ -46,7 +46,9 @@ def read_bearer_token_file(filename):
     Read a token file and return the oauth2 bearer token.
     """
     f = open(filename)
-    return f.readline().strip()
+    bearer_token = f.readline().strip()
+    f.close()
+    return bearer_token
 
 class OAuth2(Auth):
     """
