@@ -364,6 +364,8 @@ class TwitterCall(object):
                     if retry <= 0:
                         raise
                     retry -= 1
+                if delay <= 0:
+                    delay = self.TWITTER_UNAVAILABLE_WAIT
                 sleep(delay)
 
 
