@@ -354,6 +354,8 @@ class TwitterCall(object):
                     # API rate limit reached
                     reset = int(e.e.headers.get('X-Rate-Limit-Reset', time() + 30))
                     delay = int(reset - time() + 2)  # add some extra margin
+                    if delay <= 0:
+                        delay = self.TWITTER_UNAVAILABLE_WAIT
                     print("API rate limit reached; waiting for %ds..." % delay, file=sys.stderr)
                 elif e.e.code in (502, 503, 504):
                     delay = self.TWITTER_UNAVAILABLE_WAIT
@@ -364,8 +366,6 @@ class TwitterCall(object):
                     if retry <= 0:
                         raise
                     retry -= 1
-                if delay <= 0:
-                    delay = self.TWITTER_UNAVAILABLE_WAIT
                 sleep(delay)
 
 
