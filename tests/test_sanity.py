@@ -103,6 +103,23 @@ def test_multitwitpic():
     texts = [clean_link(t['text']) for t in recent]
     assert random_tweet in texts
 
+def test_metadatapic():
+    pic = _test_upload_media()
+    metadata = "metadata generated via PTT! ★" + get_random_str()
+    res = twitter_upl.media.metadata.create(_json={
+        "media_id": pic,
+        "alt_text": { "text": metadata }
+    })
+    random_tweet = ("I can also tweet pictures with text metadata attached ★  "
+        + get_random_str())
+    res = twitter11.statuses.update(status=random_tweet, media_ids=pic)
+    assert res
+    recent = twitter11.statuses.user_timeline(include_ext_alt_text=True, include_entities=True)
+    assert recent
+    meta = recent[0].get("extended_entities", {}).get("media")
+    assert meta
+    assert metadata == meta[0].get("ext_alt_text", "")
+
 def test_search():
     # In 1.1, search works on api.twitter.com not search.twitter.com
     # and requires authorisation
