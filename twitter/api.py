@@ -266,7 +266,7 @@ class TwitterCall(object):
         # https://dev.twitter.com/rest/reference/post/media/metadata/create
         jsondata = kwargs.pop('_json', None)
         if jsondata:
-            body = json.dumps(jsondata)
+            body = actually_bytes(json.dumps(jsondata))
             headers['Content-Type'] = 'application/json; charset=UTF-8'
 
         if self.auth:
