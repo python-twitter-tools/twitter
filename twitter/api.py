@@ -388,7 +388,11 @@ class Twitter(TwitterCall):
 
     The Twitter API is documented at:
 
-      http://dev.twitter.com/doc
+      https://dev.twitter.com/overview/documentation
+
+    The list of most accessible functions is listed at:
+
+      https://dev.twitter.com/rest/public
 
 
     Examples::
@@ -441,10 +445,10 @@ class Twitter(TwitterCall):
             imagedata = imagefile.read()
         # - then upload medias one by one on Twitter's dedicated server
         #   and collect each one's id:
-        t_up = Twitter(domain='upload.twitter.com',
+        t_upload = Twitter(domain='upload.twitter.com',
             auth=OAuth(token, token_key, con_secret, con_secret_key))
-        id_img1 = t_up.media.upload(media=imagedata)["media_id_string"]
-        id_img2 = t_up.media.upload(media=imagedata)["media_id_string"]
+        id_img1 = t_upload.media.upload(media=imagedata)["media_id_string"]
+        id_img2 = t_upload.media.upload(media=imagedata)["media_id_string"]
 
         # - finally send your tweet with the list of media ids:
         t.statuses.update(status="PTT ★", media_ids=",".join([id_img1, id_img2]))
@@ -456,6 +460,13 @@ class Twitter(TwitterCall):
         params = {"media[]": base64_image, "status": "PTT ★", "_base64": True}
         t.statuses.update_with_media(**params)
 
+        # Attach text metadata to medias sent, using the upload.twitter.com route
+        # using the _json workaround to send json arguments as POST body
+        # (warning: to be done before attaching the media to a tweet)
+        t_upload.media.metadata.create(_json={
+          "media_id": id_img1,
+          "alt_text": { "text": "metadata generated via PTT!" }
+        })
 
 
     Searching Twitter::
