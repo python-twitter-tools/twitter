@@ -106,10 +106,7 @@ def test_multitwitpic():
 def test_metadatapic():
     pic = _test_upload_media()
     metadata = "metadata generated via PTT! ★" + get_random_str()
-    res = twitter_upl.media.metadata.create(_json={
-        "media_id": pic,
-        "alt_text": { "text": metadata }
-    })
+    res = twitter_upl.media.metadata.create(media_id=pic, text=metadata)
     random_tweet = ("I can also tweet pictures with text metadata attached ★  "
         + get_random_str())
     res = twitter11.statuses.update(status=random_tweet, media_ids=pic)

@@ -210,6 +210,18 @@ class TwitterCall(object):
     def __call__(self, **kwargs):
         kwargs = dict(kwargs)
         uri = build_uri(self.uriparts, kwargs)
+
+        # Shortcut call arguments for special json arguments case
+        if "media/metadata/create" in uri:
+            media_id = kwargs.pop('media_id', None)
+            alt_text = kwargs.pop('alt_text', kwargs.pop('text', None))
+            if media_id and alt_text:
+                jsondata = {
+                    "media_id": media_id,
+                    "alt_text": {"text": alt_text}
+                }
+                return self.__call__(_json=jsondata, **kwargs)
+
         method = kwargs.pop('_method', None) or method_for_uri(uri)
         domain = self.domain
 
@@ -467,7 +479,8 @@ class Twitter(TwitterCall):
           "media_id": id_img1,
           "alt_text": { "text": "metadata generated via PTT!" }
         })
-
+        # or with the shortcut arguments ("alt_text" and "text" work):
+        t_upload.media.metadata.create(media_id=id_img1, text="metadata generated via PTT!")
 
     Searching Twitter::
 
