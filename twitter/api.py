@@ -231,12 +231,6 @@ class TwitterCall(object):
         url_base = "http%s://%s/%s%s%s" % (
             secure_str, domain, uri, dot, self.format)
 
-        # Catch POST_json special argument to handle special upload.twitter.com endpoints
-        jsondata = None
-        if 'POST_json' in kwargs:
-            method = 'POST'
-            jsondata = kwargs.pop('POST_json')
-
         # Check if argument tells whether img is already base64 encoded
         b64_convert = not kwargs.pop("_base64", False)
         if b64_convert:
@@ -265,6 +259,16 @@ class TwitterCall(object):
         headers = {'Accept-Encoding': 'gzip'} if self.gzip else dict()
         body = None
         arg_data = None
+
+        # Catch _json special argument to handle special endpoints which
+        # require args as a json string within the request's body
+        # for instance media/metadata/create on upload.twitter.com
+        # https://dev.twitter.com/rest/reference/post/media/metadata/create
+        jsondata = kwargs.pop('_json', None)
+        if jsondata:
+            body = json.dumps(jsondata)
+            headers['Content-Type'] = 'application/json; charset=UTF-8'
+
         if self.auth:
             headers.update(self.auth.generate_headers())
             # Use urlencoded oauth args with no params when sending media
@@ -275,11 +279,6 @@ class TwitterCall(object):
                 url_base += '?' + arg_data
             else:
                 body = arg_data.encode('utf-8')
-
-        # Handle POST_json special endpoints
-        if jsondata:
-            body = json.dumps(jsondata)
-            headers['Content-Type'] = 'application/json; charset=UTF-8'
 
         # Handle query as multipart when sending media
         if media:

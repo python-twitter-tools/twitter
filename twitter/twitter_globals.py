@@ -40,5 +40,5 @@ POST_ACTIONS = [
     'request_token', 'invalidate_token',
 
     # Upload Methods
-    'media/upload',
+    'media/upload', 'media/metadata/create',
 ]
