@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 '''
+DEPRECATED
 This is a development script, intended for development use only.
 
 This script generates the POST_ACTIONS variable
