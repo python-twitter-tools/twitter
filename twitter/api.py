@@ -400,7 +400,7 @@ class Twitter(TwitterCall):
         from twitter import *
 
         t = Twitter(
-            auth=OAuth(token, token_key, con_secret, con_secret_key))
+            auth=OAuth(token, token_secret, consumer_key, consumer_secret))
 
         # Get your "home" timeline
         t.statuses.home_timeline()
@@ -446,7 +446,7 @@ class Twitter(TwitterCall):
         # - then upload medias one by one on Twitter's dedicated server
         #   and collect each one's id:
         t_upload = Twitter(domain='upload.twitter.com',
-            auth=OAuth(token, token_key, con_secret, con_secret_key))
+            auth=OAuth(token, token_secret, consumer_key, consumer_secret))
         id_img1 = t_upload.media.upload(media=imagedata)["media_id_string"]
         id_img2 = t_upload.media.upload(media=imagedata)["media_id_string"]
 
