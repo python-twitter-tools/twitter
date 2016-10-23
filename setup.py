@@ -1,6 +1,12 @@
 from setuptools import setup, find_packages
 import sys, os
 
+try:
+    import pypandoc
+    long_description = pypandoc.convert('README', 'rst', format='md')
+except ImportError:
+    long_description = open('./README', 'r').read()
+
 version = '1.17.1'
 
 install_requires = [
@@ -16,7 +22,7 @@ tests_require = [
 setup(name='twitter',
       version=version,
       description="An API and command-line toolset for Twitter (twitter.com)",
-      long_description=open("./README", "r").read(),
+      long_description=long_description,
       # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
       classifiers=[
           "Development Status :: 5 - Production/Stable",
