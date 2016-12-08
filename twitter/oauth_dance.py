@@ -30,18 +30,60 @@ def oauth2_dance(consumer_key, consumer_secret, token_filename=None):
         write_bearer_token_file(token_filename, token)
     return token
 
-def oauth_dance(app_name, consumer_key, consumer_secret, token_filename=None):
+def get_oauth_pin(oauth_url, open_browser=True):
+    """
+    Prompt the user for the OAuth PIN.
+
+    By default, a browser will open the authorization page. If `open_browser`
+    is false, the authorization URL will just be printed instead.
+    """
+
+    print("Opening: %s\n" % oauth_url)
+
+    if open_browser:
+        print("""
+In the web browser window that opens please choose to Allow
+access. Copy the PIN number that appears on the next page and paste or
+type it here:
+    """)
+
+        try:
+            r = webbrowser.open(oauth_url)
+            time.sleep(2) # Sometimes the last command can print some
+                          # crap. Wait a bit so it doesn't mess up the next
+                          # prompt.
+            if not r:
+                raise Exception()
+        except:
+            print("""
+Uh, I couldn't open a browser on your computer. Please go here to get
+your PIN:
+
+""" + oauth_url)
+
+    else: # not using a browser
+        print("""
+Please go to the following URL, authorize the app, and copy the PIN:
+
+""" + oauth_url)
+
+    return _input("Please enter the PIN: ").strip()
+
+
+def oauth_dance(app_name, consumer_key, consumer_secret, token_filename=None, open_browser=True):
     """
     Perform the OAuth dance with some command-line prompts. Return the
     oauth_token and oauth_token_secret.
 
     Provide the name of your app in `app_name`, your consumer_key, and
-    consumer_secret. This function will open a web browser to let the
-    user allow your app to access their Twitter account. PIN
-    authentication is used.
+    consumer_secret.  This function will let the user allow your app to access
+    their Twitter account using PIN authentication.
 
-    If a token_filename is given, the oauth tokens will be written to
+    If a `token_filename` is given, the oauth tokens will be written to
     the file.
+
+    By default, this function attempts to open a browser to request access. If
+    `open_browser` is false it will just print the URL instead.
     """
     print("Hi there! We're gonna get you all set up to use %s." % app_name)
     twitter = Twitter(
@@ -49,29 +91,10 @@ def oauth_dance(app_name, consumer_key, consumer_secret, token_filename=None):
         format='', api_version=None)
     oauth_token, oauth_token_secret = parse_oauth_tokens(
         twitter.oauth.request_token(oauth_callback="oob"))
-    print("""
-In the web browser window that opens please choose to Allow
-access. Copy the PIN number that appears on the next page and paste or
-type it here:
-""")
     oauth_url = ('https://api.twitter.com/oauth/authorize?oauth_token=' +
                  oauth_token)
-    print("Opening: %s\n" % oauth_url)
+    oauth_verifier = get_oauth_pin(oauth_url, open_browser)
 
-    try:
-        r = webbrowser.open(oauth_url)
-        time.sleep(2) # Sometimes the last command can print some
-                      # crap. Wait a bit so it doesn't mess up the next
-                      # prompt.
-        if not r:
-            raise Exception()
-    except:
-        print("""
-Uh, I couldn't open a browser on your computer. Please go here to get
-your PIN:
-
-""" + oauth_url)
-    oauth_verifier = _input("Please enter the PIN: ").strip()
     twitter = Twitter(
         auth=OAuth(
             oauth_token, oauth_token_secret, consumer_key, consumer_secret),
