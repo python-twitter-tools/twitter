@@ -574,6 +574,7 @@ class SetStatusAction(Action):
         statusTxt = (" ".join(options['extra_args'])
                      if options['extra_args']
                      else str(input("message: ")))
+        statusTxt = statusTxt.replace('\\n', '\n')
         replies = []
         ptr = re.compile("@[\w_]+")
         while statusTxt:
