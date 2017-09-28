@@ -20,7 +20,7 @@ install:
 script: nosetests --with-coverage --cover-package=twitter
 
 after_success:
-  - coveralls
+  - pip install coveralls && coveralls
   - pip install pep8 pyflakes
   - pep8 twitter/*.py
   - pyflakes twitter/*.py
