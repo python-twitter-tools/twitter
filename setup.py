@@ -12,8 +12,6 @@ version = '1.17.1'
 install_requires = [
     # -*- Extra requirements: -*-
     ]
-if sys.version_info < (2,7):
-    install_requires.append('argparse')
 
 tests_require = [
     'nose',
@@ -30,11 +28,12 @@ setup(name='twitter',
           "Intended Audience :: End Users/Desktop",
           "Natural Language :: English",
           "Operating System :: OS Independent",
-          "Programming Language :: Python :: 2.6",
+          "Programming Language :: Python :: 2",
           "Programming Language :: Python :: 2.7",
-          "Programming Language :: Python :: 3.2",
-          "Programming Language :: Python :: 3.3",
+          "Programming Language :: Python :: 3",
           "Programming Language :: Python :: 3.4",
+          "Programming Language :: Python :: 3.5",
+          "Programming Language :: Python :: 3.6",
           "Topic :: Communications :: Chat :: Internet Relay Chat",
           "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: CGI Tools/Libraries",
           "Topic :: Utilities",
