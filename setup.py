@@ -7,7 +7,7 @@ try:
 except ImportError:
     long_description = open('./README', 'r').read()
 
-version = '1.17.1'
+version = '1.18.0'
 
 install_requires = [
     # -*- Extra requirements: -*-
