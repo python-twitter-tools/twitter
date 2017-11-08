@@ -31,9 +31,22 @@ AUTHENTICATION
 
 from __future__ import print_function
 
-import os, sys, time as _time, calendar, functools
-from datetime import time, date, datetime
-from getopt import gnu_getopt as getopt, GetoptError
+import functools
+import os
+import sys
+import time as _time
+from datetime import datetime, time
+from getopt import gnu_getopt as getopt
+from getopt import GetoptError
+
+from .api import Twitter, TwitterError
+from .auth import NoAuth
+from .follow import lookup
+from .oauth import OAuth, read_token_file
+from .oauth_dance import oauth_dance
+from .timezones import utc as UTC
+from .timezones import Local
+from .util import Fail, err, expand_line, parse_host_list
 
 try:
     import urllib.request as urllib2
@@ -47,13 +60,6 @@ except ImportError:
 CONSUMER_KEY='d8hIyfzs7ievqeeZLjZrqQ'
 CONSUMER_SECRET='AnZmK0rnvaX7BoJ75l6XlilnbyMv7FoiDXWVmPD8'
 
-from .api import Twitter, TwitterError
-from .oauth import OAuth, read_token_file
-from .oauth_dance import oauth_dance
-from .auth import NoAuth
-from .util import Fail, err, expand_line, parse_host_list
-from .follow import lookup
-from .timezones import utc as UTC, Local
 
 def parse_args(args, options):
     """Parse arguments from command-line to set options."""
@@ -188,9 +194,12 @@ def statuses_resolve_uids(twitter, tl):
 
     return new_tl
 
-def statuses_portion(twitter, screen_name, max_id=None, mentions=False, favorites=False, received_dms=None, isoformat=False):
+
+def statuses_portion(twitter, screen_name, max_id=None, mentions=False,
+                     favorites=False, received_dms=None, isoformat=False):
     """Get a portion of the statuses of a screen name."""
-    kwargs = dict(count=200, include_rts=1, screen_name=screen_name)
+    kwargs = dict(count=200, include_rts=1, screen_name=screen_name,
+                  tweet_mode='extended')
     if max_id:
         kwargs['max_id'] = max_id
 
@@ -199,7 +208,7 @@ def statuses_portion(twitter, screen_name, max_id=None, mentions=False, favorite
         tl = twitter.statuses.mentions_timeline(**kwargs)
     elif favorites:
         tl = twitter.favorites.list(**kwargs)
-    elif received_dms != None:
+    elif received_dms is not None:
         if received_dms:
             tl = twitter.direct_messages(**kwargs)
         else: # sent DMs
@@ -212,28 +221,31 @@ def statuses_portion(twitter, screen_name, max_id=None, mentions=False, favorite
 
     # some tweets do not provide screen name but user id, resolve those
     # this isn't a valid operation for DMs, so special-case them
-    if received_dms == None:
+    if received_dms is None:
       newtl = statuses_resolve_uids(twitter, tl)
     else:
       newtl = tl
     for t in newtl:
-        text = t['text']
+        text = t['full_text']
         rt = t.get('retweeted_status')
         if rt:
-            text = "RT @%s: %s" % (rt['user']['screen_name'], rt['text'])
+            text = "RT @%s: %s" % (rt['user']['screen_name'], rt['full_text'])
         # DMs don't include mentions by default, so in order to show who
         # the recipient was, we synthesise a mention. If we're not
         # operating on DMs, behave as normal
-        if received_dms == None:
-          tweets[t['id']] = "%s <%s> %s" % (format_date(t['created_at'], isoformat=isoformat),
-                                            t['user']['screen_name'],
-                                            format_text(text))
+        if received_dms is None:
+          tweets[t['id']] = "%s <%s> %s" % (
+              format_date(t['created_at'], isoformat=isoformat),
+              t['user']['screen_name'],
+              format_text(text))
         else:
-          tweets[t['id']] = "%s <%s> @%s %s" % (format_date(t['created_at'], isoformat=isoformat),
-                                            t['sender_screen_name'],
-                                            t['recipient']['screen_name'],
-                                            format_text(text))
+          tweets[t['id']] = "%s <%s> @%s %s" % (
+              format_date(t['created_at'], isoformat=isoformat),
+              t['sender_screen_name'],
+              t['recipient']['screen_name'],
+              format_text(text))
     return tweets
+
 
 def statuses(twitter, screen_name, tweets, mentions=False, favorites=False, received_dms=None, isoformat=False):
     """Get all the statuses for a screen name."""
