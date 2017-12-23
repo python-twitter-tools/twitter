@@ -156,6 +156,9 @@ Searching Twitter:
 ```python
 # Search for the latest tweets about #pycon
 t.search.tweets(q="#pycon")
+
+# Search for the latest tweets about #pycon, using [extended mode](https://developer.twitter.com/en/docs/tweets/tweet-updates)
+t.search.tweets(q="#pycon", tweet_mode='extended')
 ```
 
 
