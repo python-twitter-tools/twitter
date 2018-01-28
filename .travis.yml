@@ -25,10 +25,10 @@ script: nosetests --with-coverage --cover-package=twitter
 
 after_success:
   - pip install coveralls && coveralls
-  - pip install pep8 pyflakes
-  - pep8 twitter/*.py
+  - pip install pycodestyle pyflakes
+  - pycodestyle twitter/*.py
   - pyflakes twitter/*.py
-  - pep8 tests/*.py
+  - pycodestyle tests/*.py
   - pyflakes tests/*.py
 
 matrix:
