@@ -24,10 +24,6 @@ def parse_arguments():
                         help='The Twitter Consumer Key.')
     parser.add_argument('-cs', '--consumer-secret', required=True,
                         help='The Twitter Consumer Secret.')
-    parser.add_argument('-us', '--user-stream', action='store_true',
-                        help='Connect to the user stream endpoint.')
-    parser.add_argument('-ss', '--site-stream', action='store_true',
-                        help='Connect to the site stream endpoint.')
     parser.add_argument('-to', '--timeout',
                         help='Timeout for the stream (seconds).')
     parser.add_argument('-ht', '--heartbeat-timeout',
@@ -56,20 +52,11 @@ def main():
     if args.track_keywords:
         query_args['track'] = args.track_keywords
 
-    if args.user_stream:
-        stream = TwitterStream(auth=auth, domain='userstream.twitter.com',
-                               **stream_args)
-        tweet_iter = stream.user(**query_args)
-    elif args.site_stream:
-        stream = TwitterStream(auth=auth, domain='sitestream.twitter.com',
-                               **stream_args)
-        tweet_iter = stream.site(**query_args)
+    stream = TwitterStream(auth=auth, **stream_args)
+    if args.track_keywords:
+        tweet_iter = stream.statuses.filter(**query_args)
     else:
-        stream = TwitterStream(auth=auth, **stream_args)
-        if args.track_keywords:
-            tweet_iter = stream.statuses.filter(**query_args)
-        else:
-            tweet_iter = stream.statuses.sample()
+        tweet_iter = stream.statuses.sample()
 
     # Iterate over the sample stream.
     for tweet in tweet_iter:

@@ -222,33 +222,7 @@ Per default the `TwitterStream` object uses
 [public streams](https://dev.twitter.com/docs/streaming-apis/streams/public).
 If you want to use one of the other
 [streaming APIs](https://dev.twitter.com/docs/streaming-apis), specify the URL
-manually:
-
-- [Public streams](https://dev.twitter.com/docs/streaming-apis/streams/public): stream.twitter.com
-- [User streams](https://dev.twitter.com/docs/streaming-apis/streams/user): userstream.twitter.com
-- [Site streams](https://dev.twitter.com/docs/streaming-apis/streams/site): sitestream.twitter.com
-
-Note that you require the proper
-[permissions](https://dev.twitter.com/docs/application-permission-model) to
-access these streams. (E.g., for direct messages, your
-[application](https://dev.twitter.com/apps) needs the "Read, Write & Direct
-Messages" permission.)
-
-The following example demonstrates how to retrieve all new direct messages
-from the user stream:
-
-```python
-auth = OAuth(
-    consumer_key='[your consumer key]',
-    consumer_secret='[your consumer secret]',
-    token='[your token]',
-    token_secret='[your token secret]'
-)
-twitter_userstream = TwitterStream(auth=auth, domain='userstream.twitter.com')
-for msg in twitter_userstream.user():
-    if 'direct_message' in msg:
-        print msg['direct_message']['text']
-```
+manually.
 
 The iterator will `yield` until the TCP connection breaks. When the
 connection breaks, the iterator yields `{'hangup': True}` (and
