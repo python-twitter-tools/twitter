@@ -585,14 +585,14 @@ class SetStatusAction(Action):
             else:
                 break
         replies = " ".join(replies)
-        if len(replies) >= 140:
+        if len(replies) >= 280:
             # just go back
             statusTxt = replies
             replies = ""
 
         splitted = []
         while statusTxt:
-            limit = 140 - len(replies)
+            limit = 280 - len(replies)
             if len(statusTxt) > limit:
                 end = str.rfind(statusTxt, ' ', 0, limit)
             else:
