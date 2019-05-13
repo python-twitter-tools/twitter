@@ -188,7 +188,7 @@ class TwitterCall(object):
 
     def __init__(
             self, auth, format, domain, callable_cls, uri="",
-            uriparts=None, secure=True, timeout=None, gzip=False, retry=False, verify_context=False):
+            uriparts=None, secure=True, timeout=None, gzip=False, retry=False, verify_context=True):
         self.auth = auth
         self.format = format
         self.domain = domain
@@ -363,7 +363,7 @@ class TwitterCall(object):
         else:
             return self._handle_response(req, uri, arg_data, _timeout, self.verify_context)
 
-    def _handle_response(self, req, uri, arg_data, _timeout=None, verify_context=False):
+    def _handle_response(self, req, uri, arg_data, _timeout=None, verify_context=True):
         kwargs = {}
         if _timeout:
             kwargs['timeout'] = _timeout
@@ -371,7 +371,8 @@ class TwitterCall(object):
             context = None
             if not verify_context:
                 context = ssl._create_unverified_context()
-            handle = urllib_request.urlopen(req, **kwargs, context=context)
+            kwargs['context'] = context
+            handle = urllib_request.urlopen(req, **kwargs)
             if handle.headers['Content-Type'] in ['image/jpeg', 'image/png']:
                 return handle
             try:
@@ -552,7 +553,7 @@ class Twitter(TwitterCall):
     def __init__(
             self, format="json",
             domain="api.twitter.com", secure=True, auth=None,
-            api_version=_DEFAULT, retry=False, verify_context=False):
+            api_version=_DEFAULT, retry=False, verify_context=True):
         """
         Create a new twitter API connector.
 
