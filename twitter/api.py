@@ -4,6 +4,13 @@ from __future__ import unicode_literals, print_function
 from .util import PY_3_OR_HIGHER, actually_bytes
 
 try:
+    import ssl
+except ImportError:
+    _have_ssl = False
+else:
+    _have_ssl = True
+
+try:
     import urllib.request as urllib_request
     import urllib.error as urllib_error
 except ImportError:
@@ -51,6 +58,7 @@ class TwitterHTTPError(TwitterError):
     Exception thrown by the Twitter object when there is an
     HTTP error interacting with twitter.com.
     """
+
     def __init__(self, e, uri, format, uriparts):
         self.e = e
         self.uri = uri
@@ -82,10 +90,10 @@ class TwitterHTTPError(TwitterError):
     def __str__(self):
         fmt = ("." + self.format) if self.format else ""
         return (
-            "Twitter sent status %i for URL: %s%s using parameters: "
-            "(%s)\ndetails: %s" % (
-                self.e.code, self.uri, fmt, self.uriparts,
-                self.response_data))
+                "Twitter sent status %i for URL: %s%s using parameters: "
+                "(%s)\ndetails: %s" % (
+                    self.e.code, self.uri, fmt, self.uriparts,
+                    self.response_data))
 
 
 class TwitterResponse(object):
@@ -144,6 +152,7 @@ def wrap_response(response, headers):
 
 POST_ACTIONS_RE = re.compile('(' + '|'.join(POST_ACTIONS) + r')(/\d+)?$')
 
+
 def method_for_uri(uri):
     if POST_ACTIONS_RE.search(uri):
         return "POST"
@@ -175,12 +184,11 @@ def build_uri(orig_uriparts, kwargs):
 
 
 class TwitterCall(object):
-
     TWITTER_UNAVAILABLE_WAIT = 30  # delay after HTTP codes 502, 503 or 504
 
     def __init__(
             self, auth, format, domain, callable_cls, uri="",
-            uriparts=None, secure=True, timeout=None, gzip=False, retry=False):
+            uriparts=None, secure=True, timeout=None, gzip=False, retry=False, verify_context=False):
         self.auth = auth
         self.format = format
         self.domain = domain
@@ -191,6 +199,7 @@ class TwitterCall(object):
         self.timeout = timeout
         self.gzip = gzip
         self.retry = retry
+        self.verify_context = verify_context
 
     def __getattr__(self, k):
         try:
@@ -201,7 +210,8 @@ class TwitterCall(object):
                     auth=self.auth, format=self.format, domain=self.domain,
                     callable_cls=self.callable_cls, timeout=self.timeout,
                     secure=self.secure, gzip=self.gzip, retry=self.retry,
-                    uriparts=self.uriparts + (arg,))
+                    uriparts=self.uriparts + (arg,), verify_context=self.verify_context)
+
             if k == "_":
                 return extend_call
             else:
@@ -329,16 +339,19 @@ class TwitterCall(object):
 
         req = urllib_request.Request(url_base, data=body, headers=headers)
         if self.retry:
-            return self._handle_response_with_retry(req, uri, arg_data, _timeout)
+            return self._handle_response_with_retry(req, uri, arg_data, _timeout, self.verify_context)
         else:
-            return self._handle_response(req, uri, arg_data, _timeout)
+            return self._handle_response(req, uri, arg_data, _timeout, self.verify_context)
 
-    def _handle_response(self, req, uri, arg_data, _timeout=None):
+    def _handle_response(self, req, uri, arg_data, _timeout=None, verify_context=False):
         kwargs = {}
         if _timeout:
             kwargs['timeout'] = _timeout
         try:
-            handle = urllib_request.urlopen(req, **kwargs)
+            context = None
+            if not verify_context:
+                context = ssl._create_unverified_context()
+            handle = urllib_request.urlopen(req, **kwargs, context=context)
             if handle.headers['Content-Type'] in ['image/jpeg', 'image/png']:
                 return handle
             try:
@@ -515,10 +528,11 @@ class Twitter(TwitterCall):
     of XML.
 
     """
+
     def __init__(
             self, format="json",
             domain="api.twitter.com", secure=True, auth=None,
-            api_version=_DEFAULT, retry=False):
+            api_version=_DEFAULT, retry=False, verify_context=False):
         """
         Create a new twitter API connector.
 
@@ -560,7 +574,7 @@ class Twitter(TwitterCall):
         TwitterCall.__init__(
             self, auth=auth, format=format, domain=domain,
             callable_cls=TwitterCall,
-            secure=secure, uriparts=uriparts, retry=retry)
+            secure=secure, uriparts=uriparts, retry=retry, verify_context=verify_context)
 
 
 __all__ = ["Twitter", "TwitterError", "TwitterHTTPError", "TwitterResponse"]
