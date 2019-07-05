@@ -96,15 +96,16 @@ class OAuth(Auth):
             raise MissingCredentialsError(
                 'You must supply strings for token_secret and consumer_secret, not None.')
 
-    def encode_params(self, base_url, method, params):
-        params = params.copy()
+    def encode_params(self, base_url, method, url_params):
+        return urlencode_noplus(sorted(url_params.items()))
 
-        if self.token:
-            params['oauth_token'] = self.token
+    def generate_headers(self, base_url=None, method=None, url_params=None):
+        params = url_params.copy()
 
-        params['oauth_consumer_key'] = self.consumer_key
-        params['oauth_signature_method'] = 'HMAC-SHA1'
         params['oauth_version'] = '1.0'
+        params['oauth_signature_method'] = 'HMAC-SHA1'
+        params['oauth_consumer_key'] = self.consumer_key
+        params['oauth_token'] = self.token
         params['oauth_timestamp'] = str(int(time()))
         params['oauth_nonce'] = str(getrandbits(64))
 
@@ -115,13 +116,26 @@ class OAuth(Auth):
         message = '&'.join(
             urllib_parse.quote(i, safe='~') for i in [method.upper(), base_url, enc_params])
 
-        signature = (base64.b64encode(hmac.new(
-                    key.encode('ascii'), message.encode('ascii'), hashlib.sha1)
-                                      .digest()))
-        return enc_params + "&" + "oauth_signature=" + urllib_parse.quote(signature, safe='~')
+        signature = urllib_parse.quote(
+            base64.b64encode(
+                hmac.new(
+                    key.encode('ascii'),
+                    message.encode('ascii'),
+                    hashlib.sha1
+                ).digest()
+            ), safe='~'
+        )
 
-    def generate_headers(self):
-        return {}
+        return {
+            b'Authorization': ('''OAuth oauth_version="1.0",
+                oauth_signature_method="HMAC-SHA1",
+                oauth_consumer_key="%s",
+                oauth_token="%s",
+                oauth_timestamp="%s",
+                oauth_nonce="%s",
+                oauth_signature="%s"''' % (self.consumer_key, self.token, params["oauth_timestamp"], params["oauth_nonce"], signature)).encode("utf-8")
+        }
+
 
 # apparently contrary to the HTTP RFCs, spaces in arguments must be encoded as
 # %20 rather than '+' when constructing an OAuth signature (and therefore
