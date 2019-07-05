@@ -35,6 +35,16 @@ twitter11_na = Twitter(domain='api.twitter.com',
                        auth=noauth,
                        api_version='1.1')
 
+twitterlabs = Twitter(domain='api.twitter.com',
+                    auth=oauth,
+                    api_version='labs/1',
+                    format='')
+
+twitterlabs_app = Twitter(domain='api.twitter.com',
+                    auth=oauth2,
+                    api_version='labs/1',
+                    format='')
+
 AZaz = "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 b64_image_data = b"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB94JFhMBAJv5kaUAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAA4UlEQVQoz7WSIZLGIAxG6c5OFZjianBcIOfgPkju1DsEBWfAUEcNGGpY8Xe7dDoVFRvHfO8NJGRorZE39UVe1nd/WNfVObcsi3OOEAIASikAmOf5D2q/FWPUWgshKKWfiFIqhNBaxxhPjPQ05/z+Bs557xw9hBC89ymlu5BS8t6HEC5NW2sR8alRRLTWXoRSSinlSejT12M9BAAAgCeoTw9BSimlfBIu6WdYtVZEVErdaaUUItZaL/9wOsaY83YAMMb0dGtt6Jdv3/ec87ZtOWdCCGNsmibG2DiOJzP8+7b+AAOmsiPxyHWCAAAAAElFTkSuQmCC"
@@ -147,6 +157,14 @@ def test_get_tweet():
 
 def test_get_tweet_app_auth():
     _test_get_tweet(twitter11_app.statuses.lookup(_id='27095053386121216', include_entities="true", tweet_mode="extended"))
+
+
+def test_get_tweet_labs():
+    _test_get_tweet(twitterlabs.tweets(ids='27095053386121216', format='detailed', expansions='attachments.poll_ids,attachments.media_keys,author_id,entities.mentions.username,geo.place_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id'))
+
+
+def test_get_tweet_labs_app_auth():
+    _test_get_tweet(twitterlabs_app.tweets(ids='27095053386121216', format='detailed', expansions='attachments.poll_ids,attachments.media_keys,author_id,entities.mentions.username,geo.place_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id'))
 
 
 def test_search():
