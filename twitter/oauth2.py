@@ -73,7 +73,7 @@ class OAuth2(Auth):
     def encode_params(self, base_url, method, params):
         return urlencode(params)
 
-    def generate_headers(self):
+    def generate_headers(self, *args, **kwargs):
         if self.bearer_token:
             headers = {
                 b'Authorization': 'Bearer {0}'.format(

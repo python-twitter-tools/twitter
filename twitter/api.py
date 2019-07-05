@@ -282,11 +282,12 @@ class TwitterCall(object):
             headers['Content-Type'] = 'application/json; charset=UTF-8'
 
         if self.auth:
-            headers.update(self.auth.generate_headers())
+            params = {} if media or jsondata else kwargs
+            headers.update(self.auth.generate_headers(url_base, method, params))
             # Use urlencoded oauth args with no params when sending media
             # via multipart and send it directly via uri even for post
             arg_data = self.auth.encode_params(
-                url_base, method, {} if media or jsondata else kwargs)
+                url_base, method, params)
             if method == 'GET' or media or jsondata:
                 url_base += '?' + arg_data
             else:
