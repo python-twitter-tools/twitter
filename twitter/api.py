@@ -367,7 +367,7 @@ class TwitterCall(object):
                 data = f.read()
             if len(data) == 0:
                 return wrap_response({}, handle.headers)
-            elif "json" == self.format:
+            elif "json" == self.format or "/labs/" in uri:
                 res = json.loads(data.decode('utf8'))
                 return wrap_response(res, handle.headers)
             else:
