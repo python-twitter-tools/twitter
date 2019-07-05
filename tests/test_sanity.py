@@ -7,13 +7,17 @@ import time
 import pickle
 import json
 
-from twitter import Twitter, NoAuth, OAuth, read_token_file, TwitterHTTPError
+from twitter import Twitter, NoAuth, OAuth, OAuth2, read_token_file, TwitterHTTPError
 from twitter.api import TwitterDictResponse, TwitterListResponse, POST_ACTIONS, method_for_uri
 from twitter.cmdline import CONSUMER_KEY, CONSUMER_SECRET
 
 noauth = NoAuth()
 oauth = OAuth(*read_token_file('tests/oauth_creds')
               + (CONSUMER_KEY, CONSUMER_SECRET))
+
+oauth2 = OAuth2(CONSUMER_KEY, CONSUMER_SECRET)
+bearer_token = json.loads(Twitter(api_version=None, format="", secure=True, auth=oauth2).oauth2.token(grant_type="client_credentials"))['access_token']
+oauth2 = OAuth2(bearer_token=bearer_token)
 
 twitter11 = Twitter(domain='api.twitter.com',
                     auth=oauth,
@@ -22,6 +26,10 @@ twitter11 = Twitter(domain='api.twitter.com',
 twitter_upl = Twitter(domain='upload.twitter.com',
                       auth=oauth,
                       api_version='1.1')
+
+twitter11_app = Twitter(domain='api.twitter.com',
+                    auth=oauth2,
+                    api_version='1.1')
 
 twitter11_na = Twitter(domain='api.twitter.com',
                        auth=noauth,
@@ -47,6 +55,7 @@ def test_API_set_tweet(unicod=False):
     texts = [tweet['text'] for tweet in recent]
     assert random_tweet in texts
 
+
 def test_API_set_unicode_tweet():
     test_API_set_tweet(unicod=True)
 
@@ -57,11 +66,14 @@ def clean_link(text):
         return text[:pos]
     return text
 
+
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
+
 def _img_data():
     return open(os.path.join(__location__, "test.png"), "rb").read()
+
 
 def _test_API_old_media(img, _base64):
     random_tweet = (
@@ -75,20 +87,25 @@ def _test_API_old_media(img, _base64):
     texts = [clean_link(tweet['text']) for tweet in recent]
     assert random_tweet in texts
 
+
 def test_API_set_unicode_twitpic_base64():
     _test_API_old_media(b64_image_data, True)
+
 
 def test_API_set_unicode_twitpic_base64_string():
     _test_API_old_media(b64_image_data.decode('utf-8'), True)
 
+
 def test_API_set_unicode_twitpic_auto_base64_convert():
     _test_API_old_media(_img_data(), False)
+
 
 def _test_upload_media():
     res = twitter_upl.media.upload(media=_img_data())
     assert res
     assert res["media_id"]
     return str(res["media_id"])
+
 
 def test_multitwitpic():
     pics = [_test_upload_media(), _test_upload_media(), _test_upload_media()]
@@ -103,6 +120,7 @@ def test_multitwitpic():
     texts = [clean_link(t['text']) for t in recent]
     assert random_tweet in texts
 
+
 def test_metadatapic():
     pic = _test_upload_media()
     metadata = "metadata generated via PTT! ★" + get_random_str()
@@ -116,6 +134,20 @@ def test_metadatapic():
     meta = recent[0].get("extended_entities", {}).get("media")
     assert meta
     assert metadata == meta[0].get("ext_alt_text", "")
+
+
+def _test_get_tweet(results):
+    assert results
+    assert results[0]["full_text"] == "If you're interacting with Twitter via Python, I'd recommend Python Twitter Tools by @sixohsix https://github.com/sixohsix/twitter"
+
+
+def test_get_tweet():
+    _test_get_tweet(twitter11.statuses.lookup(_id='27095053386121216', include_entities="true", tweet_mode="extended"))
+
+
+def test_get_tweet_app_auth():
+    _test_get_tweet(twitter11_app.statuses.lookup(_id='27095053386121216', include_entities="true", tweet_mode="extended"))
+
 
 def test_search():
     # In 1.1, search works on api.twitter.com not search.twitter.com
