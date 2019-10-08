@@ -13,8 +13,9 @@ tweets and setting your own tweet from the safety and security of your
 favorite shell and an IRC bot that can announce Twitter updates to an
 IRC channel.
 
-For more information, after installing the `twitter` package:
+For more information:
 
+ * install the [package](https://pypi.org/project/twitter/) `pip install twitter`
  * import the `twitter` package and run `help()` on it
  * run `twitter -h` for command-line tool help
 
