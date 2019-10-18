@@ -120,7 +120,7 @@ t.lists.members(owner_screen_name="tamtar", slug="things-that-are-rad")
 # Favorite/like a status
 status = t.statuses.home_timeline()[0]
 if not status['favorited']:
-    t.favorites.create(_id=status)
+    t.favorites.create(_id=status['id'])
 
 # An *optional* `_timeout` parameter can also be used for API
 # calls which take much more time than normal or twitter stops
