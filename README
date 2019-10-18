@@ -88,7 +88,10 @@ t = Twitter(
     auth=OAuth(token, token_secret, consumer_key, consumer_secret))
 
 # Get your "home" timeline
-t.statuses.home_timeline()
+tweets = t.statuses.home_timeline()
+
+# to pass in the GET/POST parameter `id` you need to use `_id`
+t.favorites.create(_id=tweets['id'])
 
 # Get a particular friend's timeline
 t.statuses.user_timeline(screen_name="billybob")
