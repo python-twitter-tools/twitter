@@ -88,10 +88,7 @@ t = Twitter(
     auth=OAuth(token, token_secret, consumer_key, consumer_secret))
 
 # Get your "home" timeline
-tweets = t.statuses.home_timeline()
-
-# to pass in the GET/POST parameter `id` you need to use `_id`
-t.favorites.create(_id=tweets['id'])
+t.statuses.home_timeline()
 
 # Get a particular friend's timeline
 t.statuses.user_timeline(screen_name="billybob")
@@ -119,6 +116,11 @@ t.direct_messages.events.new(
 
 # Get the members of tamtar's list "Things That Are Rad"
 t.lists.members(owner_screen_name="tamtar", slug="things-that-are-rad")
+
+# Favorite/like a status
+status = t.statuses.home_timeline()[0]
+if not status['favorited']:
+    t.favorites.create(_id=status)
 
 # An *optional* `_timeout` parameter can also be used for API
 # calls which take much more time than normal or twitter stops
