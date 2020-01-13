@@ -313,9 +313,10 @@ class VerboseAdminFormatter(object):
 
 class SearchFormatter(object):
     def __call__(self, result, options):
+        payload = result['text'].replace('\n', ' ')
         return("%s%s %s" % (
-            get_time_string(result, options, "%a, %d %b %Y %H:%M:%S +0000"),
-            result['from_user'], result['text']))
+            get_time_string(result, options, "%a %b %d %H:%M:%S +0000 %Y"),
+            result['user']['screen_name'], payload))
 
 
 class VerboseSearchFormatter(SearchFormatter):
@@ -469,17 +470,13 @@ class StatusAction(Action):
 
 class SearchAction(Action):
     def __call__(self, twitter, options):
-        # We need to be pointing at search.twitter.com to work, and it is less
-        # tangly to do it here than in the main()
-        twitter.domain = "search.twitter.com"
-        twitter.uriparts = ()
-        # We need to bypass the TwitterCall parameter encoding, so we
-        # don't encode the plus sign, so we have to encode it ourselves
-        query_string = "+".join(
-            [quote(term)
-             for term in options['extra_args']])
+        # don't need the "search.twitter.com" domain & keep original uriparts
+        if not (options['extra_args'] and options['extra_args'][0]):
+            raise TwitterError("You need to specify something to search enclosed in single/double quotes")
+        query_string = options['extra_args'][0]
 
-        results = twitter.search(q=query_string)['results']
+        results = twitter.search.tweets(
+            q=query_string, count=options['length'])['statuses']
         f = get_formatter('search', options)
         for result in results:
             resultStr = f(result, options)
