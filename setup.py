@@ -9,10 +9,6 @@ except ImportError:
 
 version = '1.18.0'
 
-tests_require = [
-    'nose',
-    ]
-
 setup(name='twitter',
       version=version,
       description="An API and command-line toolset for Twitter (twitter.com)",
@@ -48,8 +44,6 @@ setup(name='twitter',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
       zip_safe=True,
-      tests_require=tests_require,
-      test_suite = 'nose.collector',
       entry_points="""
       # -*- Entry points: -*-
       [console_scripts]

@@ -11,9 +11,9 @@ python:
 - "pypy"
 
 install:
-  - pip install coverage
+  - pip install pytest pytest-cov
 
-script: nosetests --with-coverage --cover-package=twitter
+script: pytest --cov twitter --cov tests
 
 after_success:
   - pip install coveralls && coveralls
