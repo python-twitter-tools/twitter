@@ -524,6 +524,7 @@ class ListsAction(StatusAction):
         else:
             return list(reversed(twitter.lists.statuses(
                 count=options['length'],
+                tweet_mode="extended",
                 owner_screen_name=screen_name,
                 slug=options['extra_args'][1])))
 
