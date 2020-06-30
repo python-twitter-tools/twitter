@@ -285,8 +285,12 @@ class TwitterCall(object):
             headers.update(self.auth.generate_headers())
             # Use urlencoded oauth args with no params when sending media
             # via multipart and send it directly via uri even for post
+            url_args = {} if media or jsondata else kwargs
+            if method == "PUT" and _id:
+                # the two PUT method APIs both require uri id parameter
+                url_args['id'] = _id
             arg_data = self.auth.encode_params(
-                url_base, method, {} if media or jsondata else kwargs)
+                url_base, method, url_args)
             if method == 'GET' or media or jsondata:
                 url_base += '?' + arg_data
             else:
@@ -327,7 +331,7 @@ class TwitterCall(object):
                 for k in headers:
                     headers[actually_bytes(k)] = actually_bytes(headers.pop(k))
 
-        req = urllib_request.Request(url_base, data=body, headers=headers)
+        req = urllib_request.Request(url_base, data=body, headers=headers, method=method)
         if self.retry:
             return self._handle_response_with_retry(req, uri, arg_data, _timeout)
         else:
