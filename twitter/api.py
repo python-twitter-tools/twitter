@@ -331,7 +331,14 @@ class TwitterCall(object):
                 for k in headers:
                     headers[actually_bytes(k)] = actually_bytes(headers.pop(k))
 
-        req = urllib_request.Request(url_base, data=body, headers=headers, method=method)
+        req = urllib_request.Request(url_base, data=body, headers=headers)
+        # Horrible hack, the python2/urllib2 version of request doesn't
+        # take a method parameter, but we can overwrite the class
+        # get_method() function to a lambda function that always returns
+        # the method we want...
+        # https://stackoverflow.com/questions/111945/is-there-any-way-to-do-http-put-in-python/111988#111988
+        req.get_method = lambda: method
+
         if self.retry:
             return self._handle_response_with_retry(req, uri, arg_data, _timeout)
         else:
