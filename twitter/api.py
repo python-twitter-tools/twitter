@@ -337,6 +337,8 @@ class TwitterCall(object):
         # get_method() function to a lambda function that always returns
         # the method we want...
         # https://stackoverflow.com/questions/111945/is-there-any-way-to-do-http-put-in-python/111988#111988
+        if not PY_3_OR_HIGHER:
+            method = method.encode('utf-8')
         req.get_method = lambda: method
 
         if self.retry:
