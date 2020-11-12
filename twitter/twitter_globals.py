@@ -38,5 +38,10 @@ POST_ACTIONS = [
     'request_token', 'invalidate_token',
 
     # Upload Methods
-    'media/upload', 'media/metadata/create'
+    'media/upload', 'media/metadata/create',
+    
+    # Collections Methods
+    'collections/create', 'collections/destroy', 'collections/update',
+    'collections/entries/add', 'collections/entries/curate',
+    'collections/entries/move', 'collections/entries/remove'
 ]
