@@ -1,4 +1,4 @@
-name: Test
+name: Tests
 
 on: [push, pull_request]
 
@@ -6,7 +6,7 @@ env:
   FORCE_COLOR: 1
 
 jobs:
-  test:
+  tests:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -61,7 +61,7 @@ jobs:
           parallel: true
 
   coveralls_finish:
-    needs: test
+    needs: tests
     runs-on: ubuntu-latest
     steps:
     - name: Coveralls finished
