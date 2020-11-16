@@ -1,7 +1,7 @@
 Python Twitter Tools
 ====================
 
-[![Build Status](https://travis-ci.org/sixohsix/twitter.svg)](https://travis-ci.org/sixohsix/twitter)
+[![Tests](https://github.com/sixohsix/twitter/workflows/Tests/badge.svg)](https://github.com/sixohsix/twitter/actions)
 [![Coverage Status](https://coveralls.io/repos/github/sixohsix/twitter/badge.svg?branch=master)](https://coveralls.io/github/sixohsix/twitter?branch=master)
 
 The Minimalist Twitter API for Python is a Python API for Twitter,
