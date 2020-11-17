@@ -1,11 +1,7 @@
 from setuptools import setup, find_packages
-import sys, os
 
-try:
-    import pypandoc
-    long_description = pypandoc.convert('README', 'rst', format='md')
-except ImportError:
-    long_description = open('./README', 'r').read()
+with open("README") as f:
+    long_description = f.read()
 
 version = '1.18.0'
 
@@ -13,6 +9,7 @@ setup(name='twitter',
       version=version,
       description="An API and command-line toolset for Twitter (twitter.com)",
       long_description=long_description,
+      long_description_content_type="text/markdown",
       python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*",
       # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
       classifiers=[
