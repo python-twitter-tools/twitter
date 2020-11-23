@@ -91,17 +91,17 @@ t = Twitter(
 t.statuses.home_timeline()
 
 # Get a particular friend's timeline
-t.statuses.user_timeline(screen_name="billybob")
+t.statuses.user_timeline(screen_name="boogheta")
 
 # to pass in GET/POST parameters, such as `count`
 t.statuses.home_timeline(count=5)
 
 # to pass in the GET/POST parameter `id` you need to use `_id`
-t.statuses.oembed(_id=1234567890)
+t.statuses.show(_id=1234567890)
 
 # Update your status
 t.statuses.update(
-    status="Using @sixohsix's sweet Python Twitter Tools.")
+    status="Using @boogheta's sweet Python Twitter Tools.")
 
 # Send a direct message
 t.direct_messages.events.new(
@@ -110,12 +110,12 @@ t.direct_messages.events.new(
             "type": "message_create",
             "message_create": {
                 "target": {
-                    "recipient_id": t.users.show(screen_name="billybob")["id"]},
+                    "recipient_id": t.users.show(screen_name="boogheta")["id"]},
                 "message_data": {
                     "text": "I think yer swell!"}}}})
 
-# Get the members of tamtar's list "Things That Are Rad"
-t.lists.members(owner_screen_name="tamtar", slug="things-that-are-rad")
+# Get the members of maxmunnecke's list "network analysis tools" (grab the list_id within the url) https://twitter.com/i/lists/1130857490764091392
+t.lists.members(owner_screen_name="maxmunnecke", list_id="1130857490764091392")
 
 # Favorite/like a status
 status = t.statuses.home_timeline()[0]
