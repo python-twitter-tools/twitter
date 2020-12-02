@@ -48,7 +48,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install -U pip
-          python -m pip install -U pytest pytest-cov
+          python -m pip install -U pytest pytest-cov mock
 
       - name: Tests
         shell: bash
