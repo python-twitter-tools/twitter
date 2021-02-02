@@ -76,7 +76,10 @@ class TwitterHTTPError(TwitterError):
                 except ValueError:
                     # We try to load the response as json as a nicety; if it fails, carry on.
                     pass
-        self.response_data = data
+        if "<!DOCTYPE html>" in data:
+            self.response_data = {}
+        else:
+            self.response_data = data
         super(TwitterHTTPError, self).__init__(str(self))
 
     def __str__(self):
