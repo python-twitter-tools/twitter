@@ -147,7 +147,7 @@ id_img2 = t_upload.media.upload(media=imagedata)["media_id_string"]
 # - finally send your tweet with the list of media ids:
 t.statuses.update(status="PTT ★", media_ids=",".join([id_img1, id_img2]))
 
-# Or send a tweet with an image (or set a logo/banner similarily)
+# Or send a tweet with an image (or set a logo/banner similarly)
 # using the old deprecated method that will probably disappear some day
 params = {"media[]": imagedata, "status": "PTT ★"}
 # Or for an image encoded as base64:
