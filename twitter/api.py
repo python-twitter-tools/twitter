@@ -193,19 +193,27 @@ class TwitterCall(object):
         self.retry = retry
 
     def __getattr__(self, k):
-        try:
-            return object.__getattr__(self, k)
-        except AttributeError:
-            def extend_call(arg):
-                return self.callable_cls(
-                    auth=self.auth, format=self.format, domain=self.domain,
-                    callable_cls=self.callable_cls, timeout=self.timeout,
-                    secure=self.secure, gzip=self.gzip, retry=self.retry,
-                    uriparts=self.uriparts + (arg,))
-            if k == "_":
-                return extend_call
-            else:
-                return extend_call(k)
+
+        # NOTE: we test this to avoid doing dangerous things when actually
+        # attempting to get magic methods this object does not have (such as
+        # __getstate__, for instance, which is important to pickling).
+        # NOTE: when this code is run, the desired magic method cannot exist
+        # on this object because we are using __getattr__ and not
+        # __getattribute__, hence if it existed, it would be accessed normally.
+        if k.startswith('__'):
+            raise AttributeError
+
+        def extend_call(arg):
+            return self.callable_cls(
+                auth=self.auth, format=self.format, domain=self.domain,
+                callable_cls=self.callable_cls, timeout=self.timeout,
+                secure=self.secure, gzip=self.gzip, retry=self.retry,
+                uriparts=self.uriparts + (arg,))
+
+        if k == "_":
+            return extend_call
+        else:
+            return extend_call(k)
 
     def __call__(self, **kwargs):
         kwargs = dict(kwargs)

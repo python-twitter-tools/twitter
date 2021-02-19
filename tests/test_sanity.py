@@ -165,6 +165,10 @@ def test_picklability():
     assert res == res2
     assert res2[2] == 3
 
+    p = pickle.dumps(twitter11)
+    s = pickle.loads(p)
+    assert twitter11.domain == s.domain
+
 
 def test_jsonifability():
     res = TwitterDictResponse({'a': 'b'})
