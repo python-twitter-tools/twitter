@@ -3,10 +3,13 @@ from setuptools import setup, find_packages
 with open("README") as f:
     long_description = f.read()
 
-version = '1.18.0'
+
+def local_scheme(version):
+    """Skip the local version (eg. +xyz of 0.6.1.dev4+gdf99fe2)
+    to be able to upload to Test PyPI"""
+    return ""
 
 setup(name='twitter',
-      version=version,
       description="An API and command-line toolset for Twitter (twitter.com)",
       long_description=long_description,
       long_description_content_type="text/markdown",
@@ -40,6 +43,8 @@ setup(name='twitter',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
       zip_safe=True,
+      use_scm_version={"local_scheme": local_scheme},
+      setup_requires=["setuptools_scm"],
       entry_points="""
       # -*- Entry points: -*-
       [console_scripts]
