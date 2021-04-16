@@ -210,8 +210,10 @@ class TwitterCall(object):
             else:
                 return extend_call(k)
 
-    def __call__(self, **kwargs):
+    def __call__(self, params={}, **kwargs):
+        orig_kwargs = dict(kwargs)
         kwargs = dict(kwargs)
+        kwargs.update(params)
         uri = build_uri(self.uriparts, kwargs)
 
         # Shortcut call arguments for special json arguments case
@@ -223,7 +225,7 @@ class TwitterCall(object):
                     "media_id": media_id,
                     "alt_text": {"text": alt_text}
                 }
-                return self.__call__(_json=jsondata, **kwargs)
+                return self.__call__(_json=jsondata, params=params, **orig_kwargs)
 
         method = kwargs.pop('_method', None) or method_for_uri(uri)
         domain = self.domain
