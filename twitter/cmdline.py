@@ -519,9 +519,9 @@ class ListsAction(StatusAction):
             lists = twitter.lists.list(screen_name=screen_name)
             if not lists:
                 printNicely("This user has no lists.")
-            for list in lists:
+            for lst in lists:
                 lf = get_formatter('lists', options)
-                printNicely(lf(list))
+                printNicely(lf(lst))
             return []
         else:
             return list(reversed(twitter.lists.statuses(
