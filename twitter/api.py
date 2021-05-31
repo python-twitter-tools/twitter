@@ -6,9 +6,9 @@ from .util import PY_3_OR_HIGHER, actually_bytes
 try:
     import ssl
 except ImportError:
-    _have_ssl = False
+    _HAVE_SSL = False
 else:
-    _have_ssl = True
+    _HAVE_SSL = True
 
 try:
     import urllib.request as urllib_request
@@ -369,7 +369,7 @@ class TwitterCall(object):
             kwargs['timeout'] = _timeout
         try:
             context = None
-            if not verify_context:
+            if not verify_context and _HAVE_SSL:
                 context = ssl._create_unverified_context()
             kwargs['context'] = context
             handle = urllib_request.urlopen(req, **kwargs)
