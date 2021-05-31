@@ -126,10 +126,10 @@ OPTIONS = {
 }
 
 try:
-    unescape = HTMLParser.HTMLParser().unescape
-except AttributeError:
     import html
     unescape = html.unescape
+except ImportError:
+    unescape = HTMLParser.HTMLParser().unescape
 
 hashtagRe = re.compile(r'(?P<hashtag>#\S+)')
 profileRe = re.compile(r'(?P<profile>\@\S+)')
