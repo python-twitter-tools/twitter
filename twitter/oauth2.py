@@ -76,14 +76,14 @@ class OAuth2(Auth):
     def generate_headers(self):
         if self.bearer_token:
             headers = {
-                b'Authorization': 'Bearer {0}'.format(
+                'Authorization': 'Bearer {0}'.format(
                     self.bearer_token).encode('utf8')
             }
         else:
             headers = {
-                b'Content-Type': (b'application/x-www-form-urlencoded;'
+                'Content-Type': (b'application/x-www-form-urlencoded;'
                                   b'charset=UTF-8'),
-                b'Authorization': 'Basic {0}'.format(
+                'Authorization': 'Basic {0}'.format(
                     b64encode('{0}:{1}'.format(
                         quote(self.consumer_key),
                         quote(self.consumer_secret)).encode('utf8')
