@@ -3,6 +3,13 @@ from __future__ import unicode_literals
 
 from .util import PY_3_OR_HIGHER
 
+try:
+    import ssl
+except ImportError:
+    _HAVE_SSL = False
+else:
+    _HAVE_SSL = True
+
 if PY_3_OR_HIGHER:
     import urllib.request as urllib_request
     import urllib.error as urllib_error
@@ -206,9 +213,12 @@ class TwitterJSONIter(object):
                 yield self.timeout_token
 
 
-def handle_stream_response(req, uri, arg_data, block, timeout, heartbeat_timeout):
+def handle_stream_response(req, uri, arg_data, block, timeout, heartbeat_timeout, verify_context=True):
     try:
-        handle = urllib_request.urlopen(req,)
+        context = None
+        if not verify_context and _HAVE_SSL:
+            context = ssl._create_unverified_context()
+        handle = urllib_request.urlopen(req, context=context)
     except urllib_error.HTTPError as e:
         raise TwitterHTTPError(e, uri, 'json', arg_data)
     return iter(TwitterJSONIter(handle, uri, arg_data, block, timeout, heartbeat_timeout))
@@ -258,7 +268,7 @@ class TwitterStream(TwitterCall):
         uriparts = (str(api_version),)
 
         class TwitterStreamCall(TwitterCall):
-            def _handle_response(self, req, uri, arg_data, _timeout=None):
+            def _handle_response(self, req, uri, arg_data, _timeout=None, verify_context=True):
                 return handle_stream_response(
                     req, uri, arg_data, block,
                     _timeout or timeout, heartbeat_timeout)
