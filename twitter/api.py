@@ -595,7 +595,8 @@ class Twitter(TwitterCall):
         TwitterCall.__init__(
             self, auth=auth, format=format, domain=domain,
             callable_cls=TwitterCall,
-            secure=secure, uriparts=uriparts, retry=retry, verify_context=verify_context)
+            secure=secure, uriparts=uriparts, retry=retry,
+            verify_context=verify_context)
 
 
 __all__ = ["Twitter", "TwitterError", "TwitterHTTPError", "TwitterResponse"]
