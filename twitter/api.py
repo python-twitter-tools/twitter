@@ -400,11 +400,11 @@ class TwitterCall(object):
             else:
                 raise TwitterHTTPError(e, uri, self.format, arg_data)
 
-    def _handle_response_with_retry(self, req, uri, arg_data, _timeout=None):
+    def _handle_response_with_retry(self, req, uri, arg_data, _timeout=None, verify_context=True):
         retry = self.retry
         while retry:
             try:
-                return self._handle_response(req, uri, arg_data, _timeout, self.verify_context)
+                return self._handle_response(req, uri, arg_data, _timeout, verify_context)
             except TwitterHTTPError as e:
                 if e.e.code == 429:
                     # API rate limit reached
