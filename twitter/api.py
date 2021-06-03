@@ -359,17 +359,17 @@ class TwitterCall(object):
         req.get_method = lambda: method
 
         if self.retry:
-            return self._handle_response_with_retry(req, uri, arg_data, _timeout, self.verify_context)
+            return self._handle_response_with_retry(req, uri, arg_data, _timeout)
         else:
-            return self._handle_response(req, uri, arg_data, _timeout, self.verify_context)
+            return self._handle_response(req, uri, arg_data, _timeout)
 
-    def _handle_response(self, req, uri, arg_data, _timeout=None, verify_context=True):
+    def _handle_response(self, req, uri, arg_data, _timeout=None):
         kwargs = {}
         if _timeout:
             kwargs['timeout'] = _timeout
         try:
             context = None
-            if not verify_context and _HAVE_SSL:
+            if not self.verify_context and _HAVE_SSL:
                 context = ssl._create_unverified_context()
             kwargs['context'] = context
             handle = urllib_request.urlopen(req, **kwargs)
@@ -400,11 +400,11 @@ class TwitterCall(object):
             else:
                 raise TwitterHTTPError(e, uri, self.format, arg_data)
 
-    def _handle_response_with_retry(self, req, uri, arg_data, _timeout=None, verify_context=True):
+    def _handle_response_with_retry(self, req, uri, arg_data, _timeout=None):
         retry = self.retry
         while retry:
             try:
-                return self._handle_response(req, uri, arg_data, _timeout, verify_context)
+                return self._handle_response(req, uri, arg_data, _timeout)
             except TwitterHTTPError as e:
                 if e.e.code == 429:
                     # API rate limit reached
