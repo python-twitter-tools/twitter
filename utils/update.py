@@ -7,7 +7,7 @@ This is a development script, intended for development use only.
 This script generates the POST_ACTIONS variable,
 for placement in the twitter_globals.py
 
-Example Usage:
+Example Usage :
 
     %prog >twitter/twitter_globals.py
 
