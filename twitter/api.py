@@ -389,7 +389,12 @@ class TwitterCall(object):
             if len(data) == 0:
                 return wrap_response({}, handle.headers)
             elif "json" == self.format:
-                res = json.loads(data.decode('utf8'))
+                try:
+                    res = json.loads(data.decode('utf8'))
+                except json.decoder.JSONDecodeError as e:
+                    # it seems like the data received was incomplete
+                    # and we should catch it to allow retries
+                    raise TwitterError("Incomplete JSON data collected for %s (%s): %s)" % (uri, arg_data, e))
                 return wrap_response(res, handle.headers)
             else:
                 return wrap_response(
@@ -401,6 +406,7 @@ class TwitterCall(object):
                 raise TwitterHTTPError(e, uri, self.format, arg_data)
 
     def _handle_response_with_retry(self, req, uri, arg_data, _timeout=None):
+        delay = 1
         retry = self.retry
         while retry:
             try:
@@ -423,6 +429,14 @@ class TwitterCall(object):
                         raise
                     retry -= 1
                 sleep(delay)
+            except TwitterError as e:
+                if isinstance(retry, int) and not isinstance(retry, bool):
+                    if retry <= 0:
+                        raise
+                    retry -= 1
+                print("There was a problem dialoguing with the API; waiting for %ds..." % delay, file=sys.stderr)
+                sleep(delay)
+                delay *= 2
 
 
 class Twitter(TwitterCall):
