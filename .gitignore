@@ -49,6 +49,11 @@ htmlcov/
 nosetests.xml
 coverage.xml
 
+# API keys for local tests
+tests/oauth_creds
+tests/consumer_creds
+tests/bearer_token
+
 # Translations
 *.mo
 *.pot

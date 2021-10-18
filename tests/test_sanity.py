@@ -9,14 +9,28 @@ import json
 
 from twitter import Twitter, NoAuth, OAuth, OAuth2, read_token_file, TwitterHTTPError
 from twitter.api import TwitterDictResponse, TwitterListResponse, POST_ACTIONS, method_for_uri
-from twitter.cmdline import CONSUMER_KEY, CONSUMER_SECRET
 
 noauth = NoAuth()
-oauth = OAuth(*read_token_file('tests/oauth_creds')
-              + (CONSUMER_KEY, CONSUMER_SECRET))
 
-oauth2 = OAuth2(CONSUMER_KEY, CONSUMER_SECRET)
-bearer_token = json.loads(Twitter(api_version=None, format="", secure=True, auth=oauth2).oauth2.token(grant_type="client_credentials"))['access_token']
+try:
+    api_keys = (
+      os.environ['OAUTH_TOKEN'],
+      os.environ['OAUTH_SECRET'],
+      os.environ['CONSUMER_KEY'],
+      os.environ['CONSUMER_SECRET']
+    )
+    bearer_token = os.environ['BEARER_TOKEN']
+except:
+    try:
+        api_keys = *read_token_file('tests/oauth_creds') +
+                   *read_token_file('tests/consumer_creds')
+        with open('tests/bearer_token')as f:
+            bearer_token = f.readline()
+    except Exception as e:
+        sys.stderr.write("ERROR: could not find API keys neither as environment variable nor as local tests/oauth_creds, tests/consumer_creds and tests/bearer_token files")
+        exit(1)
+
+oauth = OAuth(api_keys)
 oauth2 = OAuth2(bearer_token=bearer_token)
 
 twitter11 = Twitter(domain='api.twitter.com',
