@@ -125,7 +125,12 @@ OPTIONS = {
     'force-ansi': False,
 }
 
-gHtmlParser = HTMLParser.HTMLParser()
+try:
+    import html
+    unescape = html.unescape
+except ImportError:
+    unescape = HTMLParser.HTMLParser().unescape
+
 hashtagRe = re.compile(r'(?P<hashtag>#\S+)')
 profileRe = re.compile(r'(?P<profile>\@\S+)')
 ansiFormatter = ansi.AnsiCmd(False)
@@ -207,7 +212,7 @@ def reRepl(m):
 
 
 def replaceInStatus(status):
-    txt = gHtmlParser.unescape(status)
+    txt = unescape(status)
     txt = re.sub(hashtagRe, reRepl, txt)
     txt = re.sub(profileRe, reRepl, txt)
     return txt
@@ -226,7 +231,7 @@ class StatusFormatter(object):
         return ("%s@%s %s" % (
             get_time_string(status, options),
             status['user']['screen_name'],
-            gHtmlParser.unescape(correctRTStatus(status))))
+            unescape(correctRTStatus(status))))
 
 
 class AnsiStatusFormatter(object):
@@ -248,12 +253,12 @@ class VerboseStatusFormatter(object):
             status['user']['screen_name'],
             status['user']['location'],
             status['created_at'],
-            gHtmlParser.unescape(correctRTStatus(status))))
+            unescape(correctRTStatus(status))))
 
 
 class JSONStatusFormatter(object):
     def __call__(self, status, options):
-        status['text'] = gHtmlParser.unescape(status['text'])
+        status['text'] = unescape(status['text'])
         return json.dumps(status)
 
 
@@ -514,9 +519,9 @@ class ListsAction(StatusAction):
             lists = twitter.lists.list(screen_name=screen_name)
             if not lists:
                 printNicely("This user has no lists.")
-            for list in lists:
+            for lst in lists:
                 lf = get_formatter('lists', options)
-                printNicely(lf(list))
+                printNicely(lf(lst))
             return []
         else:
             return list(reversed(twitter.lists.statuses(

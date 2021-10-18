@@ -98,15 +98,15 @@ def _test_API_old_media(img, _base64):
     assert random_tweet in texts
 
 
-def test_API_set_unicode_twitpic_base64():
+def _test_API_set_unicode_twitpic_base64():
     _test_API_old_media(b64_image_data, True)
 
 
-def test_API_set_unicode_twitpic_base64_string():
+def _test_API_set_unicode_twitpic_base64_string():
     _test_API_old_media(b64_image_data.decode('utf-8'), True)
 
 
-def test_API_set_unicode_twitpic_auto_base64_convert():
+def _test_API_set_unicode_twitpic_auto_base64_convert():
     _test_API_old_media(_img_data(), False)
 
 
@@ -117,30 +117,21 @@ def _test_upload_media():
     return str(res["media_id"])
 
 
-def test_multitwitpic():
+def test_metadata_multipic():
     pics = [_test_upload_media(), _test_upload_media(), _test_upload_media()]
-    random_tweet = ("I can even tweet multiple pictures at once now! ★  "
+    pics = [_test_upload_media(), _test_upload_media(), _test_upload_media()]
+    metadata = "metadata generated via PTT! ★" + get_random_str()
+    res = twitter_upl.media.metadata.create(media_id=pics[0], text=metadata)
+    random_tweet = ("I can even tweet multiple pictures at once and attach metadata onto some! ★  "
         + get_random_str())
     res = twitter11.statuses.update(status=random_tweet, media_ids=",".join(pics))
     assert res
     assert res["extended_entities"]
     assert len(res["extended_entities"]["media"]) == len(pics)
-    recent = twitter11.statuses.user_timeline()
+    recent = twitter11.statuses.user_timeline(include_ext_alt_text=True, include_entities=True)
     assert recent
     texts = [clean_link(t['text']) for t in recent]
     assert random_tweet in texts
-
-
-def test_metadatapic():
-    pic = _test_upload_media()
-    metadata = "metadata generated via PTT! ★" + get_random_str()
-    res = twitter_upl.media.metadata.create(media_id=pic, text=metadata)
-    random_tweet = ("I can also tweet pictures with text metadata attached ★  "
-        + get_random_str())
-    res = twitter11.statuses.update(status=random_tweet, media_ids=pic)
-    assert res
-    recent = twitter11.statuses.user_timeline(include_ext_alt_text=True, include_entities=True)
-    assert recent
     meta = recent[0].get("extended_entities", {}).get("media")
     assert meta
     assert metadata == meta[0].get("ext_alt_text", "")
@@ -214,6 +205,10 @@ def test_picklability():
     res2 = pickle.loads(p)
     assert res == res2
     assert res2[2] == 3
+
+    p = pickle.dumps(twitter11)
+    s = pickle.loads(p)
+    assert twitter11.domain == s.domain
 
 
 def test_jsonifability():

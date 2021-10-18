@@ -4,6 +4,13 @@ from __future__ import unicode_literals, print_function
 from .util import PY_3_OR_HIGHER, actually_bytes
 
 try:
+    import ssl
+except ImportError:
+    _HAVE_SSL = False
+else:
+    _HAVE_SSL = True
+
+try:
     import urllib.request as urllib_request
     import urllib.error as urllib_error
 except ImportError:
@@ -51,6 +58,7 @@ class TwitterHTTPError(TwitterError):
     Exception thrown by the Twitter object when there is an
     HTTP error interacting with twitter.com.
     """
+
     def __init__(self, e, uri, format, uriparts):
         self.e = e
         self.uri = uri
@@ -85,10 +93,10 @@ class TwitterHTTPError(TwitterError):
     def __str__(self):
         fmt = ("." + self.format) if self.format else ""
         return (
-            "Twitter sent status %i for URL: %s%s using parameters: "
-            "(%s)\ndetails: %s" % (
-                self.e.code, self.uri, fmt, self.uriparts,
-                self.response_data))
+                "Twitter sent status %i for URL: %s%s using parameters: "
+                "(%s)\ndetails: %s" % (
+                    self.e.code, self.uri, fmt, self.uriparts,
+                    self.response_data))
 
 
 class TwitterResponse(object):
@@ -147,6 +155,7 @@ def wrap_response(response, headers):
 
 POST_ACTIONS_RE = re.compile('(' + '|'.join(POST_ACTIONS) + r')(/\d+)?$')
 
+
 def method_for_uri(uri):
     if POST_ACTIONS_RE.search(uri):
         return "POST"
@@ -178,12 +187,11 @@ def build_uri(orig_uriparts, kwargs):
 
 
 class TwitterCall(object):
-
     TWITTER_UNAVAILABLE_WAIT = 30  # delay after HTTP codes 502, 503 or 504
 
     def __init__(
             self, auth, format, domain, callable_cls, uri="",
-            uriparts=None, secure=True, timeout=None, gzip=False, retry=False):
+            uriparts=None, secure=True, timeout=None, gzip=False, retry=False, verify_context=True):
         self.auth = auth
         self.format = format
         self.domain = domain
@@ -194,21 +202,30 @@ class TwitterCall(object):
         self.timeout = timeout
         self.gzip = gzip
         self.retry = retry
+        self.verify_context = verify_context
 
     def __getattr__(self, k):
-        try:
-            return object.__getattr__(self, k)
-        except AttributeError:
-            def extend_call(arg):
-                return self.callable_cls(
-                    auth=self.auth, format=self.format, domain=self.domain,
-                    callable_cls=self.callable_cls, timeout=self.timeout,
-                    secure=self.secure, gzip=self.gzip, retry=self.retry,
-                    uriparts=self.uriparts + (arg,))
-            if k == "_":
-                return extend_call
-            else:
-                return extend_call(k)
+
+        # NOTE: we test this to avoid doing dangerous things when actually
+        # attempting to get magic methods this object does not have (such as
+        # __getstate__, for instance, which is important to pickling).
+        # NOTE: when this code is run, the desired magic method cannot exist
+        # on this object because we are using __getattr__ and not
+        # __getattribute__, hence if it existed, it would be accessed normally.
+        if k.startswith('__'):
+            raise AttributeError
+
+        def extend_call(arg):
+            return self.callable_cls(
+                auth=self.auth, format=self.format, domain=self.domain,
+                callable_cls=self.callable_cls, timeout=self.timeout,
+                secure=self.secure, gzip=self.gzip, retry=self.retry,
+                uriparts=self.uriparts + (arg,), verify_context=self.verify_context)
+
+        if k == "_":
+            return extend_call
+        else:
+            return extend_call(k)
 
     def __call__(self, params={}, **kwargs):
         orig_kwargs = dict(kwargs)
@@ -356,6 +373,10 @@ class TwitterCall(object):
         if _timeout:
             kwargs['timeout'] = _timeout
         try:
+            context = None
+            if not self.verify_context and _HAVE_SSL:
+                context = ssl._create_unverified_context()
+            kwargs['context'] = context
             handle = urllib_request.urlopen(req, **kwargs)
             if handle.headers['Content-Type'] in ['image/jpeg', 'image/png']:
                 return handle
@@ -373,7 +394,12 @@ class TwitterCall(object):
             if len(data) == 0:
                 return wrap_response({}, handle.headers)
             elif "json" == self.format or "/labs/" in uri:
-                res = json.loads(data.decode('utf8'))
+                try:
+                    res = json.loads(data.decode('utf8'))
+                except json.decoder.JSONDecodeError as e:
+                    # it seems like the data received was incomplete
+                    # and we should catch it to allow retries
+                    raise TwitterError("Incomplete JSON data collected for %s (%s): %s)" % (uri, arg_data, e))
                 return wrap_response(res, handle.headers)
             else:
                 return wrap_response(
@@ -385,6 +411,7 @@ class TwitterCall(object):
                 raise TwitterHTTPError(e, uri, self.format, arg_data)
 
     def _handle_response_with_retry(self, req, uri, arg_data, _timeout=None):
+        delay = 1
         retry = self.retry
         while retry:
             try:
@@ -407,6 +434,14 @@ class TwitterCall(object):
                         raise
                     retry -= 1
                 sleep(delay)
+            except TwitterError as e:
+                if isinstance(retry, int) and not isinstance(retry, bool):
+                    if retry <= 0:
+                        raise
+                    retry -= 1
+                print("There was a problem dialoguing with the API; waiting for %ds..." % delay, file=sys.stderr)
+                sleep(delay)
+                delay *= 2
 
 
 class Twitter(TwitterCall):
@@ -483,7 +518,7 @@ class Twitter(TwitterCall):
         # - finally send your tweet with the list of media ids:
         t.statuses.update(status="PTT ★", media_ids=",".join([id_img1, id_img2]))
 
-        # Or send a tweet with an image (or set a logo/banner similarily)
+        # Or send a tweet with an image (or set a logo/banner similarly)
         # using the old deprecated method that will probably disappear some day
         params = {"media[]": imagedata, "status": "PTT ★"}
         # Or for an image encoded as base64:
@@ -533,10 +568,11 @@ class Twitter(TwitterCall):
     of XML.
 
     """
+
     def __init__(
             self, format="json",
             domain="api.twitter.com", secure=True, auth=None,
-            api_version=_DEFAULT, retry=False):
+            api_version=_DEFAULT, retry=False, verify_context=True):
         """
         Create a new twitter API connector.
 
@@ -578,7 +614,8 @@ class Twitter(TwitterCall):
         TwitterCall.__init__(
             self, auth=auth, format=format, domain=domain,
             callable_cls=TwitterCall,
-            secure=secure, uriparts=uriparts, retry=retry)
+            secure=secure, uriparts=uriparts, retry=retry,
+            verify_context=verify_context)
 
 
 __all__ = ["Twitter", "TwitterError", "TwitterHTTPError", "TwitterResponse"]
