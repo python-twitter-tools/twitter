@@ -52,6 +52,12 @@ jobs:
 
       - name: Tests
         shell: bash
+        env:
+          CONSUMER_KEY: ${{ secrets.CONSUMER_KEY }}
+          CONSUMER_SECRET: ${{ secrets.CONSUMER_SECRET }}
+          OAUTH_TOKEN: ${{ secrets.OAUTH_TOKEN }}
+          OAUTH_SECRET: ${{ secrets.OAUTH_SECRET }}
+          BEARER_TOKEN: ${{ secrets.BEARER_TOKEN }}
         run: |
           pytest --cov twitter --cov tests --cov-report=xml
 
