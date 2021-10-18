@@ -37,7 +37,7 @@ twitter11 = Twitter(domain='api.twitter.com',
                     auth=oauth,
                     api_version='1.1')
 
-twitter_upl = Twitter(domain='upload.twitter.com',
+twitter11_upl = Twitter(domain='upload.twitter.com',
                       auth=oauth,
                       api_version='1.1')
 
@@ -49,14 +49,14 @@ twitter11_na = Twitter(domain='api.twitter.com',
                        auth=noauth,
                        api_version='1.1')
 
-twitterlabs = Twitter(domain='api.twitter.com',
+twitter2 = Twitter(domain='api.twitter.com',
                     auth=oauth,
-                    api_version='labs/1',
+                    api_version='2',
                     format='')
 
-twitterlabs_app = Twitter(domain='api.twitter.com',
+twitter2_app = Twitter(domain='api.twitter.com',
                     auth=oauth2,
-                    api_version='labs/1',
+                    api_version='2',
                     format='')
 
 AZaz = "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -125,7 +125,7 @@ def _test_API_set_unicode_twitpic_auto_base64_convert():
 
 
 def _test_upload_media():
-    res = twitter_upl.media.upload(media=_img_data())
+    res = twitter11_upl.media.upload(media=_img_data())
     assert res
     assert res["media_id"]
     return str(res["media_id"])
@@ -135,7 +135,7 @@ def test_metadata_multipic():
     pics = [_test_upload_media(), _test_upload_media(), _test_upload_media()]
     pics = [_test_upload_media(), _test_upload_media(), _test_upload_media()]
     metadata = "metadata generated via PTT! ★" + get_random_str()
-    res = twitter_upl.media.metadata.create(media_id=pics[0], text=metadata)
+    res = twitter11_upl.media.metadata.create(media_id=pics[0], text=metadata)
     random_tweet = ("I can even tweet multiple pictures at once and attach metadata onto some! ★  "
         + get_random_str())
     res = twitter11.statuses.update(status=random_tweet, media_ids=",".join(pics))
@@ -164,12 +164,12 @@ def test_get_tweet_app_auth():
     _test_get_tweet(twitter11_app.statuses.lookup(_id='27095053386121216', include_entities="true", tweet_mode="extended"))
 
 
-def test_get_tweet_labs():
-    _test_get_tweet(twitterlabs.tweets(ids='27095053386121216', format='detailed', expansions='attachments.poll_ids,attachments.media_keys,author_id,entities.mentions.username,geo.place_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id'))
+def test_get_tweet_v2():
+    _test_get_tweet(twitter2.tweets(ids='27095053386121216', format='detailed', expansions='attachments.poll_ids,attachments.media_keys,author_id,entities.mentions.username,geo.place_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id'))
 
 
-def test_get_tweet_labs_app_auth():
-    _test_get_tweet(twitterlabs_app.tweets(ids='27095053386121216', format='detailed', expansions='attachments.poll_ids,attachments.media_keys,author_id,entities.mentions.username,geo.place_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id'))
+def test_get_tweet_v2_app_auth():
+    _test_get_tweet(twitter2_app.tweets(ids='27095053386121216', format='detailed', expansions='attachments.poll_ids,attachments.media_keys,author_id,entities.mentions.username,geo.place_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id'))
 
 
 def test_search():
