@@ -393,7 +393,7 @@ class TwitterCall(object):
                 data = f.read()
             if len(data) == 0:
                 return wrap_response({}, handle.headers)
-            elif "json" == self.format or "/labs/" in uri:
+            elif "json" == self.format or uri.startswith("2/"):
                 try:
                     res = json.loads(data.decode('utf8'))
                 except json.decoder.JSONDecodeError as e:
