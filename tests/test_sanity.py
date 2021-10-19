@@ -153,7 +153,11 @@ def test_metadata_multipic():
 
 def _test_get_tweet(results):
     assert results
-    assert results[0]["full_text"] == "If you're interacting with Twitter via Python, I'd recommend Python Twitter Tools by @sixohsix https://github.com/sixohsix/twitter"
+    if "data" in results:
+        results = results["data"]
+    assert len(results)
+    result = results[0]
+    assert result.get("full_text", result.get("text")) == "If you're interacting with Twitter via Python, I'd recommend Python Twitter Tools by @sixohsix https://github.com/sixohsix/twitter"
 
 
 def test_get_tweet():
@@ -165,11 +169,11 @@ def test_get_tweet_app_auth():
 
 
 def test_get_tweet_v2():
-    _test_get_tweet(twitter2.tweets(ids='27095053386121216', format='detailed', expansions='attachments.poll_ids,attachments.media_keys,author_id,entities.mentions.username,geo.place_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id'))
+    _test_get_tweet(twitter2.tweets(ids='27095053386121216', params={"tweet.fields": "text"}))
 
 
 def test_get_tweet_v2_app_auth():
-    _test_get_tweet(twitter2_app.tweets(ids='27095053386121216', format='detailed', expansions='attachments.poll_ids,attachments.media_keys,author_id,entities.mentions.username,geo.place_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id'))
+    _test_get_tweet(twitter2_app.tweets(ids='27095053386121216', params={"tweet.fields": "text"}))
 
 
 def test_search():
