@@ -22,10 +22,10 @@ try:
     bearer_token = os.environ['BEARER_TOKEN']
 except:
     try:
-        api_keys = read_token_file('tests/oauth_creds') +
-                   read_token_file('tests/consumer_creds')
+        api_keys = (read_token_file('tests/oauth_creds') +
+                   read_token_file('tests/consumer_creds'))
         with open('tests/bearer_token')as f:
-            bearer_token = f.readline()
+            bearer_token = f.readline().strip()
     except Exception as e:
         sys.stderr.write("ERROR: could not find API keys neither as environment variable nor as local tests/oauth_creds, tests/consumer_creds and tests/bearer_token files")
         exit(1)
