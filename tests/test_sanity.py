@@ -142,7 +142,8 @@ def test_metadata_multipic():
     assert res
     assert res["extended_entities"]
     assert len(res["extended_entities"]["media"]) == len(pics)
-    recent = twitter11.statuses.user_timeline(include_ext_alt_text=True, include_entities=True)
+    time.sleep(5)
+    recent = twitter11.statuses.user_timeline(include_ext_alt_text=True, include_entities=True, count=20)
     assert recent
     texts = [clean_link(t['text']) for t in recent]
     assert random_tweet in texts
