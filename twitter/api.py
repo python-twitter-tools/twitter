@@ -235,14 +235,14 @@ class TwitterCall(object):
 
         # Shortcut call arguments for special json arguments case
         if "media/metadata/create" in uri:
-            media_id = kwargs.pop('media_id', None)
-            alt_text = kwargs.pop('alt_text', kwargs.pop('text', None))
+            media_id = orig_kwargs.pop('media_id', None)
+            alt_text = orig_kwargs.pop('alt_text', orig_kwargs.pop('text', None))
             if media_id and alt_text:
                 jsondata = {
                     "media_id": media_id,
                     "alt_text": {"text": alt_text}
                 }
-                return self.__call__(_json=jsondata, params=params, **orig_kwargs)
+                return self.__call__(params=params, _json=jsondata, **orig_kwargs)
 
         method = kwargs.pop('_method', None) or method_for_uri(uri)
         domain = self.domain
