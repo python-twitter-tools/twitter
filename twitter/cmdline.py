@@ -578,7 +578,7 @@ class SetStatusAction(Action):
                      else str(input("message: ")))
         statusTxt = statusTxt.replace('\\n', '\n')
         replies = []
-        ptr = re.compile("@[\w_]+")
+        ptr = re.compile(r"@[\w_]+")
         while statusTxt:
             s = ptr.match(statusTxt)
             if s and s.start() == 0:
