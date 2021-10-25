@@ -618,4 +618,20 @@ class Twitter(TwitterCall):
             verify_context=verify_context)
 
 
-__all__ = ["Twitter", "TwitterError", "TwitterHTTPError", "TwitterResponse"]
+class Twitter2(Twitter):
+
+    def __init__(
+            self, secure=True, auth=None, retry=False, verify_context=True):
+
+        Twitter.__init__(
+            self,
+            domain="api.twitter.com",
+            api_version="2",
+            format="",
+            auth=auth,
+            retry=retry,
+            secure=secure,
+            verify_context=verify_context)
+
+
+__all__ = ["Twitter", "Twitter2", "TwitterError", "TwitterHTTPError", "TwitterResponse"]

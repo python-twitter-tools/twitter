@@ -8,7 +8,7 @@ Twitter-enabled applications.
 
 from textwrap import dedent
 
-from .api import Twitter, TwitterError, TwitterHTTPError, TwitterResponse
+from .api import Twitter, Twitter2, TwitterError, TwitterHTTPError, TwitterResponse
 from .auth import NoAuth, UserPassAuth
 from .oauth import (
     OAuth, read_token_file, write_token_file,
@@ -73,6 +73,7 @@ __all__ = [
     "read_bearer_token_file",
     "read_token_file",
     "Twitter",
+    "Twitter2",
     "TwitterError",
     "TwitterHTTPError",
     "TwitterResponse",
