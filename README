@@ -4,56 +4,12 @@ Python Twitter Tools
 [![Tests](https://github.com/python-twitter-tools/twitter/workflows/Tests/badge.svg)](https://github.com/python-twitter-tools/twitter/actions)
 [![Coverage Status](https://coveralls.io/repos/github/python-twitter-tools/twitter/badge.svg?branch=master)](https://coveralls.io/github/python-twitter-tools/twitter?branch=master)
 
-The Minimalist Twitter API for Python is a Python API for Twitter,
-everyone's favorite Web 2.0 Facebook-style status updater for people
-on the go.
-
-Also included is a Twitter command-line tool for getting your friends'
-tweets and setting your own tweet from the safety and security of your
-favorite shell and an IRC bot that can announce Twitter updates to an
-IRC channel.
+The Minimalist Twitter API for Python is a Python port for [Twitter's API](https://developer.twitter.com/en/docs/api-reference-index).
 
 For more information:
 
  * install the [package](https://pypi.org/project/twitter/) `pip install twitter`
  * import the `twitter` package and run `help()` on it
- * run `twitter -h` for command-line tool help
-
-twitter - The Command-Line Tool
--------------------------------
-
-The command-line tool lets you do some awesome things:
-
- * view your tweets, recent replies, and tweets in lists
- * view the public timeline
- * follow and unfollow (leave) friends
- * various output formats for tweet information
-
-The bottom line: type `twitter`, receive tweets.
-
-twitterbot - The IRC Bot
-------------------------
-
-The IRC bot is associated with a Twitter account (either your own account or an
-account you create for the bot). The bot announces all tweets from friends
-it is following. It can be made to follow or leave friends through IRC /msg
-commands.
-
-
-`twitter-log`
--------------
-
-`twitter-log` is a simple command-line tool that dumps all public
-tweets from a given user in a simple text format. It is useful to get
-a complete offsite backup of all your tweets. Run `twitter-log` and
-read the instructions.
-
-`twitter-archiver` and `twitter-follow`
----------------------------------------
-
-twitter-archiver will log all the tweets posted by any user since they
-started posting. twitter-follow will print a list of all of all the
-followers of a user (or all the users that user follows).
 
 
 Programming with the Twitter API classes
@@ -61,6 +17,8 @@ Programming with the Twitter API classes
 
 The `Twitter` and `TwitterStream` classes are the key to building your own
 Twitter-enabled applications.
+The `Twitter2` and `TwitterStream2` classes are helpers preconfigured to 
+handle the specificities of Twitter API v2.
 
 
 The `Twitter` class
@@ -79,13 +37,54 @@ The list of most accessible functions is listed at:
 
 **[https://developer.twitter.com/en/docs/api-reference-index](https://developer.twitter.com/en/docs/api-reference-index)**
 
-Examples:
+Examples with Twitter API v2:
+_____________________________
 
 ```python
 from twitter import *
 
+# First instantiate the class by authenticating with OAuth:
+t = Twitter2(
+    auth=OAuth(OAUTH_TOKEN, OAUTH_TOKEN_SECRET, CONSUMER_KEY, CONSUMER_SECRET))
+
+# Or with OAuth2 using a bearer token:
+t = Twitter2(auth=OAuth2(bearer_token=BEARER_TOKEN))
+
+# Note Twitter2 is only a wrapper for the regular Twitter class with presets,
+# so the above are equivalent to the following:
 t = Twitter(
-    auth=OAuth(token, token_secret, consumer_key, consumer_secret))
+    auth=OAuth(OAUTH_TOKEN, OAUTH_TOKEN_SECRET, CONSUMER_KEY, CONSUMER_SECRET),
+    api_version="2",
+    format="")
+t = Twitter(auth=OAuth2(bearer_token=BEARER_TOKEN), api_version="2", format="")
+
+# Then use it to query the API. For instance grab a specific tweet:
+t.tweets(id=1293595870563381249)
+
+# Twitter v2 API does not return automatically all fields like v1.1 was
+# One needs to specify which expansions and fields are desired as listed in
+# the [official documentation](https://developer.twitter.com/en/docs/twitter-api/tweets/lookup/api-reference/get-tweets-id).
+# For instance, to get everything available on the previous tweet:
+t.tweets(
+    id=1293595870563381249,
+    expansions="author_id,referenced_tweets.id,referenced_tweets.id.author_id,entities.mentions.username,attachments.poll_ids,attachments.media_keys,in_reply_to_user_id,geo.place_id",
+    params={
+        "tweet.fields": "attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,possibly_sensitive,referenced_tweets,reply_settings,source,text,withheld",
+        "user.fields":  "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld",
+        "media.fields": "duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics",
+        "place.fields": "contained_within,country,country_code,full_name,geo,id,name,place_type",
+        "poll.fields":  "duration_minutes,end_datetime,id,options,voting_status"
+    })
+
+```
+
+Examples with Twitter API Standard v1.1:
+________________________________________
+
+```python
+from twitter import *
+
+t = Twitter(auth=OAuth(token, token_secret, consumer_key, consumer_secret))
 
 # Get your "home" timeline
 t.statuses.home_timeline()
