@@ -302,6 +302,7 @@ class TwitterCall(object):
         if jsondata:
             body = actually_bytes(json.dumps(jsondata))
             headers['Content-Type'] = 'application/json; charset=UTF-8'
+            method = 'POST'
 
         if self.auth:
             url_params = {} if media or jsondata else kwargs
