@@ -37,8 +37,9 @@ The list of most accessible functions is listed at:
 
 **[https://developer.twitter.com/en/docs/api-reference-index](https://developer.twitter.com/en/docs/api-reference-index)**
 
+
 Examples with Twitter API v2:
-_____________________________
++++++++++++++++++++++++++++++   
 
 ```python
 from twitter import *
@@ -76,10 +77,35 @@ t.tweets(
         "poll.fields":  "duration_minutes,end_datetime,id,options,voting_status"
     })
 
+# The Stream also has its own wrapper:
+ts = TwitterStream2(auth=OAuth2(bearer_token=BEARER_TOKEN))
+
+# Then calling it behaves like python generators. For instance the sample stream:
+for tweet in ts.tweets.sample.stream():
+    print(tweet)
+
+# The same applies to the regular filter stream:
+for tweet in ts.tweets.search.stream():
+    print(tweet)
+
+# Although it does not anymore take any filter argument and needs to be
+# controlled separately using the regular Twitter class.
+# To know which rules apply, just call:
+t.tweets.search.stream.rules()
+# And to add new rules, send POST json queries to the same route:
+t.tweets.search.stream.rules(_json={"add": [{"value": "python"}]})
+
+# Then call the stream as described above:
+for tweet in ts.tweets.search.stream():
+    print(tweet)
+
+# Get more details on rules possibilities and syntax in the officiel documentation:
+# https://developer.twitter.com/en/docs/twitter-api/tweets/filtered-stream/api-reference/post-tweets-search-stream-rules
+
 ```
 
 Examples with Twitter API Standard v1.1:
-________________________________________
+++++++++++++++++++++++++++++++++++++++++
 
 ```python
 from twitter import *

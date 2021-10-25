@@ -278,3 +278,23 @@ class TwitterStream(TwitterCall):
             callable_cls=TwitterStreamCall,
             secure=secure, uriparts=uriparts, timeout=timeout, gzip=False,
             retry=False, verify_context=verify_context)
+
+class TwitterStream2(TwitterCall):
+
+    def __init__(self, domain="api.twitter.com", secure=True, auth=None,
+                 api_version='2', block=True, timeout=None,
+                 heartbeat_timeout=90.0, verify_context=True):
+        uriparts = (str(api_version),)
+
+        class TwitterStream2Call(TwitterCall):
+            def _handle_response(self, req, uri, arg_data, _timeout=None):
+                return handle_stream_response(
+                    req, uri, arg_data, block,
+                    _timeout or timeout, heartbeat_timeout, verify_context)
+
+        TwitterCall.__init__(
+            self, auth=auth, format="", domain=domain,
+            callable_cls=TwitterStream2Call,
+            secure=secure, uriparts=uriparts, timeout=timeout, gzip=False,
+            retry=False, verify_context=verify_context)
+
