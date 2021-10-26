@@ -92,7 +92,6 @@ def _test_upload_media():
 
 def test_metadata_multipic():
     pics = [_test_upload_media(), _test_upload_media(), _test_upload_media()]
-    pics = [_test_upload_media(), _test_upload_media(), _test_upload_media()]
     metadata = "metadata generated via PTT! ★" + get_random_str()
     res = twitter_upl.media.metadata.create(media_id=pics[0], text=metadata)
     random_tweet = ("I can even tweet multiple pictures at once and attach metadata onto some! ★  "
