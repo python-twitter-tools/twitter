@@ -1,5 +1,4 @@
-Python Twitter Tools
-====================
+# Python Twitter Tools
 
 [![Tests](https://github.com/python-twitter-tools/twitter/workflows/Tests/badge.svg)](https://github.com/python-twitter-tools/twitter/actions)
 [![Coverage Status](https://coveralls.io/repos/github/python-twitter-tools/twitter/badge.svg?branch=master)](https://coveralls.io/github/python-twitter-tools/twitter?branch=master)
@@ -15,56 +14,49 @@ IRC channel.
 
 For more information:
 
- * install the [package](https://pypi.org/project/twitter/) `pip install twitter`
- * import the `twitter` package and run `help()` on it
- * run `twitter -h` for command-line tool help
+- install the [package](https://pypi.org/project/twitter/) `pip install twitter`
+- import the `twitter` package and run `help()` on it
+- run `twitter -h` for command-line tool help
 
-twitter - The Command-Line Tool
--------------------------------
+## twitter - The Command-Line Tool
 
 The command-line tool lets you do some awesome things:
 
- * view your tweets, recent replies, and tweets in lists
- * view the public timeline
- * follow and unfollow (leave) friends
- * various output formats for tweet information
+- view your tweets, recent replies, and tweets in lists
+- view the public timeline
+- follow and unfollow (leave) friends
+- various output formats for tweet information
 
 The bottom line: type `twitter`, receive tweets.
 
-twitterbot - The IRC Bot
-------------------------
+## twitterbot - The IRC Bot
 
 The IRC bot is associated with a Twitter account (either your own account or an
 account you create for the bot). The bot announces all tweets from friends
 it is following. It can be made to follow or leave friends through IRC /msg
 commands.
 
+##hello
 
-`twitter-log`
--------------
+## `twitter-log`
 
 `twitter-log` is a simple command-line tool that dumps all public
 tweets from a given user in a simple text format. It is useful to get
 a complete offsite backup of all your tweets. Run `twitter-log` and
 read the instructions.
 
-`twitter-archiver` and `twitter-follow`
----------------------------------------
+## `twitter-archiver` and `twitter-follow`
 
 twitter-archiver will log all the tweets posted by any user since they
 started posting. twitter-follow will print a list of all of all the
 followers of a user (or all the users that user follows).
 
-
-Programming with the Twitter API classes
-========================================
+# Programming with the Twitter API classes
 
 The `Twitter` and `TwitterStream` classes are the key to building your own
 Twitter-enabled applications.
 
-
-The `Twitter` class
--------------------
+## The `Twitter` class
 
 The minimalist yet fully featured Twitter API class.
 
@@ -166,6 +158,7 @@ t_upload.media.metadata.create(media_id=id_img1, text="metadata generated via PT
 ```
 
 Searching Twitter:
+
 ```python
 # Search for the latest tweets about #pycon
 t.search.tweets(q="#pycon")
@@ -174,9 +167,7 @@ t.search.tweets(q="#pycon")
 t.search.tweets(q="#pycon", tweet_mode='extended')
 ```
 
-
-Retrying after reaching the API rate limit
-------------------------------------------
+## Retrying after reaching the API rate limit
 
 Simply create the `Twitter` instance with the argument `retry=True`, then the
 HTTP error codes `429`, `502`, `503`, and `504` will cause a retry of the last
@@ -184,9 +175,7 @@ request.
 
 If `retry` is an integer, it defines the maximum number of retry attempts.
 
-
-Using the data returned
------------------------
+## Using the data returned
 
 Twitter API calls return decoded JSON. This is converted into
 a bunch of Python lists, dicts, ints, and strings. For example:
@@ -201,8 +190,7 @@ x[0]
 x[0]['user']['screen_name']
 ```
 
-Getting raw XML data
---------------------
+## Getting raw XML data
 
 If you prefer to get your Twitter data in XML format, pass
 `format="xml"` to the `Twitter` object when you instantiate it:
@@ -214,8 +202,7 @@ twitter = Twitter(format="xml")
 The output will not be parsed in any way. It will be a raw string
 of XML.
 
-The `TwitterStream` class
--------------------------
+## The `TwitterStream` class
 
 The `TwitterStream` object is an interface to the Twitter Stream
 API. This can be used pretty much the same as the `Twitter` class,
@@ -241,8 +228,7 @@ connection breaks, the iterator yields `{'hangup': True}` (and
 raises `StopIteration` if iterated again).
 
 Similarly, if the stream does not produce heartbeats for more than
-90 seconds, the iterator yields `{'hangup': True,
-'heartbeat_timeout': True}` (and raises `StopIteration` if
+90 seconds, the iterator yields `{'hangup': True, 'heartbeat_timeout': True}` (and raises `StopIteration` if
 iterated again).
 
 The `timeout` parameter controls the maximum time between
@@ -259,8 +245,7 @@ Note that `timeout` supercedes this argument, so it should also be
 set `None` to use this mode, and non-blocking can potentially lead
 to 100% CPU usage.
 
-Twitter `Response` Objects
---------------------------
+## Twitter `Response` Objects
 
 Response from a Twitter request. Behaves like a list or a string
 (depending on requested format), but it has a few other interesting
@@ -270,17 +255,14 @@ attributes.
 `httplib.HTTPHeaders` instance. Use `response.headers.get('h')`
 to retrieve a header.
 
-Authentication
---------------
+## Authentication
 
 You can authenticate with Twitter in three ways: NoAuth, OAuth, or
 OAuth2 (app-only). Get `help()` on these classes to learn how to use them.
 
 OAuth and OAuth2 are probably the most useful.
 
-
-Working with OAuth
-------------------
+## Working with OAuth
 
 Visit the Twitter developer page and create a new application:
 
@@ -322,8 +304,7 @@ twitter = Twitter(auth=OAuth(
 twitter.statuses.update(status='Hello, world!')
 ```
 
-Working with `OAuth2`
----------------------
+## Working with `OAuth2`
 
 Twitter only supports the application-only flow of OAuth2 for certain
 API endpoints. This OAuth2 authenticator only supports the application-only
@@ -349,7 +330,6 @@ twitter = Twitter(auth=OAuth2(bearer_token=BEARER_TOKEN))
 twitter.search.tweets(q='keyword')
 ```
 
-License
-=======
+# License
 
 Python Twitter Tools are released under an MIT License.
