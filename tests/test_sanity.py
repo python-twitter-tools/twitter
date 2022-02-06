@@ -6,6 +6,7 @@ from random import choice
 import time
 import pickle
 import json
+import sys
 
 from twitter import Twitter, NoAuth, OAuth, OAuth2, read_token_file, TwitterHTTPError
 from twitter.api import TwitterDictResponse, TwitterListResponse, POST_ACTIONS, method_for_uri
@@ -27,7 +28,7 @@ except:
         with open('tests/bearer_token')as f:
             bearer_token = f.readline().strip()
     except Exception as e:
-        sys.stderr.write("ERROR: could not find API keys neither as environment variable nor as local tests/oauth_creds, tests/consumer_creds and tests/bearer_token files")
+        print("ERROR: could not find API keys neither as environment variable nor as local tests/oauth_creds, tests/consumer_creds and tests/bearer_token files", file=sys.stderr)
         exit(1)
 
 oauth = OAuth(*api_keys)
