@@ -1,5 +1,6 @@
 prune .github
-prune tests
+gradt tests
+exclude tests/oauth_creds
 prune utils
 exclude .coveragerc
 exclude .gitignore
