@@ -3,7 +3,10 @@
 import json
 import re
 import unittest
-from mock import patch
+try:
+    from mock import patch
+except ImportError:
+    from unittest.mock import patch
 
 try:
     import HTMLParser
