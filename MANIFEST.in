@@ -1,6 +1,6 @@
 prune .github
-gradt tests
-exclude tests/oauth_creds
+include tests/*.py
+include tests/*.png
 prune utils
 exclude .coveragerc
 exclude .gitignore
