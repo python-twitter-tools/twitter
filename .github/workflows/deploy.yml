@@ -18,18 +18,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/pip
-          key: deploy-${{ hashFiles('**/setup.py') }}
-          restore-keys: |
-            deploy-
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.x"
+          cache: pip
+          cache-dependency-path: setup.py
 
       - name: Install dependencies
         run: |
