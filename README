@@ -5,85 +5,79 @@
 
 The Minimalist Twitter API for Python is a Python port for [Twitter's API](https://developer.twitter.com/en/docs/api-reference-index).
 
+Compatible across python 2.7 and 3.6+.
+
 For more information:
 
- * install the [package](https://pypi.org/project/twitter/) `pip install twitter`
+ * install the [package](https://pypi.org/project/twitter/):
+    ```bash
+    pip install twitter
+    ```
  * import the `twitter` package and run `help()` on it
+
+## Summary
+
+- [Authenticating with OAuth/OAuth2](#authenticating)
+- [Instantiating the ](#instantiating)
+- [Querying the different API routes with different kinds of arguments](#querying-the-api)
+- [Examples with Twitter Standard API v1.1](#examples-with-twitter-api-v11)
+- [Examples with Twitter API v2](#examples-with-twitter-api-v2)
+- [Working with the live streams of tweets (v1.1 & v2)](#working-with-the-streaming-apis)
+- [Advanced features](#advanced-features)
 
 
 ## Programming with the Twitter API classes
 
 The minimalist yet fully featured Twitter API class.
 
-Get RESTful data by accessing members of this class. The result
-is decoded python objects (lists and dicts).
+Get RESTful data by accessing members of this class. The result is decoded python objects (lists and dicts).
 
-The Twitter API is documented at:
+The Twitter API is documented at: **[https://developer.twitter.com/en/docs](https://developer.twitter.com/en/docs)**
 
-**[https://developer.twitter.com/en/docs](https://developer.twitter.com/en/docs)**
+The list of most accessible functions is listed at: **[https://developer.twitter.com/en/docs/api-reference-index](https://developer.twitter.com/en/docs/api-reference-index)**
 
-The list of most accessible functions is listed at:
+The `Twitter` and `TwitterStream` classes are the key to building your own Twitter-enabled applications.
 
-**[https://developer.twitter.com/en/docs/api-reference-index](https://developer.twitter.com/en/docs/api-reference-index)**
-
-The `Twitter` and `TwitterStream` classes are the key to building your own
-Twitter-enabled applications.
-
-The `Twitter2` and `TwitterStream2` classes are helpers preconfigured to 
-handle the specificities of Twitter API v2.
+The `Twitter2` and `TwitterStream2` classes are helpers preconfigured to handle the specificities of Twitter API v2.
 
 ```python
 from twitter import Twitter, Twitter2, TwitterStream, TwitterStream2
 ```
 
-### Authenticating
+### - Authenticating
 
 Querying the Twitter API requires you to [authenticate](https://developer.twitter.com/en/docs/authentication/overview) using individual credentials.
 
-In order to obtain these, visit first the [Twitter developer page](https://developer.twitter.com/)
-and [apply for a developer acount](https://developer.twitter.com/en/apply-for-access)
-(which now requires you to provide a cellphone number in your account settings
-and to fill a form describing your intentions in using the Twitter API),
-then [create an app](https://developer.twitter.com/en/portal/apps/new).
+In order to obtain these, visit first the [Twitter developer page](https://developer.twitter.com/) and [apply for a developer acount](https://developer.twitter.com/en/apply-for-access) (which now requires you to provide a cellphone number in your account settings and to fill a form describing your intentions in using the Twitter API), then [create an app](https://developer.twitter.com/en/portal/apps/new).
 
 Once your app is configured, you can generate your API keys set:
 - API `KEY` and `SECRET`
 - Access `OAUTH_TOKEN` and `OAUTH_TOKEN_SECRET`
 - OAuth2 `BEARER_TOKEN`
 
-You can authenticate with Twitter in three ways: NoAuth, OAuth, or
-OAuth2 (app-only and API v2). Get `help()` on these classes to learn how to use them.
+You can authenticate with Twitter in two different ways: `OAuth` or `OAuth2` (for app-only routes and API v2). Get `help()` on these classes to learn how to use them.
 
-OAuth and OAuth2 are probably the most useful.
-
-- OAuth requires a complete set of `KEY`, `SECRET`, `OAUTH_TOKEN` and
-`OAUTH_TOKEN_SECRET`:
+- `OAuth` requires a complete set of `KEY`, `SECRET`, `OAUTH_TOKEN` and `OAUTH_TOKEN_SECRET`:
 
 ```python
 from twitter import OAuth
-
 auth = OAuth(OAUTH_TOKEN, OAUTH_TOKEN_SECRET, KEY, SECRET)
 ```
 
-- OAuth2 can be used directly with just the `BEARER_TOKEN`:
+- `OAuth2` can be used directly with just the `BEARER_TOKEN`:
 
 ```python
 from twitter import OAuth2
-
 auth2 = OAuth2(bearer_token=BEARER_TOKEN)
 ```
 
-Note also that you can configure your app to enable "3-legged OAuth" if you
-want to allow other users to interact with Twitter through your app. In this
-case, only your KEY and SECRET will be required and your application will need
-to be authorized by the user by performing the "OAuth Dance" (see dedicated
-[documentation below](#oauth-dance).
+Note that you can also configure your app to enable "3-legged OAuth" if you want to allow other users to interact with Twitter through your app.
+In this case, only your KEY and SECRET will be required and your application will need to be authorized by the user by performing the "OAuth Dance" (see dedicated [documentation below](#oauth-danse)).
 
 
-### Instantiating
+### - Instantiating
 
-Now that you have credentials allowing to use either OAuth or OAuth2
-authentification, you can instantiate the Twitter classes like this:
+Now that you have credentials allowing to use either OAuth or OAuth2 authentification, you can instantiate the Twitter classes like this:
 
 ```python
 # For the API v1.1:
@@ -95,54 +89,42 @@ tw_app = Twitter(auth=auth2)
 tw2 = Twitter2(auth=auth)
 tw2_app = Twitter2(auth=auth2)
 # (which are actually the same as:)
-tw2 = Twitter(auth=auth, api_version = "2", format="")
-tw2_app = Twitter(auth=auth2, api_version = "2", format="")
+tw2 = Twitter(auth=auth, api_version="2", format="")
+tw2_app = Twitter(auth=auth2, api_version="2", format="")
 ```
 
-Note that the different API routes proposed can sometimes require always
-OAuth2 while certain will only work with regular OAuth and other will accept
-both (but potentially with different rate limits).
-Please read the [official documentation](https://developer.twitter.com/en/docs/api-reference-index)
-to know which authentication to use for which routes.
+Note that some API routes proposed by Twitter only work with OAuth, while others will only work with OAuth2 and some others will accept both (but potentially with different rate limits).
+Please read the [official documentation](https://developer.twitter.com/en/docs/api-reference-index) to know which authentication to use for which routes.
 
 
-## Querying the API
+### - Querying the API
 
-The philosophy of this wrapper is to be as flexible as possible and allow
-users to call any new routes added by Twitter without requiring to add
-specific code for each route within the library first. One only needs to know
-the url of an API route to call it as if it were an attribute of the Twitter
-classes.
+The philosophy of this wrapper is to be as flexible as possible and allow users to call any new routes added by Twitter without requiring to add specific code for each route within the library first. One only needs to know the url of an API route to call it as if it were an attribute of the Twitter classes.
 
-Hence, for instance, to use the v2 search tweets route
-[`https://api.twitter.com/2/tweets/search/recent`](https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent),
-you can call it as such:
+Hence, for instance, to use Twitter API v2's search tweets route [`https://api.twitter.com/2/tweets/search/recent`](https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent), you can call it as such:
 
 ```python
 tw2_app.tweets.search.recent(query="python", max_results=50)
 ```
 
-Identically with the v1.1 search route
-[`https://api.twitter.com/1.1/search/tweets.json`](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/search/api-reference/get-search-tweets):
+Identically, with API v1.1's search route [`https://api.twitter.com/1.1/search/tweets.json`](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/search/api-reference/get-search-tweets):
 
 ```python
 tw.search.tweets(q="python", result_type="recent", count=50)
 ```
 
-API routes sometimes include an argument within them. In such cases the
-positionnal argument should be prefixed with an underscore and reused as
-such in the function's arguments. For instance, to get a user's id when
+API routes sometimes include an argument within them. In such cases the positionnal argument should be prefixed with an underscore and reused as such in the function's arguments. For instance, to get a user's id when
 knowing only its screen_name, one can use [`https://api.twitter.com/2/users/by/username/:username`](https://developer.twitter.com/en/docs/twitter-api/users/lookup/api-reference/get-users-by-username-username):
 
-```
-res = tw2.users.by.username._username(_username="PythonTwitTools")
-user_id = res["data"]["id"]
+```python
+user = tw2.users.by.username._username(_username="PythonTwitTools")
+user_id = user["data"]["id"]
 ```
 
 Similarly, to collect all recent tweets of this account (his "timeline"), using [`https://api.twitter.com/2/users/:id/tweets`](https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets);
 
 ```python
-tw2.users._id.tweets(_id=user_id, exclude="retweets")
+timeline = tw2.users._id.tweets(_id=user_id, exclude="retweets")
 ```
 
 Some routes also require an `id` to be given at the end of the route url. In those cases, one can directly use the 'id` argument without prefixing it with an underscore and it will magically be added at the end of the route. For instance to get more metadata on the previous user, thanks to the route [`https://api.twitter.com/2/users/:id`](https://developer.twitter.com/en/docs/twitter-api/users/lookup/api-reference/get-users-id)
@@ -153,7 +135,7 @@ tw2.users(id=user_id)
 tw2.users._id(_id=user_id)
 ```
 
-Consequently, when calling one of the rare routes raking an argument named "id" but that is not supposed to appear within the route url, it needs to be renamed as `_id` within the function's argument. For instance, to call [`https://api.twitter.com/1.1/collections/show.json`](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/curate-a-collection/api-reference/get-collections-show):
+Consequently, when calling one of the rare routes taking an argument named `id` that is not supposed to appear within the route url, it needs to be renamed as `_id` within the function's argument. For instance, to call [`https://api.twitter.com/1.1/collections/show.json`](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/curate-a-collection/api-reference/get-collections-show):
 
 ```python
 tw.collections.show(_id="custom-388061495298244609")
@@ -161,7 +143,7 @@ tw.collections.show(_id="custom-388061495298244609")
 tw.collections.show(id="custom-388061495298244609")
 ```
 
-Finally, some routes require to force the HTTP method used to call them (`GET`, `POST`, `DELETE`, etc.). The library uses GET by default and tries to guess most other cases, but it required sometimes to be forced, wghich can be done by using the extra `_method` argument. For instance, the route [`https://api.twitter.com/2/users/:id/muting`](https://developer.twitter.com/en/docs/twitter-api/users/mutes/api-reference/get-users-muting) can be called with GET to collect a list of muted users, and with `POST` to add a user to this list:
+Finally, some routes require to force the HTTP method used to call them (`GET`, `POST`, `DELETE`, etc.). The library uses GET by default and tries to guess most other cases, but it requires sometimes to be forced, which can be done by using the extra `_method` argument. For instance, the route [`https://api.twitter.com/2/users/:id/muting`](https://developer.twitter.com/en/docs/twitter-api/users/mutes/api-reference/get-users-muting) can be called with GET to collect a list of muted users, and with `POST` to add a user to this list:
 
 ```python
 # To see the list of all users muted by our previous user:
@@ -170,36 +152,176 @@ tw2.users._id.muting(_id=user_id)
 tw2.users._id.muting(_id=user_id, _method="POST")
 ```
 
+Most routes arguments can be called directly as keyword arguments as in the previous example, but Twitter API v2 sometimes uses more complex nested arguments (such as `tweet.fields`, `add.value`, etc.) which are not "legal" python kwargs. For all of these, another special argument is available named `params` which accepts these. For instance to list desired fields when requesting a specific tweet with [https://api.twitter.com/2/tweets](https://developer.twitter.com/en/docs/twitter-api/tweets/lookup/api-reference/get-tweets):
 
-Examples with Twitter API v2:
-+++++++++++++++++++++++++++++   
+```python
+tw2.tweets(
+    id=1293595870563381249,
+    params={
+        "tweet.fields": "attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,possibly_sensitive,referenced_tweets,reply_settings,source,text,withheld",
+        "user.fields":  "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld",
+        "media.fields": "duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics"
+    }
+)
+```
+
+Finally, some rare routes using POST explicitly require arguments to be formatted as JSON body. These can be used with the special `_json` argument (which automatically handles setting `_method` to POST). For instance to send a Direct Message with API v1's [https://api.twitter.com/1.1/direct_messages/events/new.json](https://developer.twitter.com/en/docs/twitter-api/v1/direct-messages/sending-and-receiving/api-reference/new-event) to our previous `user_id`:
+
+```python
+tw.direct_messages.events.new(
+    _json={
+        "event": {
+            "type": "message_create",
+            "message_create": {
+                "target": {
+                    "recipient_id": user_id
+                },
+                "message_data": {
+                    "text": "Hello there!"
+                }
+            }
+        }
+    }
+)
+```
+
+### - Examples with [Twitter Standard API v1.1](https://developer.twitter.com/en/docs/api-reference-index#twitter-api-standard):
 
 ```python
 from twitter import *
 
 # First instantiate the class by authenticating with OAuth:
-t = Twitter2(
-    auth=OAuth(OAUTH_TOKEN, OAUTH_TOKEN_SECRET, CONSUMER_KEY, CONSUMER_SECRET))
+oauth = OAuth(OAUTH_TOKEN, OAUTH_TOKEN_SECRET, CONSUMER_KEY, CONSUMER_SECRET)
+tw = Twitter(auth=oauth)
 
 # Or with OAuth2 using a bearer token:
-t = Twitter2(auth=OAuth2(bearer_token=BEARER_TOKEN))
+oauth2 = OAuth2(bearer_token=BEARER_TOKEN)
+tw_app = Twitter(auth=oauth2)
 
-# Note Twitter2 is only a wrapper for the regular Twitter class with presets,
+# Note the BEARER_TOKEN can be regenerated directly through a combination of calls to Twitter API v1 as such:
+import json
+token = Twitter(api_version=None, format="", secure=True, auth=OAuth2(CONSUMER_KEY, CONSUMER_SECRET)).oauth2.token(grant_type="client_credentials")
+BEARER_TOKEN = json.loads(token)['access_token']
+
+# Get your "home" timeline
+tw.statuses.home_timeline()
+
+# Add specific parameters such as "count" as simple keyword arguments
+tw.statuses.home_timeline(count=5)
+
+# Get a specific user's timeline
+tw.statuses.user_timeline(screen_name="boogheta")
+
+# Get a specific tweet
+tw.statuses.show(id=1564290764359753730)
+
+# Post a new tweet:
+tw.statuses.update(status="Using @boogheta's sweet Python Twitter Tools.")
+
+# Send a direct message
+t.direct_messages.events.new(
+  _json={
+    "event": {
+      "type": "message_create",
+      "message_create": {
+        "target": {"recipient_id": t.users.show(screen_name="boogheta")["id"]},
+        "message_data": {"text": "I think yer swell!"}
+      }
+    }
+  }
+)
+
+# Get the members of maxmunnecke's list "network analysis tools" (grab the list_id within the url) https://twitter.com/i/lists/1130857490764091392
+tw.lists.members(owner_screen_name="maxmunnecke", list_id="1130857490764091392")
+
+# Like/Favorite a status
+status = tw.statuses.home_timeline()[0]
+if not status['favorited']:
+    tw.favorites.create(_id=status['id'])
+
+# An *optional* `_timeout` parameter can also be used for API
+# calls which take much more time than normal or when Twitter stops
+# responding for some reason:
+t.users.lookup(
+  screen_name=','.join(A_LIST_OF_100_SCREEN_NAMES),
+  _timeout=1
+)
+
+# Overriding method: GET/POST
+# you should not need to use this method as this library properly
+# detects whether GET or POST should be used for all V1 routes.
+# Nevertheless to force a particular method, use `_method`:
+tw.statuses.oembed(_id=1564290764359753730, _method='GET')
+
+# Send images along with your tweets:
+# - first just read images from the web or from files the regular way:
+with open("example.png", "rb") as imagefile:
+    imagedata = imagefile.read()
+# - then upload medias one by one on Twitter's dedicated server
+#   and collect each one's id:
+tw_upload = Twitter(domain='upload.twitter.com', auth=oauth)
+id_img1 = tw_upload.media.upload(media=imagedata)["media_id_string"]
+id_img2 = tw_upload.media.upload(media=imagedata)["media_id_string"]
+# - finally send your tweet with the list of media ids:
+tw.statuses.update(status="PTT rocks! ★", media_ids=",".join([id_img1, id_img2]))
+
+# Or send a tweet with an image (or set a logo/banner similarly)
+# using the old deprecated method that will probably disappear some day
+params = {"media[]": imagedata, "status": "PTT ★"}
+# Or for an image encoded as base64:
+params = {"media[]": base64_image, "status": "PTT ★", "_base64": True}
+tw.statuses.update_with_media(**params)
+
+# Attach text metadata to medias sent, using the upload.twitter.com route
+# and the "_json" workaround to send json arguments as POST body
+# (warning: to be done before attaching the media to a tweet)
+tw_upload.media.metadata.create(
+  _json={
+    "media_id": id_img1,
+    "alt_text": {
+      "text": "metadata generated via PTT!"
+    }
+  }
+)
+# or with the shortcut arguments ("alt_text" and "text" work):
+tw_upload.media.metadata.create(media_id=id_img1, text="metadata generated via PTT!")
+
+# Search tweets matching a word or a hashtag such as #pycon:
+tw.search.tweets(q="#pycon")
+
+# Search for the latest tweets about #pycon, using [extended mode](https://developer.twitter.com/en/docs/tweets/tweet-updates)
+tw.search.tweets(q="#pycon", tweet_mode='extended')
+```
+
+### - Examples with [Twitter API v2](https://developer.twitter.com/en/docs/api-reference-index#twitter-api-v2):
+
+```python
+from twitter import *
+
+# First instantiate the class by authenticating with OAuth:
+oauth = OAuth(OAUTH_TOKEN, OAUTH_TOKEN_SECRET, CONSUMER_KEY, CONSUMER_SECRET)
+tw = Twitter2(auth=oauth)
+
+# Or with OAuth2 using a bearer token:
+oauth2 = OAuth2(bearer_token=BEARER_TOKEN)
+tw_app = Twitter2(auth=oauth2)
+
+# Note that Twitter2 is only a wrapper for the regular Twitter class with presets,
 # so the above are equivalent to the following:
-t = Twitter(
-    auth=OAuth(OAUTH_TOKEN, OAUTH_TOKEN_SECRET, CONSUMER_KEY, CONSUMER_SECRET),
-    api_version="2",
-    format="")
-t = Twitter(auth=OAuth2(bearer_token=BEARER_TOKEN), api_version="2", format="")
+tw = Twitter(auth=oauth, api_version="2", format="")
+tw_app = Twitter(auth=oauth2, api_version="2", format="")
 
-# Then use it to query the API. For instance grab a specific tweet:
-t.tweets(id=1293595870563381249)
+# Then use it to query the API. For instance, get metadata on the authenticated user:
+tw.users.me()
 
-# Twitter v2 API does not return automatically all fields like v1.1 was
+# Add specific parameters, for instance the "id" of a specific tweet to gran:
+tw.tweets(id=1293595870563381249)
+
+# Twitter v2 API does not return automatically all fields like v1.1 was.
 # One needs to specify which expansions and fields are desired as listed in
 # the [official documentation](https://developer.twitter.com/en/docs/twitter-api/tweets/lookup/api-reference/get-tweets-id).
 # For instance, to get everything available on the previous tweet:
-t.tweets(
+tw.tweets(
     id=1293595870563381249,
     expansions="author_id,referenced_tweets.id,referenced_tweets.id.author_id,entities.mentions.username,attachments.poll_ids,attachments.media_keys,in_reply_to_user_id,geo.place_id",
     params={
@@ -208,245 +330,116 @@ t.tweets(
         "media.fields": "duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics",
         "place.fields": "contained_within,country,country_code,full_name,geo,id,name,place_type",
         "poll.fields":  "duration_minutes,end_datetime,id,options,voting_status"
-    })
+    }
+)
 
-# The Stream also has its own wrapper:
-ts = TwitterStream2(auth=OAuth2(bearer_token=BEARER_TOKEN))
+# Post a new tweet, using JSON body parameters:
+tw.tweets(_json={"text": "Using @boogheta's sweet Python Twitter Tools."})
 
-# Then calling it behaves like python generators. For instance the sample stream:
-for tweet in ts.tweets.sample.stream():
+# Search tweets matching a word or a hashtag such as #pycon:
+tw.tweets.search.recent(query="#pycon")
+
+```
+
+### - Working with the Streaming APIs
+
+The `TwitterStream` and `TwitterStream2` classes are interfaces to the Twitter Stream APIs. These can be used pretty much the same as the `Twitter` and `Twitter2` classes, except the result of calling a method will be an iterator that yields objects decoded from the stream.
+
+Per default the `TwitterStream` object uses [public streams](https://dev.twitter.com/docs/streaming-apis/streams/public).
+If you want to use one of the other [streaming APIs](https://dev.twitter.com/docs/streaming-apis), you should specify the `domain` URL manually to the TwitterStream class.
+
+The iterator will `yield` until the TCP connection breaks. When the connection breaks, the iterator yields `{'hangup': True}` (and raises `StopIteration` if iterated again).
+
+Similarly, if the stream does not produce heartbeats for more than 90 seconds, the iterator yields `{'hangup': True, 'heartbeat_timeout': True}` (and raises `StopIteration` if iterated again).
+
+The `timeout` parameter controls the maximum time between yields. If it is nonzero, then the iterator will yield either stream data or `{'timeout': True}` within the timeout period. This is useful if you want your program to do other stuff in between waiting for tweets.
+
+The `block` parameter sets the stream to be fully non-blocking. In this mode, the iterator always yields immediately. It returns stream data, or `None`.
+
+Note that `timeout` supercedes this argument, so it should also be set as `None` to use this mode, and non-blocking can potentially lead to 100% CPU usage.
+
+
+#### + Examples with the v1.1 streaming APIs:
+
+```python
+# Use the Twitter API v1.1 dedicated wrapper for streaming:
+tw_stream = TwitterStream(auth=oauth)
+
+# Then calling it behaves like python generators. For instance with the sample stream:
+for tweet in tw_stream.statuses.sample():
     print(tweet)
 
-# The same applies to the regular filter stream:
-for tweet in ts.tweets.search.stream():
+# The same applies to the regular search filter stream:
+for tweet in tw_stream.statuses.filter(track="python,programming"):
     print(tweet)
 
-# Although it does not anymore take any filter argument and needs to be
+# Streams will return objects which can be either None, tweet dictionary objects
+# or service messages such as "disconnect", "hangup", "timeout" or "delete",
+# so testing whether the collected objet exists and has an "id_str"
+# for instance can be a good practice:
+for tweet in tw_stream.statuses.filter(track="python,programming"):
+    if tweet.get("id_str"):
+        process_tweet(tweet)
+
+```
+
+#### + Examples with the v2 streaming APIs:
+
+```python
+# To use the live Stream with API v2, a specific wrapper is also there:
+tw2_stream = TwitterStream2(auth=oauth2)
+
+# Then calling it behaves like python generators. For instance with the sample stream:
+for tweet in tw2_stream.tweets.sample.stream():
+    print(tweet)
+
+# The same applies to the regular search filter stream:
+for tweet in tw2_stream.tweets.search.stream():
+    print(tweet)
+
+# Although it does not anymore take any filter argument and first needs to be
 # controlled separately using the regular Twitter class.
+tw2_app = Twitter2(auth=oauth2)
 # To know which rules apply, just call:
-t.tweets.search.stream.rules()
+tw2_app.tweets.search.stream.rules()
 # And to add new rules, send POST json queries to the same route:
-t.tweets.search.stream.rules(_json={"add": [{"value": "python"}]})
+tw2_app.tweets.search.stream.rules(_json={"add": [{"value": "python"}, {"value": "programming"}]})
 
 # Then call the stream as described above:
-for tweet in ts.tweets.search.stream():
+for tweet in tw2_stream.tweets.search.stream():
     print(tweet)
 
-# Get more details on rules possibilities and syntax in the officiel documentation:
+# Get more details on rules options and syntax in the officiel documentation:
 # https://developer.twitter.com/en/docs/twitter-api/tweets/filtered-stream/api-reference/post-tweets-search-stream-rules
-
 ```
 
-Examples with Twitter API Standard v1.1:
-++++++++++++++++++++++++++++++++++++++++
+### - Advanced features:
 
-```python
-from twitter import *
+#### + Retrying after reaching the API rate limit:
 
-t = Twitter(auth=OAuth(token, token_secret, consumer_key, consumer_secret))
-
-# Get your "home" timeline
-t.statuses.home_timeline()
-
-# Get a particular friend's timeline
-t.statuses.user_timeline(screen_name="boogheta")
-
-# to pass in GET/POST parameters, such as `count`
-t.statuses.home_timeline(count=5)
-
-# to pass in the GET/POST parameter `id` you need to use `_id`
-t.statuses.show(_id=1234567890)
-
-# Update your status
-t.statuses.update(
-    status="Using @boogheta's sweet Python Twitter Tools.")
-
-# Send a direct message
-t.direct_messages.events.new(
-    _json={
-        "event": {
-            "type": "message_create",
-            "message_create": {
-                "target": {
-                    "recipient_id": t.users.show(screen_name="boogheta")["id"]},
-                "message_data": {
-                    "text": "I think yer swell!"}}}})
-
-# Get the members of maxmunnecke's list "network analysis tools" (grab the list_id within the url) https://twitter.com/i/lists/1130857490764091392
-t.lists.members(owner_screen_name="maxmunnecke", list_id="1130857490764091392")
-
-# Favorite/like a status
-status = t.statuses.home_timeline()[0]
-if not status['favorited']:
-    t.favorites.create(_id=status['id'])
-
-# An *optional* `_timeout` parameter can also be used for API
-# calls which take much more time than normal or twitter stops
-# responding for some reason:
-t.users.lookup(
-    screen_name=','.join(A_LIST_OF_100_SCREEN_NAMES), _timeout=1)
-
-# Overriding Method: GET/POST
-# you should not need to use this method as this library properly
-# detects whether GET or POST should be used, Nevertheless
-# to force a particular method, use `_method`
-t.statuses.oembed(_id=1234567890, _method='GET')
-
-# Send images along with your tweets:
-# - first just read images from the web or from files the regular way:
-with open("example.png", "rb") as imagefile:
-    imagedata = imagefile.read()
-# - then upload medias one by one on Twitter's dedicated server
-#   and collect each one's id:
-t_upload = Twitter(domain='upload.twitter.com',
-    auth=OAuth(token, token_secret, consumer_key, consumer_secret))
-id_img1 = t_upload.media.upload(media=imagedata)["media_id_string"]
-id_img2 = t_upload.media.upload(media=imagedata)["media_id_string"]
-# - finally send your tweet with the list of media ids:
-t.statuses.update(status="PTT ★", media_ids=",".join([id_img1, id_img2]))
-
-# Or send a tweet with an image (or set a logo/banner similarly)
-# using the old deprecated method that will probably disappear some day
-params = {"media[]": imagedata, "status": "PTT ★"}
-# Or for an image encoded as base64:
-params = {"media[]": base64_image, "status": "PTT ★", "_base64": True}
-t.statuses.update_with_media(**params)
-
-# Attach text metadata to medias sent, using the upload.twitter.com route
-# using the _json workaround to send json arguments as POST body
-# (warning: to be done before attaching the media to a tweet)
-t_upload.media.metadata.create(_json={
-  "media_id": id_img1,
-  "alt_text": { "text": "metadata generated via PTT!" }
-})
-# or with the shortcut arguments ("alt_text" and "text" work):
-t_upload.media.metadata.create(media_id=id_img1, text="metadata generated via PTT!")
-```
-
-Searching Twitter:
-```python
-# Search for the latest tweets about #pycon
-t.search.tweets(q="#pycon")
-
-# Search for the latest tweets about #pycon, using [extended mode](https://developer.twitter.com/en/docs/tweets/tweet-updates)
-t.search.tweets(q="#pycon", tweet_mode='extended')
-```
-
-
-Retrying after reaching the API rate limit
-------------------------------------------
-
-Simply create the `Twitter` instance with the argument `retry=True`, then the
-HTTP error codes `429`, `502`, `503`, and `504` will cause a retry of the last
-request.
+Simply create the `Twitter` instance with the argument `retry=True`, then the HTTP error codes `429`, `502`, `503`, and `504` will cause a retry of the last request.
 
 If `retry` is an integer, it defines the maximum number of retry attempts.
 
 
-Using the data returned
------------------------
+#### + Twitter `Response` Objects:
 
-Twitter API calls return decoded JSON. This is converted into
-a bunch of Python lists, dicts, ints, and strings. For example:
+Response from a Twitter request. Behaves like a list or a string (depending on requested format), but it has a few other interesting attributes.
 
-```python
-x = twitter.statuses.home_timeline()
-
-# The first 'tweet' in the timeline
-x[0]
-
-# The screen name of the user who wrote the first 'tweet'
-x[0]['user']['screen_name']
-```
-
-Getting raw XML data
---------------------
-
-If you prefer to get your Twitter data in XML format, pass
-`format="xml"` to the `Twitter` object when you instantiate it:
-
-```python
-twitter = Twitter(format="xml")
-```
-
-The output will not be parsed in any way. It will be a raw string
-of XML.
-
-The `TwitterStream` class
--------------------------
-
-The `TwitterStream` object is an interface to the Twitter Stream
-API. This can be used pretty much the same as the `Twitter` class,
-except the result of calling a method will be an iterator that
-yields objects decoded from the stream. For example::
-
-```python
-twitter_stream = TwitterStream(auth=OAuth(...))
-iterator = twitter_stream.statuses.sample()
-
-for tweet in iterator:
-    ...do something with this tweet...
-```
-
-Per default the `TwitterStream` object uses
-[public streams](https://dev.twitter.com/docs/streaming-apis/streams/public).
-If you want to use one of the other
-[streaming APIs](https://dev.twitter.com/docs/streaming-apis), specify the URL
-manually.
-
-The iterator will `yield` until the TCP connection breaks. When the
-connection breaks, the iterator yields `{'hangup': True}` (and
-raises `StopIteration` if iterated again).
-
-Similarly, if the stream does not produce heartbeats for more than
-90 seconds, the iterator yields `{'hangup': True,
-'heartbeat_timeout': True}` (and raises `StopIteration` if
-iterated again).
-
-The `timeout` parameter controls the maximum time between
-yields. If it is nonzero, then the iterator will yield either
-stream data or `{'timeout': True}` within the timeout period. This
-is useful if you want your program to do other stuff in between
-waiting for tweets.
-
-The `block` parameter sets the stream to be fully non-blocking.
-In this mode, the iterator always yields immediately. It returns
-stream data, or `None`.
-
-Note that `timeout` supercedes this argument, so it should also be
-set `None` to use this mode, and non-blocking can potentially lead
-to 100% CPU usage.
-
-Twitter `Response` Objects
---------------------------
-
-Response from a Twitter request. Behaves like a list or a string
-(depending on requested format), but it has a few other interesting
-attributes.
-
-`headers` gives you access to the response headers as an
-`httplib.HTTPHeaders` instance. Use `response.headers.get('h')`
-to retrieve a header.
+`headers` gives you access to the response headers as an `httplib.HTTPHeaders` instance. Use `response.headers.get('h')` to retrieve a header.
 
 
-### OAuth Danse
+#### + OAuth Danse
 
-When users run your application they have to authenticate your app with
-their Twitter account. A few HTTP calls to Twitter are required to do this.
+When users run your application they have to authenticate your app with their Twitter account. A few HTTP calls to Twitter are required to do this.
 Please see the twitter.oauth_dance module to see how this is done.
-If you are making a command-line app, you can use the oauth_dance() function
-directly.
+If you are making a command-line app, you can use the oauth_dance() function directly.
 
-Performing the "oauth dance" gets you an oauth token and oauth secret
-that authenticate the user with Twitter. You should save these for
-later, so that the user doesn't have to do the oauth dance again.
+Performing the "oauth dance" gets you an oauth token and oauth secret that authenticate the user with Twitter. You should save these for later, so that the user doesn't have to do the oauth dance again.
 
-`read_token_file` and `write_token_file` are utility methods to read and
-write OAuth `token` and `secret` key values. The values are stored as
-strings in the file. Not terribly exciting.
+`read_token_file` and `write_token_file` are utility methods to read and write OAuth `token` and `secret` key values. The values are stored as strings in the file. Not terribly exciting.
 
-Finally, you can use the `OAuth` authenticator to connect to Twitter. In
-code it all goes like this:
+Finally, you can use the `OAuth` authenticator to connect to Twitter. In code it all goes like this:
 
 ```python
 import os
@@ -466,8 +459,6 @@ twitter = Twitter(auth=OAuth(oauth_token, oauth_secret, KEY, SECRET))
 twitter.statuses.update(status='Hello, world!')
 ```
 
-
 ## License
 
-Python Twitter Tools and the Twitter API Python wrapper are released
-under an MIT License.
+Python Twitter Tools and the Twitter API Python wrapper are released under an MIT License.
