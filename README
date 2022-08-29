@@ -17,13 +17,13 @@ For more information:
 
 ## Summary
 
-- [Authenticating with OAuth/OAuth2](#authenticating)
-- [Instantiating the ](#instantiating)
-- [Querying the different API routes with different kinds of arguments](#querying-the-api)
-- [Examples with Twitter Standard API v1.1](#examples-with-twitter-api-v11)
-- [Examples with Twitter API v2](#examples-with-twitter-api-v2)
-- [Working with the live streams of tweets (v1.1 & v2)](#working-with-the-streaming-apis)
-- [Advanced features](#advanced-features)
+- [Authenticating with OAuth/OAuth2](#--authenticating)
+- [Instantiating the ](#--instantiating)
+- [Querying the different API routes with different kinds of arguments](#--querying-the-api)
+- [Examples with Twitter Standard API v1.1](#--examples-with-twitter-standard-api-v11)
+- [Examples with Twitter API v2](#--examples-with-twitter-api-v2)
+- [Working with the live streams of tweets (v1.1 & v2)](#--working-with-the-streaming-apis)
+- [Advanced features](#--advanced-features)
 
 
 ## Programming with the Twitter API classes
