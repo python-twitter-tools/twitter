@@ -159,8 +159,8 @@ def expand_line(line, sites):
 
 def parse_host_list(list_of_hosts):
     """Parse the comma separated list of hosts."""
-    p = set(
-        m.group(1) for m in re.finditer("\s*([^,\s]+)\s*,?\s*", list_of_hosts))
+    p = {
+        m.group(1) for m in re.finditer(r"\s*([^,\s]+)\s*,?\s*", list_of_hosts)}
     return p
 
 

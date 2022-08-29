@@ -1,5 +1,6 @@
 prune .github
-prune tests
+include tests/*.py
+include tests/*.png
 prune utils
 exclude .coveragerc
 exclude .gitignore

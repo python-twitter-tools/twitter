@@ -153,15 +153,18 @@ class TwitterBot(object):
         self.irc = irclib.IRC()
         self.irc.add_global_handler('privmsg', self.handle_privmsg)
         self.irc.add_global_handler('ctcp', self.handle_ctcp)
-        self.irc.add_global_handler('umode', self.handle_umode)
+        self.irc.add_global_handler('welcome', self.handle_welcome)
         self.ircServer = self.irc.server()
 
+        self.welcome_received = False
         self.sched = Scheduler(
             (SchedTask(self.process_events, 1),
              SchedTask(self.check_statuses, 120)))
         self.lastUpdate = (datetime.utcnow() - timedelta(minutes=10)).utctimetuple()
 
     def check_statuses(self):
+        if not self.welcome_received:
+            return
         debug("In check_statuses")
         try:
             updates = reversed(self.twitter.statuses.home_timeline())
@@ -226,18 +229,16 @@ class TwitterBot(object):
             elif args[0] == 'CLIENTINFO':
                 conn.ctcp_reply(source, "CLIENTINFO PING VERSION CLIENTINFO")
 
-    def handle_umode(self, conn, evt):
+    def handle_welcome(self, conn, evt):
         """
-        QuakeNet ignores all your commands until after the MOTD. This
-        handler defers joining until after it sees a magic line. It
-        also tries to join right after connect, but this will just
-        make it join again which should be safe.
+        Undernet and QuakeNet ignore all your commands until it receives 001. This
+        handler defers joining until after it sees a magic line.
         """
-        args = evt.arguments()
-        if (args and args[0] == '+i'):
-            channels = self.config.get('irc', 'channel').split(',')
-            for channel in channels:
-                self.ircServer.join(channel)
+        self.welcome_received = True
+        channels = self.config.get('irc', 'channel').split(',')
+        for channel in channels:
+            self.ircServer.join(channel)
+        self.check_statuses()
 
     def privmsg_channels(self, msg):
         return_response=True
@@ -288,13 +289,11 @@ class TwitterBot(object):
                     get_prefix('inform'), userNick, name))
 
     def _irc_connect(self):
+        self.welcome_received = False
         self.ircServer.connect(
             self.config.get('irc', 'server'),
             self.config.getint('irc', 'port'),
             self.config.get('irc', 'nick'))
-        channels=self.config.get('irc', 'channel').split(',')
-        for channel in channels:
-            self.ircServer.join(channel)
 
     def run(self):
         self._irc_connect()

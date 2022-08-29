@@ -49,7 +49,7 @@ def start_server(*resp):
 
     httpd = SocketServer.TCPServer(("", 0), MyHandler)
     t = threading.Thread(target=httpd.serve_forever)
-    t.setDaemon(True)
+    t.daemon = True
     t.start()
     port = httpd.server_address[1]
     yield functools.partial(url, port)

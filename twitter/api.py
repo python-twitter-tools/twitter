@@ -40,6 +40,11 @@ try:
 except ImportError:
     import simplejson as json
 
+try:
+    from json.decoder import JSONDecodeError
+except ImportError:
+    JSONDecodeError = ValueError
+
 
 class _DEFAULT(object):
     pass
@@ -397,7 +402,7 @@ class TwitterCall(object):
             elif "json" == self.format or uri.startswith("2/"):
                 try:
                     res = json.loads(data.decode('utf8'))
-                except json.decoder.JSONDecodeError as e:
+                except JSONDecodeError as e:
                     # it seems like the data received was incomplete
                     # and we should catch it to allow retries
                     raise TwitterError("Incomplete JSON data collected for %s (%s): %s)" % (uri, arg_data, e))
