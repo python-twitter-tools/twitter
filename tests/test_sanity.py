@@ -9,7 +9,7 @@ import pickle
 import json
 import sys
 
-from twitter import Twitter, NoAuth, OAuth, OAuth2, read_token_file, TwitterHTTPError
+from twitter import Twitter, TwitterStream, TwitterStream2, NoAuth, OAuth, OAuth2, read_token_file, TwitterHTTPError
 from twitter.api import TwitterDictResponse, TwitterListResponse, POST_ACTIONS, method_for_uri
 
 noauth = NoAuth()
