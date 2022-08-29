@@ -67,8 +67,7 @@ twitter2_app = Twitter(domain='api.twitter.com',
 
 twitter2_stream = TwitterStream2(domain='api.twitter.com',
                     auth=oauth2,
-                    api_version='2',
-                    format='')
+                    api_version='2')
 
 AZaz = "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
