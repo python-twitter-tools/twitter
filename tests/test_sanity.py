@@ -51,12 +51,21 @@ twitter11_na = Twitter(domain='api.twitter.com',
                        auth=noauth,
                        api_version='1.1')
 
+twitter11_stream = TwitterStream(domain='stream.twitter.com',
+                    auth=oauth,
+                    api_version='1.1')
+
 twitter2 = Twitter(domain='api.twitter.com',
                     auth=oauth,
                     api_version='2',
                     format='')
 
 twitter2_app = Twitter(domain='api.twitter.com',
+                    auth=oauth2,
+                    api_version='2',
+                    format='')
+
+twitter2_stream = TwitterStream2(domain='api.twitter.com',
                     auth=oauth2,
                     api_version='2',
                     format='')
@@ -183,6 +192,54 @@ def test_search():
     # and requires authorisation
     results = twitter11.search.tweets(q='foo')
     assert results
+
+
+def test_stream():
+    # Sometimes Twitter matches tweets with keywords from urls or users
+    # which are more complex to check so we allow a few mismatches
+    mismatch = 0
+    for tweet in twitter11_stream.statuses.filter(track="gaga,bieber", filter_level='none', stall_warnings='true'):
+        if "timeout" in tweet:
+            continue
+        assert "text" in tweet
+        lowtext = tweet["text"].lower()
+        if "gaga" in lowtext or "bieber" in lowtext:
+            break
+        mismatch += 1
+        if mismatch > 5:
+            assert "gaga" in lowtext or "bieber" in lowtext
+
+
+def test_stream_v2():
+    rules = twitter2_app.tweets.search.stream.rules()
+    assert "data" in rules and "meta" in rules and len(rules["data"]) == rules["meta"].get("result_count", 0)
+
+    if len(rules["data"]):
+        remove = twitter2_app.tweets.search.stream.rules(
+            _json={"delete": {"ids": [rule["id"] for rule in rules["data"]]}}
+        )
+        assert "meta" in remove and "summary" in remove["meta"] and remove["meta"]["summary"].get("deleted", 0) == len(rules["data"])
+
+    add = twitter2_app.tweets.search.stream.rules(
+        _json={"add": [{"value": '"gaga"'}, {"value": '"bieber"'}]}
+    )
+    assert "meta" in add and "summary" in add["meta"] and add["meta"]["summary"].get("created", 0) == 2
+    assert "data" in add and len(add["data"]) == 2
+
+    # Sometimes Twitter matches tweets with keywords from urls or users
+    # which are more complex to check so we allow a few mismatches
+    mismatch = 0
+    for tweet in twitter2_stream.tweets.search.stream(
+        expansions="referenced_tweets.id",
+        params={"tweet.fields": "referenced_tweets,text"}
+    ):
+        assert "data" in tweet and "text" in tweet["data"]
+        lowtext = tweet["data"]["text"].lower()
+        if "gaga" in lowtext or "bieber" in lowtext:
+            break
+        mismatch += 1
+        if mismatch > 5:
+            assert "gaga" in lowtext or "bieber" in lowtext
 
 
 def test_get_trends():
