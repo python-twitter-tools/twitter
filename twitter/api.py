@@ -17,6 +17,8 @@ except ImportError:
     import urllib2 as urllib_request
     import urllib2 as urllib_error
 
+import certifi
+
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -375,7 +377,7 @@ class TwitterCall(object):
             return self._handle_response(req, uri, arg_data, _timeout)
 
     def _handle_response(self, req, uri, arg_data, _timeout=None):
-        kwargs = {}
+        kwargs = {'cafile': certifi.where()}
         if _timeout:
             kwargs['timeout'] = _timeout
         try:
