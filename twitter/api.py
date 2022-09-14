@@ -371,13 +371,17 @@ class TwitterCall(object):
             return self._handle_response(req, uri, arg_data, _timeout)
 
     def _handle_response(self, req, uri, arg_data, _timeout=None):
-        kwargs = {'cafile': certifi.where()}
+        kwargs = {}
         if _timeout:
             kwargs['timeout'] = _timeout
         try:
             context = None
-            if not self.verify_context and _HAVE_SSL:
-                context = ssl._create_unverified_context()
+            if _HAVE_SSL:
+                if not self.verify_context:
+                    context = ssl._create_unverified_context()
+                else:
+                    context = ssl.create_default_context()
+                    context.load_verify_locations(cafile=certifi.where())
             kwargs['context'] = context
             handle = urllib_request.urlopen(req, **kwargs)
             if handle.headers['Content-Type'] in ['image/jpeg', 'image/png']:
