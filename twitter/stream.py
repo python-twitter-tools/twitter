@@ -16,11 +16,14 @@ if PY_3_OR_HIGHER:
 else:
     import urllib2 as urllib_request
     import urllib2 as urllib_error
+
+import certifi
+
 import json
 from ssl import SSLError
 import socket
 import codecs
-import sys, select, time
+import select, time
 
 from .api import TwitterCall, wrap_response, TwitterHTTPError
 
@@ -218,7 +221,7 @@ def handle_stream_response(req, uri, arg_data, block, timeout, heartbeat_timeout
         context = None
         if not verify_context and _HAVE_SSL:
             context = ssl._create_unverified_context()
-        handle = urllib_request.urlopen(req, context=context)
+        handle = urllib_request.urlopen(req, context=context, cafile=certifi.where())
     except urllib_error.HTTPError as e:
         raise TwitterHTTPError(e, uri, 'json', arg_data)
     return iter(TwitterJSONIter(handle, uri, arg_data, block, timeout, heartbeat_timeout))
