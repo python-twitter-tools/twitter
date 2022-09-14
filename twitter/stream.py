@@ -219,9 +219,13 @@ class TwitterJSONIter(object):
 def handle_stream_response(req, uri, arg_data, block, timeout, heartbeat_timeout, verify_context=True):
     try:
         context = None
-        if not verify_context and _HAVE_SSL:
-            context = ssl._create_unverified_context()
-        handle = urllib_request.urlopen(req, context=context, cafile=certifi.where())
+        if _HAVE_SSL:
+            if not verify_context:
+                context = ssl._create_unverified_context()
+            else:
+                context = ssl.create_default_context()
+                context.load_verify_locations(cafile=certifi.where())
+        handle = urllib_request.urlopen(req, context=context)
     except urllib_error.HTTPError as e:
         raise TwitterHTTPError(e, uri, 'json', arg_data)
     return iter(TwitterJSONIter(handle, uri, arg_data, block, timeout, heartbeat_timeout))
