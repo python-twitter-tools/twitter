@@ -47,6 +47,7 @@ setup(name='twitter',
       zip_safe=True,
       use_scm_version={"local_scheme": local_scheme},
       setup_requires=["setuptools_scm"],
+      install_requires=["certifi"],
       entry_points="""
       # -*- Entry points: -*-
       [console_scripts]
