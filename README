@@ -163,6 +163,22 @@ t_upload.media.metadata.create(_json={
 })
 # or with the shortcut arguments ("alt_text" and "text" work):
 t_upload.media.metadata.create(media_id=id_img1, text="metadata generated via PTT!")
+
+# Alternatively, you cand reuse the originally instantiated object, 
+# changing the domain, that is:
+t.domain = 'upload.twitter.com'
+
+# Now you can upload the image (or images).
+id_img1 = t.media.upload(media=imagedata)['media_id_string']
+id_img2 = t.media.upload(media=imagedata)["media_id_string"]
+
+# You now can reset the domain to the original one:
+t.domain = 'api.twitter.com'
+
+# And you can send the update:
+t.statuses.update(status="PTT ★", media_ids=",".join([id_img1, id_img2]))
+
+
 ```
 
 Searching Twitter:
