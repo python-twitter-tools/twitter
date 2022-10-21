@@ -164,7 +164,7 @@ t_upload.media.metadata.create(_json={
 # or with the shortcut arguments ("alt_text" and "text" work):
 t_upload.media.metadata.create(media_id=id_img1, text="metadata generated via PTT!")
 
-# Alternatively, you cand reuse the originally instantiated object, 
+# Alternatively, you can reuse the originally instantiated object, 
 # changing the domain, that is:
 t.domain = 'upload.twitter.com'
 
