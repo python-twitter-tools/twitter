@@ -1,6 +1,6 @@
 name: Tests
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 
 env:
   FORCE_COLOR: 1
@@ -18,7 +18,7 @@ jobs:
             "3.8",
             "3.9",
             "3.10",
-            "3.11-dev",
+            "3.11",
             "pypy2.7",
         ]
         os: [ubuntu-latest]
