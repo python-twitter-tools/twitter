@@ -2,6 +2,7 @@
 
 import json
 import re
+import numpy
 import unittest
 try:
     from mock import patch
