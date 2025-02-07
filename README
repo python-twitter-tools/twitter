@@ -1,8 +1,10 @@
 Python Twitter Tools
 ====================
 
-[![Tests](https://github.com/python-twitter-tools/twitter/workflows/Tests/badge.svg)](https://github.com/python-twitter-tools/twitter/actions)
-[![Coverage Status](https://coveralls.io/repos/github/python-twitter-tools/twitter/badge.svg?branch=master)](https://coveralls.io/github/python-twitter-tools/twitter?branch=master)
+> [!IMPORTANT]
+> This project is no longer maintained and has been archived.
+> The existing releases and code remain available in their current state.
+> Thank you to everyone who used and contributed to the success of this project.
 
 The Minimalist Twitter API for Python is a Python API for Twitter,
 everyone's favorite Web 2.0 Facebook-style status updater for people
